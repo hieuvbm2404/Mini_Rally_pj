@@ -1,0 +1,1177 @@
+# Mini Rally / Agile Work Management Tool - Database Design
+
+## 1. Mục tiêu thiết kế DB
+
+Tài liệu này mô tả bộ database cho hệ thống **Mini Rally / Agile Work Management Tool**.
+
+Hệ thống hướng đến quy mô khoảng **200 users**, dùng cho quản lý project theo Agile/Scrum/Kanban với các nghiệp vụ chính:
+
+- Workspace / Organization
+- User / Role / Permission
+- Project management
+- Work item hierarchy: Initiative, Epic, Story, Task, Defect
+- Backlog management
+- Sprint / Iteration management
+- Scrum / Kanban board
+- Release management
+- Comment / Attachment
+- Activity log / Audit log
+- Notification
+- Saved filter
+- Admin / Settings
+
+---
+
+## 2. Tổng quan nhóm bảng
+
+Database được chia thành các nhóm nghiệp vụ chính:
+
+```text
+1. Account & Workspace
+2. Project Management
+3. Role & Permission
+4. Workflow Management
+5. Work Item Management
+6. Backlog / Sprint / Board
+7. Release Management
+8. Comment / Attachment / Activity
+9. Notification
+10. Utility / Saved Filter
+```
+
+Tổng số bảng đề xuất bản đầy đủ: **25 bảng**.
+
+```text
+users
+workspaces
+workspace_members
+roles
+permissions
+role_permissions
+projects
+project_members
+project_settings
+workflow_statuses
+workflow_transitions
+work_items
+work_item_relations
+labels
+work_item_labels
+sprints
+sprint_items
+releases
+release_items
+comments
+attachments
+watchers
+activity_logs
+notifications
+saved_filters
+```
+
+---
+
+## 3. ERD logic tổng quan
+
+```text
+Workspace
+ ├── Users through WorkspaceMembers
+ ├── Roles / Permissions
+ ├── Projects
+ │    ├── ProjectMembers
+ │    ├── ProjectSettings
+ │    ├── WorkflowStatuses
+ │    ├── WorkflowTransitions
+ │    ├── WorkItems
+ │    │    ├── Comments
+ │    │    ├── Attachments
+ │    │    ├── Labels
+ │    │    ├── Watchers
+ │    │    └── ActivityLogs
+ │    ├── Sprints
+ │    └── Releases
+ └── SavedFilters
+```
+
+Work item hierarchy:
+
+```text
+Initiative
+  └── Epic / Feature
+       └── Story
+            ├── Task
+            └── Defect
+```
+
+Trong DB, dùng chung bảng `work_items` cho tất cả loại item. Dùng `parent_id` cho quan hệ cha-con chính, và dùng `work_item_relations` cho các quan hệ phụ như blocks, duplicates, relates to, depends on.
+
+---
+
+# 4. Account & Workspace
+
+## 4.1. `users`
+
+Lưu thông tin người dùng.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| full_name | VARCHAR(255) | Tên người dùng |
+| email | VARCHAR(255) | Unique |
+| password_hash | TEXT | Mật khẩu đã hash |
+| avatar_url | TEXT | Nullable |
+| status | VARCHAR(50) | active, inactive, invited, suspended |
+| last_login_at | TIMESTAMP | Nullable |
+| created_at | TIMESTAMP |  |
+| updated_at | TIMESTAMP |  |
+
+Gợi ý enum `status`:
+
+```text
+active
+inactive
+invited
+suspended
+```
+
+---
+
+## 4.2. `workspaces`
+
+Một workspace đại diện cho một tổ chức/team/công ty sử dụng hệ thống.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| name | VARCHAR(255) | Tên workspace |
+| slug | VARCHAR(100) | Unique |
+| description | TEXT | Nullable |
+| owner_id | UUID | FK → users.id |
+| status | VARCHAR(50) | active, archived |
+| created_at | TIMESTAMP |  |
+| updated_at | TIMESTAMP |  |
+
+---
+
+## 4.3. `workspace_members`
+
+Mapping user vào workspace.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| workspace_id | UUID | FK → workspaces.id |
+| user_id | UUID | FK → users.id |
+| role_id | UUID | FK → roles.id |
+| status | VARCHAR(50) | active, invited, removed |
+| joined_at | TIMESTAMP | Nullable |
+| created_at | TIMESTAMP |  |
+
+Unique constraint:
+
+```text
+UNIQUE(workspace_id, user_id)
+```
+
+---
+
+# 5. Role & Permission
+
+## 5.1. `roles`
+
+Lưu role ở cấp workspace hoặc project.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| workspace_id | UUID | FK → workspaces.id |
+| name | VARCHAR(100) | Workspace Admin, PM, BA, Dev, QA, Viewer |
+| code | VARCHAR(100) | workspace_admin, project_manager, developer... |
+| scope | VARCHAR(50) | workspace, project |
+| description | TEXT | Nullable |
+| is_system | BOOLEAN | Role mặc định hay custom |
+| created_at | TIMESTAMP |  |
+| updated_at | TIMESTAMP |  |
+
+Role mặc định:
+
+```text
+workspace_admin
+project_manager
+product_owner_ba
+developer
+tester_qa
+viewer
+```
+
+---
+
+## 5.2. `permissions`
+
+Danh sách quyền trong hệ thống.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| code | VARCHAR(150) | Ví dụ: work_item.create |
+| name | VARCHAR(255) | Tên hiển thị |
+| module | VARCHAR(100) | workspace, project, sprint, work_item... |
+| description | TEXT | Nullable |
+
+Ví dụ permission:
+
+```text
+workspace.manage
+user.invite
+role.manage
+permission.manage
+project.create
+project.update
+project.delete
+project.member.manage
+work_item.create
+work_item.update
+work_item.delete
+work_item.assign
+work_item.status.update
+sprint.create
+sprint.start
+sprint.close
+release.create
+report.view
+setting.manage
+audit_log.view
+```
+
+---
+
+## 5.3. `role_permissions`
+
+Mapping role với permission.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| role_id | UUID | FK → roles.id |
+| permission_id | UUID | FK → permissions.id |
+| created_at | TIMESTAMP |  |
+
+Unique constraint:
+
+```text
+UNIQUE(role_id, permission_id)
+```
+
+---
+
+# 6. Project Management
+
+## 6.1. `projects`
+
+Lưu project/sản phẩm/team.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| workspace_id | UUID | FK → workspaces.id |
+| key | VARCHAR(20) | Ví dụ: COX, SUBFI, HOTEL |
+| name | VARCHAR(255) | Tên project |
+| description | TEXT | Nullable |
+| owner_id | UUID | FK → users.id |
+| status | VARCHAR(50) | active, archived, completed |
+| start_date | DATE | Nullable |
+| end_date | DATE | Nullable |
+| created_at | TIMESTAMP |  |
+| updated_at | TIMESTAMP |  |
+
+Unique constraint:
+
+```text
+UNIQUE(workspace_id, key)
+```
+
+Ví dụ work item key sinh ra từ project key:
+
+```text
+COX-1
+COX-2
+SUBFI-1
+HOTEL-1
+```
+
+---
+
+## 6.2. `project_members`
+
+Mapping user vào project.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| project_id | UUID | FK → projects.id |
+| user_id | UUID | FK → users.id |
+| role_id | UUID | FK → roles.id |
+| status | VARCHAR(50) | active, removed |
+| joined_at | TIMESTAMP |  |
+| created_at | TIMESTAMP |  |
+
+Unique constraint:
+
+```text
+UNIQUE(project_id, user_id)
+```
+
+---
+
+## 6.3. `project_settings`
+
+Lưu cấu hình riêng của project.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| project_id | UUID | FK → projects.id |
+| default_assignee_id | UUID | Nullable, FK → users.id |
+| default_workflow_id | UUID | Nullable |
+| enable_sprint | BOOLEAN | Bật/tắt sprint |
+| enable_release | BOOLEAN | Bật/tắt release |
+| enable_story_point | BOOLEAN | Bật/tắt story point |
+| created_at | TIMESTAMP |  |
+| updated_at | TIMESTAMP |  |
+
+Có thể bỏ bảng này ở MVP nếu muốn đơn giản, nhưng nên giữ để dễ mở rộng.
+
+---
+
+# 7. Workflow Management
+
+## 7.1. `workflow_statuses`
+
+Lưu các trạng thái work item theo project.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| project_id | UUID | FK → projects.id |
+| name | VARCHAR(100) | To Do, In Progress, Testing... |
+| code | VARCHAR(100) | todo, in_progress... |
+| category | VARCHAR(50) | todo, in_progress, done |
+| color | VARCHAR(20) | Nullable |
+| sort_order | INT | Thứ tự hiển thị trên board |
+| is_default | BOOLEAN | Trạng thái mặc định |
+| is_final | BOOLEAN | Trạng thái kết thúc |
+| created_at | TIMESTAMP |  |
+
+Status gợi ý:
+
+```text
+New
+Defined
+Ready
+In Progress
+Code Review
+Testing
+Done
+Accepted
+Rejected
+Blocked
+```
+
+---
+
+## 7.2. `workflow_transitions`
+
+Quy định trạng thái nào có thể chuyển sang trạng thái nào.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| project_id | UUID | FK → projects.id |
+| from_status_id | UUID | FK → workflow_statuses.id |
+| to_status_id | UUID | FK → workflow_statuses.id |
+| role_id | UUID | Nullable, role nào được chuyển |
+| created_at | TIMESTAMP |  |
+
+Ví dụ:
+
+```text
+To Do → In Progress
+In Progress → Code Review
+Code Review → Testing
+Testing → Done
+Done → Accepted
+```
+
+---
+
+# 8. Work Item Management
+
+## 8.1. `work_items`
+
+Bảng core quan trọng nhất. Dùng chung cho:
+
+```text
+Initiative
+Epic / Feature
+Story
+Task
+Defect
+```
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| project_id | UUID | FK → projects.id |
+| workspace_id | UUID | FK → workspaces.id, denormalized để query nhanh |
+| item_key | VARCHAR(50) | Ví dụ: COX-123 |
+| item_no | INT | Số thứ tự trong project |
+| type | VARCHAR(50) | initiative, epic, story, task, defect |
+| title | VARCHAR(500) | Tên work item |
+| description | TEXT | Nullable |
+| acceptance_criteria | TEXT | Nullable |
+| status_id | UUID | FK → workflow_statuses.id |
+| priority | VARCHAR(50) | low, medium, high, critical |
+| severity | VARCHAR(50) | Chỉ dùng cho defect |
+| story_point | DECIMAL(5,2) | Nullable |
+| assignee_id | UUID | FK → users.id, nullable |
+| reporter_id | UUID | FK → users.id |
+| parent_id | UUID | FK → work_items.id, nullable |
+| sprint_id | UUID | FK → sprints.id, nullable |
+| release_id | UUID | FK → releases.id, nullable |
+| due_date | DATE | Nullable |
+| environment | VARCHAR(100) | Nullable, dùng cho defect |
+| steps_to_reproduce | TEXT | Nullable, dùng cho defect |
+| expected_result | TEXT | Nullable, dùng cho defect |
+| actual_result | TEXT | Nullable, dùng cho defect |
+| root_cause | TEXT | Nullable, dùng cho defect |
+| resolution | TEXT | Nullable, dùng cho defect |
+| position | INT | Dùng để sort backlog/board |
+| is_blocked | BOOLEAN | Default false |
+| blocked_reason | TEXT | Nullable |
+| created_by | UUID | FK → users.id |
+| updated_by | UUID | FK → users.id |
+| created_at | TIMESTAMP |  |
+| updated_at | TIMESTAMP |  |
+| deleted_at | TIMESTAMP | Soft delete |
+
+Gợi ý enum `type`:
+
+```text
+initiative
+epic
+story
+task
+defect
+```
+
+Gợi ý enum `priority`:
+
+```text
+low
+medium
+high
+critical
+```
+
+Gợi ý enum `severity`:
+
+```text
+minor
+major
+critical
+blocker
+```
+
+Index quan trọng:
+
+```text
+INDEX(project_id)
+INDEX(workspace_id)
+INDEX(status_id)
+INDEX(type)
+INDEX(assignee_id)
+INDEX(reporter_id)
+INDEX(parent_id)
+INDEX(sprint_id)
+INDEX(release_id)
+INDEX(priority)
+INDEX(created_at)
+UNIQUE(project_id, item_no)
+UNIQUE(project_id, item_key)
+```
+
+---
+
+## 8.2. `work_item_relations`
+
+Dùng để tạo relation phức tạp ngoài parent-child.
+
+Ví dụ relation:
+
+```text
+blocks
+is_blocked_by
+relates_to
+duplicates
+depends_on
+```
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| source_item_id | UUID | FK → work_items.id |
+| target_item_id | UUID | FK → work_items.id |
+| relation_type | VARCHAR(50) | blocks, duplicates, relates_to... |
+| created_by | UUID | FK → users.id |
+| created_at | TIMESTAMP |  |
+
+Ghi chú:
+
+- Dùng `parent_id` cho hierarchy chính.
+- Dùng `work_item_relations` cho dependency hoặc quan hệ phụ.
+
+---
+
+## 8.3. `labels`
+
+Label/tag theo project.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| project_id | UUID | FK → projects.id |
+| name | VARCHAR(100) | frontend, backend, urgent... |
+| color | VARCHAR(20) | Nullable |
+| created_at | TIMESTAMP |  |
+
+Unique constraint:
+
+```text
+UNIQUE(project_id, name)
+```
+
+---
+
+## 8.4. `work_item_labels`
+
+Mapping work item với label.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| work_item_id | UUID | FK → work_items.id |
+| label_id | UUID | FK → labels.id |
+| created_at | TIMESTAMP |  |
+
+Unique constraint:
+
+```text
+UNIQUE(work_item_id, label_id)
+```
+
+---
+
+# 9. Sprint / Backlog / Board
+
+## 9.1. `sprints`
+
+Lưu sprint/iteration.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| project_id | UUID | FK → projects.id |
+| name | VARCHAR(255) | Sprint 1, Sprint 2... |
+| goal | TEXT | Nullable |
+| start_date | DATE |  |
+| end_date | DATE |  |
+| status | VARCHAR(50) | planned, active, closed, cancelled |
+| capacity | DECIMAL(8,2) | Nullable |
+| created_by | UUID | FK → users.id |
+| started_at | TIMESTAMP | Nullable |
+| closed_at | TIMESTAMP | Nullable |
+| created_at | TIMESTAMP |  |
+| updated_at | TIMESTAMP |  |
+
+Gợi ý enum `status`:
+
+```text
+planned
+active
+closed
+cancelled
+```
+
+---
+
+## 9.2. `sprint_items`
+
+Mapping work item với sprint, dùng để lưu lịch sử item từng nằm trong sprint nào.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| sprint_id | UUID | FK → sprints.id |
+| work_item_id | UUID | FK → work_items.id |
+| added_by | UUID | FK → users.id |
+| added_at | TIMESTAMP |  |
+| removed_at | TIMESTAMP | Nullable |
+| final_status_id | UUID | Nullable, FK → workflow_statuses.id |
+| carried_over_to_sprint_id | UUID | Nullable, FK → sprints.id |
+
+Ghi chú:
+
+- MVP đơn giản có thể chỉ dùng `work_items.sprint_id`.
+- Nếu muốn report velocity/burndown chính xác hơn, nên giữ `sprint_items`.
+
+---
+
+# 10. Release Management
+
+## 10.1. `releases`
+
+Lưu release/version.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| project_id | UUID | FK → projects.id |
+| name | VARCHAR(255) | v1.0 MVP |
+| version | VARCHAR(50) | 1.0.0 |
+| description | TEXT | Nullable |
+| start_date | DATE | Nullable |
+| release_date | DATE | Nullable |
+| status | VARCHAR(50) | planned, in_progress, released, cancelled, archived |
+| created_by | UUID | FK → users.id |
+| created_at | TIMESTAMP |  |
+| updated_at | TIMESTAMP |  |
+
+Gợi ý enum `status`:
+
+```text
+planned
+in_progress
+released
+cancelled
+archived
+```
+
+---
+
+## 10.2. `release_items`
+
+Mapping work item với release.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| release_id | UUID | FK → releases.id |
+| work_item_id | UUID | FK → work_items.id |
+| added_by | UUID | FK → users.id |
+| added_at | TIMESTAMP |  |
+| removed_at | TIMESTAMP | Nullable |
+
+Ghi chú:
+
+- MVP có thể chỉ dùng `work_items.release_id`.
+- Nếu muốn lưu lịch sử move release, nên giữ `release_items`.
+
+---
+
+# 11. Collaboration
+
+## 11.1. `comments`
+
+Bình luận trong work item.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| work_item_id | UUID | FK → work_items.id |
+| parent_comment_id | UUID | Nullable, reply comment |
+| author_id | UUID | FK → users.id |
+| body | TEXT | Nội dung comment |
+| is_edited | BOOLEAN | Default false |
+| created_at | TIMESTAMP |  |
+| updated_at | TIMESTAMP |  |
+| deleted_at | TIMESTAMP | Nullable |
+
+---
+
+## 11.2. `attachments`
+
+File upload cho work item hoặc comment.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| workspace_id | UUID | FK → workspaces.id |
+| project_id | UUID | FK → projects.id |
+| work_item_id | UUID | Nullable, FK → work_items.id |
+| comment_id | UUID | Nullable, FK → comments.id |
+| uploaded_by | UUID | FK → users.id |
+| file_name | VARCHAR(255) | Tên file gốc |
+| file_url | TEXT | URL object storage |
+| file_type | VARCHAR(100) | MIME type |
+| file_size | BIGINT | bytes |
+| storage_key | TEXT | Path/key trong S3/R2 |
+| created_at | TIMESTAMP |  |
+
+---
+
+## 11.3. `watchers`
+
+User theo dõi work item để nhận notification.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| work_item_id | UUID | FK → work_items.id |
+| user_id | UUID | FK → users.id |
+| created_at | TIMESTAMP |  |
+
+Unique constraint:
+
+```text
+UNIQUE(work_item_id, user_id)
+```
+
+---
+
+# 12. Activity Log / Audit Log
+
+## 12.1. `activity_logs`
+
+Audit log cho hành động trong hệ thống.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| workspace_id | UUID | FK → workspaces.id |
+| project_id | UUID | Nullable, FK → projects.id |
+| work_item_id | UUID | Nullable, FK → work_items.id |
+| actor_id | UUID | FK → users.id |
+| action | VARCHAR(100) | work_item.updated, status.changed... |
+| entity_type | VARCHAR(100) | project, work_item, sprint... |
+| entity_id | UUID | ID của entity |
+| old_value | JSONB | Nullable |
+| new_value | JSONB | Nullable |
+| metadata | JSONB | Nullable |
+| created_at | TIMESTAMP |  |
+
+Ví dụ action:
+
+```text
+work_item.created
+work_item.updated
+work_item.status_changed
+work_item.assigned
+comment.created
+attachment.uploaded
+sprint.started
+sprint.closed
+release.created
+project.updated
+```
+
+Bảng này dùng cho:
+
+- Activity tab trong work item
+- Audit log trong Admin/Settings
+- Debug nghiệp vụ
+- Reporting nâng cao sau này
+
+---
+
+# 13. Notification
+
+## 13.1. `notifications`
+
+Thông báo trong app.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| user_id | UUID | Người nhận, FK → users.id |
+| workspace_id | UUID | FK → workspaces.id |
+| project_id | UUID | Nullable, FK → projects.id |
+| work_item_id | UUID | Nullable, FK → work_items.id |
+| type | VARCHAR(100) | assigned, mentioned, status_changed... |
+| title | VARCHAR(255) | Tiêu đề |
+| body | TEXT | Nội dung |
+| is_read | BOOLEAN | Default false |
+| read_at | TIMESTAMP | Nullable |
+| created_at | TIMESTAMP |  |
+
+Gợi ý enum `type`:
+
+```text
+assigned
+mentioned
+commented
+status_changed
+due_soon
+sprint_started
+sprint_closed
+```
+
+---
+
+# 14. Utility
+
+## 14.1. `saved_filters`
+
+Lưu filter cá nhân hoặc filter project.
+
+| Field | Type | Note |
+|---|---|---|
+| id | UUID / BIGINT | Primary key |
+| workspace_id | UUID | FK → workspaces.id |
+| project_id | UUID | Nullable, FK → projects.id |
+| user_id | UUID | FK → users.id |
+| name | VARCHAR(255) | My Open Bugs, My Tasks... |
+| filter_config | JSONB | Điều kiện filter |
+| is_shared | BOOLEAN | Share cho project hay không |
+| created_at | TIMESTAMP |  |
+| updated_at | TIMESTAMP |  |
+
+Ví dụ `filter_config`:
+
+```json
+{
+  "type": ["defect"],
+  "status": ["in_progress", "testing"],
+  "assignee_id": "user-id",
+  "priority": ["high", "critical"]
+}
+```
+
+---
+
+# 15. Bảng có thể thêm sau MVP
+
+Các bảng sau chưa cần build ngay, nhưng có thể thêm khi sản phẩm mở rộng.
+
+## 15.1. Custom Field
+
+Nếu muốn user tự tạo field custom như Jira/Rally:
+
+```text
+custom_fields
+custom_field_values
+```
+
+MVP chưa nên làm vì phức tạp.
+
+---
+
+## 15.2. Test Management
+
+Nếu muốn thêm test case/test run:
+
+```text
+test_cases
+test_runs
+test_results
+```
+
+---
+
+## 15.3. Time Tracking
+
+Nếu muốn tracking effort/time spent:
+
+```text
+time_logs
+```
+
+Gợi ý fields:
+
+```text
+work_item_id
+user_id
+time_spent_minutes
+log_date
+description
+created_at
+updated_at
+```
+
+---
+
+## 15.4. Integration / Webhook
+
+Nếu muốn tích hợp Slack, Teams, GitHub:
+
+```text
+integrations
+webhooks
+```
+
+---
+
+# 16. Bản MVP gọn nhất
+
+Nếu muốn build MVP nhanh nhưng vẫn dùng được, có thể bắt đầu với **18 bảng**:
+
+```text
+users
+workspaces
+workspace_members
+roles
+permissions
+role_permissions
+projects
+project_members
+workflow_statuses
+work_items
+work_item_relations
+labels
+work_item_labels
+sprints
+releases
+comments
+attachments
+activity_logs
+```
+
+Có thể delay các bảng này:
+
+```text
+project_settings
+workflow_transitions
+sprint_items
+release_items
+notifications
+saved_filters
+watchers
+```
+
+---
+
+# 17. Bản full đề xuất
+
+Bản full nhưng vẫn hợp lý cho sản phẩm nghiêm túc:
+
+## Core
+
+```text
+1. users
+2. workspaces
+3. workspace_members
+4. roles
+5. permissions
+6. role_permissions
+```
+
+## Project
+
+```text
+7. projects
+8. project_members
+9. project_settings
+```
+
+## Workflow
+
+```text
+10. workflow_statuses
+11. workflow_transitions
+```
+
+## Work Item
+
+```text
+12. work_items
+13. work_item_relations
+14. labels
+15. work_item_labels
+```
+
+## Planning
+
+```text
+16. sprints
+17. sprint_items
+18. releases
+19. release_items
+```
+
+## Collaboration
+
+```text
+20. comments
+21. attachments
+22. watchers
+```
+
+## Audit & Notification
+
+```text
+23. activity_logs
+24. notifications
+```
+
+## Utility
+
+```text
+25. saved_filters
+```
+
+---
+
+# 18. Quan hệ chính giữa các bảng
+
+```text
+users 1--n workspace_members
+workspaces 1--n workspace_members
+workspaces 1--n projects
+
+roles 1--n workspace_members
+roles 1--n project_members
+roles n--n permissions through role_permissions
+
+projects 1--n project_members
+projects 1--n workflow_statuses
+projects 1--n workflow_transitions
+projects 1--n work_items
+projects 1--n sprints
+projects 1--n releases
+projects 1--n labels
+
+workflow_statuses 1--n work_items
+
+work_items 1--n comments
+work_items 1--n attachments
+work_items 1--n activity_logs
+work_items 1--n watchers
+work_items n--n labels through work_item_labels
+work_items n--n work_items through work_item_relations
+
+sprints 1--n sprint_items
+sprints 1--n work_items
+
+releases 1--n release_items
+releases 1--n work_items
+
+users 1--n comments
+users 1--n attachments
+users 1--n activity_logs
+users 1--n notifications
+users 1--n saved_filters
+```
+
+---
+
+# 19. Lưu ý thiết kế quan trọng
+
+## 19.1. UUID hay BIGINT?
+
+Khuyến nghị:
+
+```text
+Primary key: UUID
+Display key: PROJECTKEY-number
+```
+
+Ví dụ:
+
+```text
+id = 7f6d8e5a-xxxx-xxxx
+item_key = COX-123
+```
+
+User chỉ thấy `COX-123`, hệ thống dùng UUID để xử lý.
+
+---
+
+## 19.2. Work item nên dùng 1 bảng hay nhiều bảng?
+
+Nên dùng **1 bảng `work_items` duy nhất**.
+
+Không nên tách thành:
+
+```text
+stories
+tasks
+defects
+epics
+```
+
+Vì board, backlog, sprint, release đều cần query chung. Dùng `work_items.type` sẽ đơn giản và dễ mở rộng hơn.
+
+---
+
+## 19.3. Có nên có `parent_id` không?
+
+Có.
+
+Dùng `parent_id` cho hierarchy chính:
+
+```text
+Epic → Story → Task
+Epic → Story → Defect
+```
+
+Dùng `work_item_relations` cho relation phụ:
+
+```text
+A blocks B
+A duplicates B
+A relates to B
+A depends on B
+```
+
+---
+
+## 19.4. Sprint và Release nên lưu trực tiếp trong `work_items` không?
+
+Có thể lưu trực tiếp:
+
+```text
+work_items.sprint_id
+work_items.release_id
+```
+
+Để query nhanh.
+
+Nếu cần lưu lịch sử, thêm:
+
+```text
+sprint_items
+release_items
+```
+
+Best practice cho app này:
+
+```text
+MVP: dùng sprint_id và release_id trong work_items
+Version 2: thêm sprint_items và release_items để lưu history
+```
+
+---
+
+# 20. Kết luận
+
+Bộ DB đề xuất gồm **25 bảng** là đủ để cover toàn bộ nghiệp vụ của hệ thống Mini Rally:
+
+```text
+✅ User / Workspace
+✅ Role / Permission
+✅ Project
+✅ Backlog
+✅ Work Item hierarchy
+✅ Story / Task / Defect
+✅ Sprint
+✅ Board
+✅ Release
+✅ Comment
+✅ Attachment
+✅ Activity Log
+✅ Notification
+✅ Saved Filter
+✅ Admin / Settings
+✅ Basic Reporting
+```
+
+Với quy mô khoảng **200 users**, thiết kế này có thể bắt đầu bằng PostgreSQL, dùng UUID làm primary key, index kỹ các field phục vụ query, và build theo hướng modular monolith.
