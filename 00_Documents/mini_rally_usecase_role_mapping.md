@@ -46,6 +46,10 @@ Thay vì dùng Use Case Diagram nhiều mũi tên gây rối, tài liệu này t
 | Xóa / Archive Project | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Quản lý thành viên Project | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Cấu hình Project | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Tạo/Cập nhật/Archive Team | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Quản lý Team members | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Link/Unlink Team với Project | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Chuyển Project/Team context | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -77,9 +81,8 @@ Thay vì dùng Use Case Diagram nhiều mũi tên gây rối, tài liệu này t
 | Tạo item trong Backlog | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ |
 | Grooming Backlog | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Sắp xếp Priority | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Đưa Work Item vào Sprint | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Remove Work Item khỏi Sprint | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Filter / Search Backlog | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Resize cột / đổi page size | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -236,4 +239,3 @@ admin.manage_permission
 ```
 
 Sau đó mỗi role sẽ được gán một danh sách permission tương ứng.
-

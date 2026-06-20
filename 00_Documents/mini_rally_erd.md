@@ -12,6 +12,27 @@ erDiagram
         timestamp updated_at
     }
 
+    AUTH_SESSIONS {
+        uuid id PK
+        uuid user_id FK
+        text token_hash UK
+        text user_agent
+        varchar ip_address
+        timestamp expires_at
+        timestamp revoked_at
+        timestamp last_seen_at
+        timestamp created_at
+    }
+
+    PASSWORD_RESET_TOKENS {
+        uuid id PK
+        uuid user_id FK
+        text token_hash UK
+        timestamp expires_at
+        timestamp used_at
+        timestamp created_at
+    }
+
     WORKSPACES {
         uuid id PK
         varchar name
@@ -31,6 +52,32 @@ erDiagram
         varchar status
         timestamp joined_at
         timestamp created_at
+        timestamp updated_at
+    }
+
+    WORKSPACE_INVITATIONS {
+        uuid id PK
+        uuid workspace_id FK
+        varchar email
+        uuid role_id FK
+        text token_hash UK
+        varchar status
+        uuid invited_by FK
+        timestamp expires_at
+        uuid accepted_by FK
+        timestamp accepted_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    WORKSPACE_SETTINGS {
+        uuid id PK
+        uuid workspace_id FK
+        varchar timezone
+        varchar default_locale
+        varchar date_format
+        timestamp created_at
+        timestamp updated_at
     }
 
     ROLES {
@@ -70,6 +117,7 @@ erDiagram
         varchar status
         date start_date
         date end_date
+        bigint next_item_no
         timestamp created_at
         timestamp updated_at
     }
@@ -82,6 +130,7 @@ erDiagram
         varchar status
         timestamp joined_at
         timestamp created_at
+        timestamp updated_at
     }
 
     PROJECT_SETTINGS {
@@ -92,6 +141,39 @@ erDiagram
         boolean enable_sprint
         boolean enable_release
         boolean enable_story_point
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    TEAMS {
+        uuid id PK
+        uuid workspace_id FK
+        varchar name
+        varchar key
+        text description
+        uuid lead_id FK
+        varchar status
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    TEAM_MEMBERS {
+        uuid id PK
+        uuid team_id FK
+        uuid user_id FK
+        varchar status
+        timestamp joined_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    PROJECT_TEAMS {
+        uuid id PK
+        uuid project_id FK
+        uuid team_id FK
+        varchar status
+        timestamp linked_at
+        timestamp unlinked_at
         timestamp created_at
         timestamp updated_at
     }
@@ -122,6 +204,7 @@ erDiagram
         uuid id PK
         uuid workspace_id FK
         uuid project_id FK
+        uuid team_id FK
         varchar item_key UK
         int item_no
         varchar type
@@ -181,6 +264,7 @@ erDiagram
     SPRINTS {
         uuid id PK
         uuid project_id FK
+        uuid team_id FK
         varchar name
         text goal
         date start_date
@@ -307,9 +391,15 @@ erDiagram
     %% Account & Workspace
     %% =========================
 
+    USERS ||--o{ AUTH_SESSIONS : has
+    USERS ||--o{ PASSWORD_RESET_TOKENS : resets
     USERS ||--o{ WORKSPACES : owns
     USERS ||--o{ WORKSPACE_MEMBERS : joins
     WORKSPACES ||--o{ WORKSPACE_MEMBERS : has
+    WORKSPACES ||--o{ WORKSPACE_INVITATIONS : has
+    WORKSPACES ||--|| WORKSPACE_SETTINGS : configures
+    ROLES ||--o{ WORKSPACE_INVITATIONS : grants
+    USERS ||--o{ WORKSPACE_INVITATIONS : invites
     ROLES ||--o{ WORKSPACE_MEMBERS : assigned_to
 
     WORKSPACES ||--o{ ROLES : defines
@@ -329,6 +419,12 @@ erDiagram
 
     PROJECTS ||--|| PROJECT_SETTINGS : has
     USERS ||--o{ PROJECT_SETTINGS : default_assignee
+    WORKSPACES ||--o{ TEAMS : owns
+    USERS ||--o{ TEAMS : leads
+    TEAMS ||--o{ TEAM_MEMBERS : has
+    USERS ||--o{ TEAM_MEMBERS : joins
+    PROJECTS ||--o{ PROJECT_TEAMS : links
+    TEAMS ||--o{ PROJECT_TEAMS : links
 
     %% =========================
     %% Workflow
@@ -346,6 +442,7 @@ erDiagram
 
     WORKSPACES ||--o{ WORK_ITEMS : contains
     PROJECTS ||--o{ WORK_ITEMS : has
+    TEAMS ||--o{ WORK_ITEMS : owns
     WORKFLOW_STATUSES ||--o{ WORK_ITEMS : current_status
 
     USERS ||--o{ WORK_ITEMS : assigned
@@ -368,6 +465,7 @@ erDiagram
     %% =========================
 
     PROJECTS ||--o{ SPRINTS : has
+    TEAMS ||--o{ SPRINTS : runs
     USERS ||--o{ SPRINTS : created
 
     SPRINTS ||--o{ WORK_ITEMS : contains_current
