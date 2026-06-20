@@ -94,8 +94,9 @@ Hệ thống nên dùng hierarchy đơn giản như sau:
 
 ```text
 Workspace
-└── Project
-    ├── Feature / Epic
+├── Project
+│   ├── Team (many-to-many through ProjectTeam)
+│   ├── Feature / Epic
     │   └── User Story
     │       ├── Task
     │       └── Defect
@@ -144,15 +145,15 @@ updated_at
 
 ### Purpose
 
-Workspace là cấp cao nhất, đại diện cho một công ty, team hoặc organization.
+Workspace là cấp cao nhất, đại diện cho một Công ty/Organization và là tenant boundary. Workspace không đồng nghĩa với Team.
 
 ### Features
 
-- Create workspace.
-- Update workspace information.
+- Provision fixed Company/Workspace from deployment configuration.
 - Manage workspace members.
 - Manage workspace-level roles.
-- Workspace settings.
+- Company settings tối thiểu.
+- Không có Workspace List/Create/Edit/Archive/Switch UI trong single-company MVP.
 
 ### Suggested Fields
 
@@ -173,7 +174,7 @@ updated_at
 
 ### Purpose
 
-Project đại diện cho một sản phẩm, dự án hoặc team cụ thể.
+Project đại diện cho một sản phẩm hoặc phạm vi delivery. Project có thể liên kết với nhiều Team và một Team có thể làm việc trên nhiều Project.
 
 ### Features
 
@@ -184,6 +185,7 @@ Project đại diện cho một sản phẩm, dự án hoặc team cụ thể.
 - Assign project role.
 - Project overview.
 - Project settings.
+- Link/unlink Team.
 
 ### Suggested Fields
 
@@ -206,6 +208,29 @@ updated_at
 ```text
 Project Key: COX
 Work Item Key: COX-101, COX-102, COX-103
+```
+
+---
+
+## 6.3A Team Management
+
+### Purpose
+
+Team là đơn vị thực thi thuộc Workspace. Team membership độc lập với Project–Team link; quyền thao tác vẫn được enforce bằng Workspace/Project role.
+
+### Features
+
+- Create/Edit/Archive Team.
+- Manage Team lead và Team members.
+- Link một Team vào nhiều Project trong cùng Workspace.
+- Hiển thị hierarchy `Company/Workspace → Project → Team` trong App Shell.
+
+### Suggested Tables
+
+```text
+teams
+team_members
+project_teams
 ```
 
 ---
@@ -730,15 +755,17 @@ integrations
 ## 11.2 Workspace Pages
 
 ```text
-/workspaces
-/workspaces/:id
-/settings/workspace
+/settings/company
 ```
+
+`/workspaces` và Workspace CRUD pages không thuộc single-company MVP.
 
 ## 11.3 Project Pages
 
 ```text
 /projects
+/projects/new
+/projects/:id/edit
 /projects/:id/overview
 /projects/:id/backlog
 /projects/:id/board
@@ -747,6 +774,8 @@ integrations
 /projects/:id/reports
 /projects/:id/settings
 ```
+
+Project List/Create/Edit/Archive/Restore đã có mockup tại `03_Mockup Design/src/app/pages/ProjectsPage.tsx`.
 
 ## 11.4 Work Item Pages
 
