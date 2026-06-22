@@ -1,5 +1,7 @@
 # Phase 0 — Development Tracking
 
+> **⚠️ SUPERSEDED (2026-06-20):** This 1.5-day single-company prototype is **no longer the project foundation**. It is replaced by [`05_Architecture/FOUNDATION_PHASE.md`](../../05_Architecture/FOUNDATION_PHASE.md) (modular monolith, multi-tenant foundation, NestJS/TS). Kept for historical reference only.
+
 ## 1. Tracking Information
 
 | Thuộc tính | Giá trị |

@@ -1,10 +1,12 @@
 # Mini Rally Project Overview
 
+> **⚠️ Scope note (2026 pivot):** This document captures the *original* "Mini Rally" product vision. The project has since pivoted to a **global, multi-tenant, enterprise-grade SaaS** (a ~95–100% Rally equivalent). For the **authoritative** architecture, tech stack, tenancy, scale, security and scope, see [`05_Architecture/`](../05_Architecture/) (`ARCHITECTURE_CURRENT.md`, `ARCHITECTURE_FUTURE_SCALE.md`, `PRODUCTION_READINESS.md`, `FOUNDATION_PHASE.md`). The functional/module breakdown below remains valid; the "small / ≤200 users / not full enterprise" framing is superseded.
+
 ## 1. Project Overview
 
-Dự án này là một ứng dụng web quản lý công việc theo mô hình Agile, lấy cảm hứng từ Rally/Jira nhưng được thiết kế gọn hơn, phù hợp cho team nội bộ hoặc công ty nhỏ với quy mô khoảng **200 users trở xuống**.
+Dự án này là một ứng dụng web quản lý công việc theo mô hình Agile, lấy cảm hứng từ Rally/Jira. Sản phẩm hướng đến một **SaaS multi-tenant enterprise-grade cho thị trường global** (xem `05_Architecture/`), khởi đầu VN-first nhưng thiết kế chuẩn hóa, scale-ready từ ngày đầu.
 
-Mục tiêu không phải là clone toàn bộ Rally enterprise, mà là xây dựng một **Agile Work Management Tool** đủ dùng cho BA, PO, Scrum Master, Developer, QA và Stakeholder để quản lý project, backlog, sprint, task, defect, release và dashboard.
+Mục tiêu là xây dựng một **Agile Work Management Tool** (Rally-equivalent) đủ dùng cho BA, PO, Scrum Master, Developer, QA và Stakeholder để quản lý project, backlog, sprint, task, defect, release và dashboard.
 
 Ứng dụng sẽ là **một web app duy nhất**, không tách riêng site admin. Tuy nhiên, bên trong app sẽ có khu vực **Admin / Settings** dành cho các user có quyền quản trị.
 
