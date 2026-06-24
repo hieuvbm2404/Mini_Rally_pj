@@ -2,6 +2,27 @@
 
 > **⚠️ Scope note (2026 pivot):** This document captures the *original* "Mini Rally" product vision. The project has since pivoted to a **global, multi-tenant, enterprise-grade SaaS** (a ~95–100% Rally equivalent). For the **authoritative** architecture, tech stack, tenancy, scale, security and scope, see [`05_Architecture/`](../05_Architecture/) (`ARCHITECTURE_CURRENT.md`, `ARCHITECTURE_FUTURE_SCALE.md`, `PRODUCTION_READINESS.md`, `FOUNDATION_PHASE.md`). The functional/module breakdown below remains valid; the "small / ≤200 users / not full enterprise" framing is superseded.
 
+## Current MVP/Phase Baseline — 2026-06-24
+
+Phase 0 đã pass acceptance. Phase đang chuẩn bị dev là **Phase 1 — Core Work Item Management**.
+
+Scope Phase 1 hiện tại:
+
+```text
+Backlog Story/Defect
+→ Create Story/Defect
+→ Work Item Detail
+→ Child Tasks
+→ Task Detail
+→ Estimate / To Do / Actual
+→ Description / Notes / Attachments / Release Notes
+→ Basic Activity Log / Revision History
+```
+
+Team CRUD **không nằm trong Phase 1**. Phase 1 chỉ dùng Team như dữ liệu có sẵn để assign Project/Work Item/Task. Team Management nên nằm ở Phase 2 hoặc phase riêng `Company / Team Administration`.
+
+Các tài liệu triển khai Phase 1 nằm tại [`../04_Developement_tracking/Phase 1`](../04_Developement_tracking/Phase%201).
+
 ## 1. Project Overview
 
 Dự án này là một ứng dụng web quản lý công việc theo mô hình Agile, lấy cảm hứng từ Rally/Jira. Sản phẩm hướng đến một **SaaS multi-tenant enterprise-grade cho thị trường global** (xem `05_Architecture/`), khởi đầu VN-first nhưng thiết kế chuẩn hóa, scale-ready từ ngày đầu.

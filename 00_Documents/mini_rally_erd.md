@@ -452,6 +452,10 @@ erDiagram
 
     WORK_ITEMS ||--o{ WORK_ITEMS : parent_child
 
+    %% Phase 1 WORK_ITEMS fields:
+    %% notes, release_notes, schedule_state, flow_state, estimate_hours, todo_hours, actual_hours.
+    %% Task is stored as WORK_ITEMS.type = task with parent_id pointing to Story/Defect.
+
     WORK_ITEMS ||--o{ WORK_ITEM_RELATIONS : source
     WORK_ITEMS ||--o{ WORK_ITEM_RELATIONS : target
     USERS ||--o{ WORK_ITEM_RELATIONS : created

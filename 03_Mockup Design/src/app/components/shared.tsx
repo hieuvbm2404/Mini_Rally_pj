@@ -11,7 +11,7 @@ import {
   GripVertical, Copy, Scissors, UserPlus, GitMerge,
   ExternalLink, AlignJustify, Minus, Zap,
   Tag, Calendar, RotateCw, ListChecks, Globe, Send, ArrowUpRight,
-  CheckSquare, Square, Columns,
+  CheckSquare, Square, Columns, Maximize2,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -124,13 +124,11 @@ export function DetailPanel({ item, onClose, role, onOpenFull }: { item: WorkIte
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5"><TypeBadge type={item.type} /><span className="font-mono text-[11px]" style={{ color: "#8c94a6" }}>{item.id}</span></div>
           <p className="text-[13px] font-semibold leading-snug" style={{ color: "#1a2234" }}>{item.title}</p>
-          {onOpenFull && (
-            <button onClick={() => onOpenFull(item)} className="mt-2 flex items-center gap-1 text-[11px] font-medium" style={{ color: "#2558a6" }} onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")} onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}>
-              <ExternalLink size={11} /> Open Full Detail
-            </button>
-          )}
         </div>
-        <button onClick={onClose} className="ml-2 p-1 rounded shrink-0" style={{ color: "#8c94a6" }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = "#f4f6f9"; e.currentTarget.style.color = "#1a2234"; }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#8c94a6"; }}><X size={14} /></button>
+        <div className="ml-2 flex items-center gap-1 shrink-0">
+          {onOpenFull && <button aria-label="Expand work item to full page" title="Open full detail" onClick={() => onOpenFull(item)} className="p-1 rounded" style={{ color: "#5c6478" }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = "#edf2fb"; e.currentTarget.style.color = "#1d3f73"; }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#5c6478"; }}><Maximize2 size={14} /></button>}
+          <button aria-label="Close work item panel" onClick={onClose} className="p-1 rounded" style={{ color: "#8c94a6" }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = "#f4f6f9"; e.currentTarget.style.color = "#1a2234"; }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#8c94a6"; }}><X size={14} /></button>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="grid grid-cols-2 gap-3">
@@ -169,41 +167,46 @@ export function DetailPanel({ item, onClose, role, onOpenFull }: { item: WorkIte
 
 // ─── New Item Modal ───────────────────────────────────────────────────────────
 
-export function NewItemModal({ onClose, defaultType }: { onClose: () => void; defaultType?: WorkItemType }) {
-  const [type, setType] = useState<WorkItemType>(defaultType || "Feature");
+export function NewItemModal({ onClose, defaultType, allowedTypes = ["Feature", "Story", "Defect", "Task"] }: { onClose: () => void; defaultType?: WorkItemType; allowedTypes?: WorkItemType[] }) {
+  const [type, setType] = useState<WorkItemType>(defaultType && allowedTypes.includes(defaultType) ? defaultType : allowedTypes[0]);
   const [title, setTitle] = useState("");
-  const [status, setStatus] = useState<StatusType>("Defined");
-  const [priority, setPriority] = useState<PriorityType>("Medium");
+  const [projectKey, setProjectKey] = useState(SCOPE_PROJECTS[0].key);
+  const [team, setTeam] = useState(SCOPE_PROJECTS[0].teams[0]);
+  const selectedProject = SCOPE_PROJECTS.find(project => project.key === projectKey) || SCOPE_PROJECTS[0];
+  function selectProject(nextProjectKey: string) {
+    const nextProject = SCOPE_PROJECTS.find(project => project.key === nextProjectKey) || SCOPE_PROJECTS[0];
+    setProjectKey(nextProject.key);
+    setTeam(nextProject.teams[0]);
+  }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.28)" }} onClick={onClose} />
       <div className="relative bg-white rounded shadow-2xl flex flex-col overflow-hidden" style={{ width: 520, maxHeight: "80vh", border: "1px solid #d4d8de" }}>
         <div className="flex items-center justify-between px-5 py-3.5 shrink-0" style={{ backgroundColor: "#f7f8fa", borderBottom: "1px solid #e2e6eb" }}>
-          <div><p className="text-[13px] font-semibold" style={{ color: "#1a2234" }}>New Work Item</p><p className="text-[11px]" style={{ color: "#8c94a6" }}>Nexus Platform 2025 · Core Platform</p></div>
+          <div><p className="text-[13px] font-semibold" style={{ color: "#1a2234" }}>New Work Item</p><p className="text-[11px]" style={{ color: "#8c94a6" }}>{selectedProject.name} · {team}</p></div>
           <button onClick={onClose} className="p-1 rounded" style={{ color: "#8c94a6" }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = "#edf0f4"; e.currentTarget.style.color = "#1a2234"; }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#8c94a6"; }}><X size={15} /></button>
         </div>
         <div className="overflow-y-auto flex-1 p-5 space-y-4">
           <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: "#5c6478" }}>Type</label>
-            <div className="flex gap-2">{(["Feature", "Story", "Defect", "Task"] as WorkItemType[]).map(t => { const c = TYPE_CFG[t]; return <button key={t} onClick={() => setType(t)} className="flex-1 py-1.5 text-[11px] font-semibold rounded-sm" style={{ backgroundColor: type === t ? c.bg : "transparent", color: type === t ? c.text : "#5c6478", border: `1px solid ${type === t ? c.border : "#dde2ea"}` }}>{t}</button>; })}</div>
+            <div className="flex gap-2">{allowedTypes.map(t => { const c = TYPE_CFG[t]; return <button key={t} onClick={() => setType(t)} className="flex-1 py-1.5 text-[11px] font-semibold rounded-sm" style={{ backgroundColor: type === t ? c.bg : "transparent", color: type === t ? c.text : "#5c6478", border: `1px solid ${type === t ? c.border : "#dde2ea"}` }}>{t}</button>; })}</div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Project</label><select aria-label="Project" value={projectKey} onChange={event => selectProject(event.target.value)} className="w-full text-[12px] px-2.5 py-1.5 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#1a2234" }}>{SCOPE_PROJECTS.map(project => <option key={project.key} value={project.key}>{project.key} · {project.name}</option>)}</select></div>
+            <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Team</label><select aria-label="Team" value={team} onChange={event => setTeam(event.target.value)} className="w-full text-[12px] px-2.5 py-1.5 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#1a2234" }}>{selectedProject.teams.map(projectTeam => <option key={projectTeam}>{projectTeam}</option>)}</select></div>
           </div>
           <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Title <span style={{ color: "#dc2626" }}>*</span></label>
             <input autoFocus type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Enter a concise, descriptive title..." className="w-full text-[13px] px-3 py-2 rounded focus:outline-none" style={{ border: "1px solid #dde2ea", color: "#1a2234" }} onFocus={e => (e.currentTarget.style.borderColor = "rgba(29,63,115,0.4)")} onBlur={e => (e.currentTarget.style.borderColor = "#dde2ea")} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Status</label><select value={status} onChange={e => setStatus(e.target.value as StatusType)} className="w-full text-[12px] px-2.5 py-1.5 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#1a2234" }}>{(["Defined", "In-Progress", "Code Review", "Testing", "Completed", "Accepted"] as StatusType[]).map(s => <option key={s}>{s}</option>)}</select></div>
-            <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Priority</label><select value={priority} onChange={e => setPriority(e.target.value as PriorityType)} className="w-full text-[12px] px-2.5 py-1.5 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#1a2234" }}>{["Critical", "High", "Medium", "Low"].map(p => <option key={p}>{p}</option>)}</select></div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
             <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Owner</label><select className="w-full text-[12px] px-2.5 py-1.5 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#1a2234" }}>{OWNERS.map(o => <option key={o.name}>{o.name}</option>)}</select></div>
             <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Plan Estimate (pts)</label><input type="number" min={0} placeholder="0" className="w-full text-[12px] px-2.5 py-1.5 rounded focus:outline-none" style={{ border: "1px solid #dde2ea", color: "#1a2234" }} /></div>
           </div>
-          <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Release</label><select className="w-full text-[12px] px-2.5 py-1.5 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#1a2234" }}>{["Q4 2024", "Q1 2025", "Q2 2025"].map(o => <option key={o}>{o}</option>)}</select></div>
-          <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Description</label><textarea rows={3} placeholder="Provide context, acceptance criteria, and relevant links..." className="w-full text-[12px] px-3 py-2 rounded focus:outline-none resize-none" style={{ border: "1px solid #dde2ea", color: "#1a2234" }} onFocus={e => (e.currentTarget.style.borderColor = "rgba(29,63,115,0.4)")} onBlur={e => (e.currentTarget.style.borderColor = "#dde2ea")} /></div>
         </div>
         <div className="flex items-center justify-between px-5 py-3 shrink-0" style={{ borderTop: "1px solid #e2e6eb", backgroundColor: "#f7f8fa" }}>
           <span className="text-[10px]" style={{ color: "#8c94a6" }}>Ctrl+Enter to save</span>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-3.5 py-1.5 text-[12px] font-medium rounded" style={{ border: "1px solid #dde2ea", color: "#5c6478" }} onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#edf0f4")} onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}>Cancel</button>
+            <button onClick={onClose} className="px-4 py-1.5 text-[12px] font-semibold rounded" style={{ border: "1px solid #9fb5d5", color: "#1d3f73", backgroundColor: "#f5f8fc" }} onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#e8eff8")} onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#f5f8fc")}>Create with details</button>
             <button onClick={onClose} className="px-4 py-1.5 text-[12px] font-semibold text-white rounded" style={{ backgroundColor: "#1d3f73" }} onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#163259")} onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#1d3f73")}>Create Item</button>
           </div>
         </div>

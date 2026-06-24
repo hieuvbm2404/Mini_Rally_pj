@@ -37,6 +37,26 @@ Phạm vi mapping là prototype trong `03_Mockup Design`. Đây là React/Vite s
 
 ---
 
+## 1A. Phase 1 mockup delta — 2026-06-24
+
+Các thay đổi mockup mới nhất cho Phase 1 đã được áp dụng ở `03_Mockup Design` và được document chi tiết tại [`04_Developement_tracking/Phase 1`](../04_Developement_tracking/Phase%201).
+
+| Area | Trạng thái mới | FE source | Ghi chú dev |
+|---|---|---|---|
+| Backlog | Chỉ tập trung Story/Defect | [`BacklogPage.tsx`](../03_Mockup%20Design/src/app/pages/BacklogPage.tsx) | Feature/Task không còn là type tạo từ Backlog |
+| Backlog click behavior | Click Work Item ID mở full detail page | [`BacklogPage.tsx`](../03_Mockup%20Design/src/app/pages/BacklogPage.tsx), [`App.tsx`](../03_Mockup%20Design/src/app/App.tsx) | Summary panel chỉ còn là trạng thái collapse |
+| Create Work Item | Modal gồm Type, Project, Team, Title, Owner, Plan Estimate | [`BacklogPage.tsx`](../03_Mockup%20Design/src/app/pages/BacklogPage.tsx) | Có `Create`, `Create with details`, `Cancel` |
+| Work Item Detail | Header + tabs `Details`, `Tasks`, `Revision History` | [`WorkItemDetailPage.tsx`](../03_Mockup%20Design/src/app/pages/WorkItemDetailPage.tsx) | Details dùng left content + right field panel |
+| Work Item Details tab | Description, Attachments, Notes, Release Notes | [`WorkItemDetailPage.tsx`](../03_Mockup%20Design/src/app/pages/WorkItemDetailPage.tsx) | Rich editor mock toolbar |
+| Work Item Tasks tab | Full-width task list, không có sidebar phải | [`WorkItemDetailPage.tsx`](../03_Mockup%20Design/src/app/pages/WorkItemDetailPage.tsx) | Columns Rank/ID/Name/State/Owner/Project/Teams/To Do/Actuals/Estimate |
+| Work Item Detail sidebar states | Schedule State + Flow State + Defect Priority | [`WorkItemDetailPage.tsx`](../03_Mockup%20Design/src/app/pages/WorkItemDetailPage.tsx) | `Status` sidebar đổi thành `Flow State`; Priority chỉ show cho Defect với Low/Normal/High/Urgent/None |
+| Add Task | Modal Name required, Estimate, Owner | [`WorkItemDetailPage.tsx`](../03_Mockup%20Design/src/app/pages/WorkItemDetailPage.tsx) | Có `Create with details` |
+| Task Detail | Banner riêng cho Task, tabs `Details`, `Revision History` | [`WorkItemDetailPage.tsx`](../03_Mockup%20Design/src/app/pages/WorkItemDetailPage.tsx) | Không có Tasks tab |
+| Task Detail fields | State, Owner, Project, Team, Work Product, Estimate, To Do, Actual | [`WorkItemDetailPage.tsx`](../03_Mockup%20Design/src/app/pages/WorkItemDetailPage.tsx) | State gồm Defined/In-Progress/Completed |
+| Activity Log | Revision History cho Work Item và Task | [`WorkItemDetailPage.tsx`](../03_Mockup%20Design/src/app/pages/WorkItemDetailPage.tsx) | Basic activity log |
+
+---
+
 ## 2. Bản đồ tổng quan
 
 Mockup chưa sử dụng route URL. `App` lưu `isAuthenticated/currentPage` trong local state và render screen từ thư mục `pages/`.
@@ -218,8 +238,8 @@ Sprint planning không nằm trong Backlog hiện tại; Sprint Management và I
 
 | Khu vực / yêu cầu | FE hiện tại | Coverage |
 |---|---|---|
-| Search và filter type/status/priority | Header controls | ✅ local state |
-| Backlog columns | Type, ID, Name, Priority, Est, Owner, Status, Release | ✅; đã bỏ Sprint và Updated |
+| Search và filter type/schedule state/priority | Header controls | ✅ local state |
+| Backlog columns | Type, ID, Name, Priority, Est, Owner, Schedule State, Release | ✅; Priority chỉ dành cho Defect; đã bỏ Sprint và Updated |
 | Create Work Item | Mở `NewItemModal` | 🟡 Không persist |
 | Item type order | Feature → Story → Defect → Task; Feature mặc định | ✅ |
 | Resizable columns | Drag separator ở mép phải header | ✅ local state |
@@ -263,7 +283,7 @@ Không còn trong Backlog: Unplanned strip, Sprint summary/capacity, Sprint filt
 | Comments | Static thread + input | 🟡 Post chưa thêm comment |
 | Attachments | Static file list | 🟡 Upload/download chưa xử lý |
 | Activity Log | Static timeline | ✅ UI / 🟡 dữ liệu |
-| Metadata panel | Project, owner, reporter, status, priority, estimate, sprint, release, parent, labels, due date, blocked, watchers | 🟡 Thiếu severity và blocked reason trong panel |
+| Metadata panel | Owner, Project, Team, Schedule State, Flow State, Defect-only Priority, Plan Estimate, Release, Iteration | ✅ theo Phase 1 detail sidebar |
 | Role behavior | `editable = role !== Viewer` | 🟡 Chưa có field-level permissions; Viewer vẫn thấy Link/Upload và đổi Blocked được |
 
 ### SCR-07 — Quality / Defect Management

@@ -21,6 +21,8 @@ import { type Role, type Page, type WorkItemType, type StatusType, type Priority
 import { releaseStatusCfg, cx, Avatar, TYPE_CFG, TypeBadge, STATUS_CFG, StatusBadge, PRI_CFG, PriorityBadge, MiniProgress, RoleBadge, DetailPanel, NewItemModal, EmptyState, SectionCard } from "../components/shared";
 
 export type BacklogColumnKey = "type" | "id" | "name" | "priority" | "estimate" | "owner" | "status" | "release";
+const DEFECT_PRIORITY_LABELS: Record<string, string> = { Critical: "Urgent", High: "High", Medium: "Normal", Low: "Low" };
+const DEFECT_PRIORITY_TO_LEGACY: Record<string, string> = { Urgent: "Critical", High: "High", Normal: "Medium", Low: "Low", None: "None" };
 
 export function ResizableBacklogHeader({ label, width, column, onResize, align = "left" }: { label: string; width: number; column: BacklogColumnKey; onResize: (column: BacklogColumnKey, event: React.MouseEvent<HTMLDivElement>) => void; align?: "left" | "center" | "right" }) {
   return (
@@ -54,7 +56,7 @@ export function BacklogPage({ role, activeItem, onItemClick, onOpenFull }: { rol
     (i.id.startsWith("US") || i.id.startsWith("DE")) &&
     (filterType === "All" || i.type === filterType) &&
     (filterStatus === "All" || i.status === filterStatus) &&
-    (filterPriority === "All" || i.priority === filterPriority) &&
+    (filterPriority === "All" || (i.type === "Defect" && i.priority === DEFECT_PRIORITY_TO_LEGACY[filterPriority])) &&
     (i.title.toLowerCase().includes(search.toLowerCase()) || i.id.toLowerCase().includes(search.toLowerCase()))
   ).sort((a, b) => (a.rank || 99) - (b.rank || 99));
 
@@ -114,13 +116,13 @@ export function BacklogPage({ role, activeItem, onItemClick, onOpenFull }: { rol
         <select value={filterType} onChange={e => setFilterType(e.target.value)} className="text-[11px] px-2 py-1 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#5c6478" }}>
           {["All", "Story", "Defect"].map(t => <option key={t}>{t}</option>)}
         </select>
-        {/* Status filter */}
+        {/* Schedule State filter */}
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="text-[11px] px-2 py-1 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#5c6478" }}>
-          {["All", "Defined", "In-Progress", "Code Review", "Testing", "Completed", "Accepted"].map(s => <option key={s}>{s}</option>)}
+          {["All", "Idea", "Defined", "In-Progress", "Completed", "Accepted", "Release"].map(s => <option key={s}>{s}</option>)}
         </select>
         {/* Priority filter */}
         <select value={filterPriority} onChange={e => setFilterPriority(e.target.value)} className="text-[11px] px-2 py-1 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#5c6478" }}>
-          {["All", "Critical", "High", "Medium", "Low"].map(p => <option key={p}>{p}</option>)}
+          {["All", "Low", "Normal", "High", "Urgent", "None"].map(p => <option key={p}>{p}</option>)}
         </select>
         <div className="flex-1" />
       </div>
@@ -152,7 +154,7 @@ export function BacklogPage({ role, activeItem, onItemClick, onOpenFull }: { rol
               <ResizableBacklogHeader label="Priority" column="priority" width={columnWidths.priority} onResize={startColumnResize} />
               <ResizableBacklogHeader label="Est" column="estimate" width={columnWidths.estimate} onResize={startColumnResize} align="center" />
               <ResizableBacklogHeader label="Owner" column="owner" width={columnWidths.owner} onResize={startColumnResize} />
-              <ResizableBacklogHeader label="Status" column="status" width={columnWidths.status} onResize={startColumnResize} />
+              <ResizableBacklogHeader label="Schedule State" column="status" width={columnWidths.status} onResize={startColumnResize} />
               <ResizableBacklogHeader label="Release" column="release" width={columnWidths.release} onResize={startColumnResize} />
             </div>
 
@@ -160,14 +162,14 @@ export function BacklogPage({ role, activeItem, onItemClick, onOpenFull }: { rol
               const isActive = activeItem?.id === item.id;
               const isSel = selectedIds.has(item.id);
               return (
-                <div key={item.id} className="flex items-center h-8 px-3 gap-2 cursor-pointer group hover:bg-[#f7f8fa]" style={{ width: backlogTableWidth, minWidth: "100%", backgroundColor: isActive ? "#edf2fb" : isSel ? "#f3f6fb" : undefined, borderBottom: "1px solid #edf0f4" }} onClick={() => onItemClick(item)}>
+                <div key={item.id} className="flex items-center h-8 px-3 gap-2 cursor-pointer group hover:bg-[#f7f8fa]" style={{ width: backlogTableWidth, minWidth: "100%", backgroundColor: isActive ? "#edf2fb" : isSel ? "#f3f6fb" : undefined, borderBottom: "1px solid #edf0f4" }} onClick={() => onOpenFull ? onOpenFull(item) : onItemClick(item)}>
                   <div className="w-5 shrink-0" onClick={e => { e.stopPropagation(); toggleSelect(item.id); }}><input type="checkbox" checked={isSel} onChange={() => toggleSelect(item.id)} onClick={e => e.stopPropagation()} className="w-3.5 h-3.5 rounded" style={{ accentColor: "#1d3f73" }} /></div>
                   <div className="w-4 shrink-0 opacity-0 group-hover:opacity-100 cursor-grab"><GripVertical size={11} style={{ color: "#8c94a6" }} /></div>
                   <div className="w-6 shrink-0 text-[10px] font-mono text-right tabular-nums" style={{ color: "#8c94a6" }}>{pageStart + idx + 1}</div>
                   <div className="shrink-0 overflow-hidden" style={{ width: columnWidths.type }}><TypeBadge type={item.type} /></div>
-                  <div className="shrink-0 overflow-hidden font-mono text-[10px]" style={{ width: columnWidths.id, color: "#5c6478" }}>{item.id}</div>
+                  <div className="shrink-0 overflow-hidden font-mono text-[10px] underline-offset-2 group-hover:underline" style={{ width: columnWidths.id, color: "#2558a6" }}>{item.id}</div>
                   <div className="shrink-0 min-w-0 pr-2" style={{ width: columnWidths.name }}><span className="block truncate text-[12px] font-medium" style={{ color: "#1a2234" }}>{item.title}</span></div>
-                  <div className="shrink-0 overflow-hidden" style={{ width: columnWidths.priority }}><PriorityBadge priority={item.priority} /></div>
+                  <div className="shrink-0 overflow-hidden" style={{ width: columnWidths.priority }}>{item.type === "Defect" ? <span className="inline-flex items-center gap-1 px-1.5 py-px text-[10px] font-semibold rounded-sm whitespace-nowrap" style={{ backgroundColor: "#fff7ed", color: "#9a3412" }}><span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#f97316" }} />{DEFECT_PRIORITY_LABELS[item.priority] ?? "None"}</span> : <span className="text-[10px] font-mono" style={{ color: "#a0a7b5" }}>—</span>}</div>
                   <div className="shrink-0 text-center font-mono text-[10px] font-semibold" style={{ width: columnWidths.estimate, color: "#5c6478" }}>{item.planEstimate}</div>
                   <div className="shrink-0 flex items-center gap-1 overflow-hidden" style={{ width: columnWidths.owner }}><Avatar owner={item.owner} size="xs" /><span className="text-[10px] truncate" style={{ color: "#5c6478" }}>{item.owner.initials}</span></div>
                   <div className="shrink-0 overflow-hidden" style={{ width: columnWidths.status }}><StatusBadge status={item.status} /></div>
@@ -194,7 +196,7 @@ export function BacklogPage({ role, activeItem, onItemClick, onOpenFull }: { rol
         </div>
         {activeItem && <DetailPanel item={activeItem} onClose={() => onItemClick(activeItem)} role={role} onOpenFull={onOpenFull} />}
       </div>
-      {showModal && <NewItemModal onClose={() => setShowModal(false)} />}
+      {showModal && <NewItemModal onClose={() => setShowModal(false)} defaultType="Story" allowedTypes={["Story", "Defect"]} />}
     </div>
   );
 }

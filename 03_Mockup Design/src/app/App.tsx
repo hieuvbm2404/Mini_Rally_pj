@@ -29,7 +29,8 @@ export default function App() {
   function handleItemClick(item: WorkItem) { setActiveItem(previous => previous?.id === item.id ? null : item); }
   function navigateTo(page: Page) { setCurrentPage(page); setActiveItem(null); closeFullDetail(); }
   function changeScope(project: ScopeProject, team: string) { setCurrentProject(project); setCurrentTeam(team); setActiveItem(null); closeFullDetail(); }
-  function openFullDetail(item: WorkItem) { setFullDetailItem(item); setShowFullDetail(true); }
+  function openFullDetail(item: WorkItem) { setActiveItem(null); setFullDetailItem(item); setShowFullDetail(true); }
+  function minimizeFullDetail(item: WorkItem) { setActiveItem(item); setShowFullDetail(false); setFullDetailItem(null); }
   function closeFullDetail() { setShowFullDetail(false); setFullDetailItem(null); }
   function signOut() {
     closeFullDetail();
@@ -60,7 +61,7 @@ export default function App() {
       <TopNav currentPage={currentPage} onNavigate={navigateTo} currentRole={currentRole} onRoleChange={setCurrentRole} unreadCount={unreadCount} currentProject={currentProject} currentTeam={currentTeam} onScopeChange={changeScope} onSignOut={signOut} onCreateProject={() => { setCurrentPage("projects"); setProjectCreateRequest(1); }} />
       <ContextBar currentPage={currentPage} currentProject={currentProject} currentTeam={currentTeam} />
       <div className="flex flex-1 overflow-hidden">
-        {showFullDetail && fullDetailItem ? <WorkItemDetailPage item={fullDetailItem} role={currentRole} onBack={closeFullDetail} /> : renderPage()}
+        {showFullDetail && fullDetailItem ? <WorkItemDetailPage item={fullDetailItem} role={currentRole} project={currentProject} team={currentTeam} onBack={closeFullDetail} onMinimize={minimizeFullDetail} /> : renderPage()}
       </div>
     </div>
   );

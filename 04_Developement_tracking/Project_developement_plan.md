@@ -278,3 +278,53 @@ Login bằng Workspace Admin
 → Gán US vào Sprint
 → Xem tại Iteration Status
 ```
+# Current Baseline Update — 2026-06-24
+
+Phase 0 đã pass BA acceptance. Phase đang chuẩn bị dev tiếp theo là **Phase 1 — Core Work Item Management**.
+
+Các quyết định mới nhất của Phase 1 override những mô tả cũ bên dưới nếu có mâu thuẫn:
+
+- Backlog thuộc `Plan → Backlog`.
+- Backlog Phase 1 chỉ tập trung **Story** và **Defect**; không tạo/hiển thị Feature hoặc Task như backlog item độc lập.
+- Task chỉ được tạo như **child task** bên trong Work Item Detail.
+- Click Work Item ID từ Backlog mở **full Work Item Detail page** mặc định.
+- Work Item Detail có tabs: `Details`, `Tasks`, `Revision History`.
+- Task Detail có banner riêng và chỉ có tabs: `Details`, `Revision History`.
+- Work Item content Phase 1 gồm: Description, Attachments, Notes, Release Notes.
+- Task content Phase 1 gồm: Description, Notes, Attachments.
+- Time fields Phase 1 gồm: Work Item `Plan Estimate`; Task `Estimate`, `To Do`, `Actual`.
+- Basic Activity Log được thể hiện bằng tab `Revision History`.
+
+Tài liệu Phase 1 chi tiết nằm tại:
+
+- [`Phase 1/PHASE1_MOCKUP_CHECKLIST.md`](Phase%201/PHASE1_MOCKUP_CHECKLIST.md)
+- [`Phase 1/PHASE1_DEVELOPMENT_TRACKING.md`](Phase%201/PHASE1_DEVELOPMENT_TRACKING.md)
+- [`Phase 1/01_Backlog_Work_Item_List/SRS.md`](Phase%201/01_Backlog_Work_Item_List/SRS.md)
+- [`Phase 1/02_Work_Item_Create/SRS.md`](Phase%201/02_Work_Item_Create/SRS.md)
+- [`Phase 1/03_Work_Item_Detail/SRS.md`](Phase%201/03_Work_Item_Detail/SRS.md)
+- [`Phase 1/04_Task_Management/SRS.md`](Phase%201/04_Task_Management/SRS.md)
+- [`Phase 1/05_Time_Tracking/SRS.md`](Phase%201/05_Time_Tracking/SRS.md)
+- [`Phase 1/06_Content_Attachments/SRS.md`](Phase%201/06_Content_Attachments/SRS.md)
+- [`Phase 1/07_Activity_Log/SRS.md`](Phase%201/07_Activity_Log/SRS.md)
+
+## Phase 1 open confirmations
+
+| ID | Nội dung đã được resolve | Trạng thái |
+|---|---|---|
+| P1-CF-001 | Backlog production giữ hay bỏ các cột `Priority`, `Status`, `Release` | SUPERSEDED BY P1-DC-001/002 |
+| P1-CF-002 | Timebox Phase 1 chính thức | SUPERSEDED BY P1-DC-004 |
+| P1-CF-003 | `Notes` là rich-text field riêng hay comment thread | SUPERSEDED BY P1-DC-005 |
+| P1-CF-004 | `Actual` nhập tay trong Phase 1 hay aggregate từ time logs | SUPERSEDED BY P1-DC-006 |
+## Phase 1 Final BA Decisions — 2026-06-24
+
+Các quyết định này là baseline cuối cho Phase 1 và override các ghi chú cũ nếu có mâu thuẫn:
+
+| ID | Quyết định | Trạng thái |
+|---|---|---|
+| P1-DC-001 | Backlog giữ `Priority`, nhưng chỉ dành cho Defect; Story hiển thị `—` | DECIDED |
+| P1-DC-002 | Backlog đổi cột `Status` thành `Schedule State` | DECIDED |
+| P1-DC-003 | Work Item Detail sidebar có `Schedule State` và `Flow State`; `Status` đổi thành `Flow State` | DECIDED |
+| P1-DC-004 | Timebox Phase 1 = 2 working days = 16 hours | DECIDED |
+| P1-DC-005 | `Notes` là text/rich-text field riêng | DECIDED |
+| P1-DC-006 | `Actual` nhập tay vào `actual_hours` trong Phase 1 | DECIDED |
+| P1-DC-007 | Defect Detail sidebar hiển thị `Priority`; options `Low/Normal/High/Urgent/None` | DECIDED |

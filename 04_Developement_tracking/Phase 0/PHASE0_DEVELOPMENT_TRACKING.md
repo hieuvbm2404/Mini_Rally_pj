@@ -110,16 +110,16 @@
 
 ### Authentication
 
-- [ ] Admin login bằng API thật và nhận HttpOnly session cookie.
-- [ ] Invalid credential trả message chung, không lộ account existence.
-- [ ] Refresh protected route giữ session.
-- [ ] Logout revoke session và quay về Login.
+- [x] Admin login bằng API thật và nhận HttpOnly session cookie.
+- [x] Invalid credential trả message chung, không lộ account existence.
+- [x] Refresh protected route giữ session.
+- [x] Logout revoke session và quay về Login.
 - [ ] Client/log không chứa password hash, raw token hoặc token hash.
 
 ### App Shell
 
-- [ ] URL route, refresh, back và forward hoạt động.
-- [ ] Fixed Company context load từ server.
+- [x] URL route, refresh, back và forward hoạt động.
+- [x] Fixed Company context load từ server.
 - [ ] Project/Team hierarchy chỉ chứa dữ liệu được phép xem.
 - [ ] 403, 404, loading và generic error state hoạt động.
 - [ ] UI gating và API permission enforcement nhất quán.
@@ -129,8 +129,8 @@
 - [ ] Project List load từ DB, có search/status/pagination.
 - [ ] `memberCount` và `teamCount` đúng, không N+1 query.
 - [ ] Create Project tạo project/settings/owner membership/team links atomically.
-- [ ] Duplicate/invalid key bị reject.
-- [ ] Edit không cho đổi immutable Project Key.
+- [x] Duplicate/invalid key bị reject.
+- [x] Edit không cho đổi immutable Project Key.
 - [ ] Archive giữ dữ liệu và chặn mutation.
 - [ ] Restore đúng permission.
 
@@ -141,6 +141,40 @@
 - [ ] Cross-tenant/cross-project access test pass.
 - [ ] Production build pass và browser không có runtime error.
 - [ ] OpenAPI/contract test được cập nhật.
+
+### BA production scan — 2026-06-22
+
+Target: `https://induced-mesh-healthy-dependence.trycloudflare.com/`
+
+#### BA release acceptance
+
+- [x] Company được set cứng và PROD không cho tạo/switch Workspace.
+- [x] Workspace Admin tạo được Project trên PROD.
+
+Kết luận: **đạt BA acceptance đã chốt**: fixed Company/no Workspace creation và tạo được Project `TEST — Testing adding project` trên PROD. Lần thử tạo thêm project `BA622` trả `Request failed (502)` được giữ lại như lỗi intermittent cần theo dõi. URL hiện tại đã trả `ERR_NAME_NOT_RESOLVED`, nên chưa thể chạy regression lại.
+
+- Workspace/Company creation và switching là `N/A` theo single-company scope. Prod hiển thị fixed company `ACME Corp`, không có affordance tạo hoặc switch Workspace.
+- Login hợp lệ, invalid credential, refresh protected route, logout/auth guard và return URL đã pass trên prod.
+- Company → Project context hiển thị được; chọn Project cập nhật context thành `NXP · All Teams`.
+- Project list, search và status filter hoạt động. Không tick AC list vì chưa có đủ dữ liệu/controls để kiểm chứng pagination và chưa thể chứng minh nguồn DB chỉ từ UI.
+- 404 state pass. Không tick AC error states vì chưa kiểm chứng đủ 403, loading và generic error/retry.
+- Duplicate key `NXP` và invalid key một ký tự đều bị reject; Edit hiển thị Project Key là immutable.
+- Project `TEST — Testing adding project` đã được tạo thành công trên PROD. Lần thử tạo thêm key `BA622` thất bại bằng `Request failed (502)`; cần theo dõi tính ổn định của API.
+- Tài khoản `admin@acme.dev` thấy các mục Workspace Settings, User Management, Roles & Permissions và Audit Log ở trạng thái disabled; cần kiểm tra RBAC/UI gating.
+- Browser không ghi nhận runtime error, nhưng target vẫn expose TanStack Router/Query Devtools và asset `/node_modules/.vite/deps`; chưa đủ bằng chứng đây là production build nên không tick AC này.
+
+### Cross-thread technical scan — 2026-06-22
+
+Nguồn bàn giao: Codex thread `Repo test`; kết quả kỹ thuật local không được tính thay cho BA production acceptance.
+
+- `rally-web` chạy tại `localhost:5173`, nhưng chỉ render scaffold `Foundation shell is up`; không phải UI Phase 0 đã thấy trên Cloudflare target.
+- `rally-api` chạy tại `localhost:3000`; `/v1/healthz` trả 200 nhưng `/v1/readyz` trả 503 vì PostgreSQL/Valkey/LocalStack chưa sẵn sàng.
+- Production build của cả `rally-web` và `rally-api` pass. Chưa tick AC production build vì local FE không khớp UI đang deploy và Cloudflare target đã hết hiệu lực (`ERR_NAME_NOT_RESOLVED`).
+- API unit tests: 111/112 pass. Test `AuthService > changePassword > throws on wrong current password` fail vì implementation trả `DomainException`/400 thay vì `UnauthorizedException` theo test contract.
+- `pnpm test:e2e` không chạy được test case nào: Vitest báo `Identifier 'setup' has already been declared` rồi `No test files found`.
+- OpenAPI JSON load được, có 70 paths và các nhóm Auth/Workspace/Project/Team/Health. Chưa tick contract AC vì E2E/contract verification chưa pass.
+- OpenAPI vẫn expose `POST /v1/workspaces` và `GET/PATCH/DELETE /v1/workspaces/{id}`, trái single-company Phase 0 AC không có Workspace CRUD endpoint.
+- Request không có auth tới `/v1/workspaces`, `/v1/projects` và `/v1/auth/me` đều trả 500 `INTERNAL_ERROR`, không phải 401; cần sửa dependency/error handling của auth guard khi infrastructure unavailable.
 
 ## 8. Blocker & Risk Log
 

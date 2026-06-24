@@ -628,10 +628,17 @@ Defect
 | title | VARCHAR(500) | Tên work item |
 | description | TEXT | Nullable |
 | acceptance_criteria | TEXT | Nullable |
+| notes | TEXT | Nullable, Phase 1 rich-text notes field; không thay thế bằng comment thread |
+| release_notes | TEXT | Nullable, Phase 1 technical writer/release notes content |
+| schedule_state | VARCHAR(50) | Phase 1: idea, defined, in_progress, completed, accepted, release |
+| flow_state | VARCHAR(50) | Phase 1: idea, defined, in_progress, completed, accepted, release |
 | status_id | UUID | FK → workflow_statuses.id |
-| priority | VARCHAR(50) | low, medium, high, critical |
+| priority | VARCHAR(50) | Defect only in Phase 1: none, low, normal, high, urgent |
 | severity | VARCHAR(50) | Chỉ dùng cho defect |
 | story_point | DECIMAL(5,2) | Nullable |
+| estimate_hours | DECIMAL(8,2) | Nullable, Phase 1 task estimate in hours |
+| todo_hours | DECIMAL(8,2) | Nullable, Phase 1 task remaining work in hours |
+| actual_hours | DECIMAL(8,2) | Nullable, Phase 1 task actual work in hours; can become cached aggregate later |
 | assignee_id | UUID | FK → users.id, nullable |
 | reporter_id | UUID | FK → users.id |
 | parent_id | UUID | FK → work_items.id, nullable |
@@ -668,9 +675,10 @@ Gợi ý enum `priority`:
 
 ```text
 low
-medium
+normal
 high
-critical
+urgent
+none
 ```
 
 Gợi ý enum `severity`:
@@ -699,6 +707,23 @@ INDEX(created_at)
 UNIQUE(project_id, item_no)
 UNIQUE(project_id, item_key)
 ```
+
+### Phase 1 Work Item field notes
+
+- `story_point` là `Plan Estimate` cho Story/Defect.
+- `estimate_hours`, `todo_hours`, `actual_hours` dùng cho Task trong Phase 1.
+- Task vẫn là record trong `work_items` với `type='task'` và `parent_id` trỏ tới Story/Defect.
+- `notes` và `release_notes` được thêm để khớp mockup Phase 1. Phase 1 đã chốt `notes` là rich-text/text field riêng; `comments` không thay thế `notes`.
+- `actual_hours` trong Phase 1 mặc định là input trực tiếp; nếu phase sau có time entry chi tiết thì field này nên trở thành cached aggregate hoặc bỏ khỏi write trực tiếp.
+
+### Phase 1 resolved BA decisions
+
+- Phase 1 sidebar uses `Schedule State` and `Flow State`; the old sidebar label `Status` is renamed to `Flow State`.
+- `schedule_state` and `flow_state` enum values: `idea`, `defined`, `in_progress`, `completed`, `accepted`, `release`.
+- Backlog `Priority` is kept only for Defect. Story rows show `—` in the Priority column.
+- Defect detail sidebar shows `Priority` only when `work_items.type = 'defect'`; options are `low`, `normal`, `high`, `urgent`, `none`.
+- `actual_hours` is manually entered in Phase 1.
+- `notes` is a text/rich-text field in Phase 1, not a replacement by comment thread.
 
 ---
 
@@ -1043,7 +1068,7 @@ Ví dụ `filter_config`:
   "type": ["defect"],
   "status": ["in_progress", "testing"],
   "assignee_id": "user-id",
-  "priority": ["high", "critical"]
+  "priority": ["high", "urgent"]
 }
 ```
 
