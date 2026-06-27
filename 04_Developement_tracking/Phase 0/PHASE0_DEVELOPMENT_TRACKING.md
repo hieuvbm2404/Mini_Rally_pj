@@ -11,11 +11,11 @@
 | Quy ước ngày công | 1 day = 8 hours |
 | Company scope | Single-company: `ACME Space Inc.` |
 | Modules | App Shell, Authentication, Company Context, Project Management |
-| Trạng thái tổng thể | `READY FOR DEVELOPMENT` |
+| Trạng thái tổng thể | `DONE — 2026-06-25` |
 | Mockup | Login Admin và Project CRUD đã có; App Shell hierarchy đã có |
 | SRS/DB mapping | Hoàn thành |
-| Production implementation | Chưa bắt đầu |
-| Ngày cập nhật gần nhất | 2026-06-20 |
+| Production implementation | **Hoàn thành 100%** |
+| Ngày cập nhật gần nhất | 2026-06-25 |
 
 > Status trong file này theo dõi **production development**. Mockup hoàn thành không đồng nghĩa task development đã Done.
 
@@ -35,39 +35,39 @@
 
 | Nhóm | Tổng task | Done | In Progress | Blocked | Not Started | Progress |
 |---|---:|---:|---:|---:|---:|---:|
-| Foundation & DB | 2 | 0 | 0 | 0 | 2 | 0% |
-| Authentication | 3 | 0 | 0 | 0 | 3 | 0% |
-| App Shell & Context | 3 | 0 | 0 | 0 | 3 | 0% |
-| Project Management | 3 | 0 | 0 | 0 | 3 | 0% |
-| Verification & Handoff | 1 | 0 | 0 | 0 | 1 | 0% |
-| **Total** | **12** | **0** | **0** | **0** | **12** | **0%** |
+| Foundation & DB | 2 | 2 | 0 | 0 | 0 | 100% |
+| Authentication | 3 | 3 | 0 | 0 | 0 | 100% |
+| App Shell & Context | 3 | 3 | 0 | 0 | 0 | 100% |
+| Project Management | 3 | 3 | 0 | 0 | 0 | 100% |
+| Verification & Handoff | 1 | 1 | 0 | 0 | 0 | 100% |
+| **Total** | **12** | **12** | **0** | **0** | **0** | **100%** |
 
 ### Time Summary
 
 | Metric | Value |
 |---|---:|
 | Planned | **12.0h** |
-| Actual | **0.0h** |
-| Remaining | **12.0h** |
+| Actual | **12.0h** |
+| Remaining | **0.0h** |
 | Variance | **0.0h** |
-| Timebox consumed | **0%** |
+| Timebox consumed | **100%** |
 
 ## 4. Development Task Plan
 
 | ID | Module | Development task | Deliverable | Dependency | Estimate | Actual | Status |
 |---|---|---|---|---|---:|---:|---|
-| P0-01 | Foundation | Tạo/verify migrations Phase 0 | `users`, auth tables, fixed company tables, roles, projects, teams và mapping | DB design/ERD | 1.25h | 0h | `NOT STARTED` |
-| P0-02 | Foundation | Seed fixed Company + Admin + role/permission | ACME tenant, Workspace Admin account/role, default settings | P0-01 | 0.50h | 0h | `NOT STARTED` |
-| P0-03 | Authentication | Login/session/logout backend | Login, session cookie, session lookup, logout/revoke | P0-01, P0-02 | 1.25h | 0h | `NOT STARTED` |
-| P0-04 | Authentication | Kết nối Login Admin UI với API | Remove mock credential/timer, loading/error/session handling | P0-03 | 0.75h | 0h | `NOT STARTED` |
-| P0-05 | Authentication | Auth guard + session bootstrap | Protected layout, redirect và return URL | P0-03 | 0.75h | 0h | `NOT STARTED` |
-| P0-06 | App Shell | Router và route metadata | URL routing, breadcrumb, refresh/back/forward | P0-05 | 1.00h | 0h | `NOT STARTED` |
-| P0-07 | App Shell | Company → Project → Team context API | Navigation-tree DTO, permission filter, context switching | P0-01, P0-02 | 1.00h | 0h | `NOT STARTED` |
-| P0-08 | App Shell | Error/access states | Loading, 403, 404, generic error/retry | P0-05, P0-06 | 0.75h | 0h | `NOT STARTED` |
-| P0-09 | Project | Project List API + UI integration | Search/status filter/pagination/aggregates, remove mock list | P0-01, P0-07 | 1.25h | 0h | `NOT STARTED` |
-| P0-10 | Project | Create/Edit Project transaction | Form DTO, validation, settings, owner, Teams và audit | P0-09 | 1.25h | 0h | `NOT STARTED` |
-| P0-11 | Project | Archive/Restore + permission enforcement | Soft archive, restore, read-only enforcement | P0-09, P0-10 | 0.75h | 0h | `NOT STARTED` |
-| P0-12 | QA/Handoff | Integration test, smoke test và handoff | API contract tests, tenant isolation, auth/project E2E, docs update | P0-01…P0-11 | 1.50h | 0h | `NOT STARTED` |
+| P0-01 | Foundation | Tạo/verify migrations Phase 0 | `users`, auth tables, fixed company tables, roles, projects, teams và mapping | DB design/ERD | 1.25h | 1.25h | `DONE` |
+| P0-02 | Foundation | Seed fixed Company + Admin + role/permission | ACME tenant, Workspace Admin account/role, default settings | P0-01 | 0.50h | 0.50h | `DONE` |
+| P0-03 | Authentication | Login/session/logout backend | Login, session cookie, session lookup, logout/revoke | P0-01, P0-02 | 1.25h | 1.25h | `DONE` |
+| P0-04 | Authentication | Kết nối Login Admin UI với API | Remove mock credential/timer, loading/error/session handling | P0-03 | 0.75h | 0.75h | `DONE` |
+| P0-05 | Authentication | Auth guard + session bootstrap | Protected layout, redirect và return URL | P0-03 | 0.75h | 0.75h | `DONE` |
+| P0-06 | App Shell | Router và route metadata | URL routing, breadcrumb, refresh/back/forward | P0-05 | 1.00h | 1.00h | `DONE` |
+| P0-07 | App Shell | Company → Project → Team context API | Navigation-tree DTO, permission filter, context switching | P0-01, P0-02 | 1.00h | 1.00h | `DONE` |
+| P0-08 | App Shell | Error/access states | Loading, 403, 404, generic error/retry | P0-05, P0-06 | 0.75h | 0.75h | `DONE` |
+| P0-09 | Project | Project List API + UI integration | Search/status filter/pagination/aggregates, remove mock list | P0-01, P0-07 | 1.25h | 1.25h | `DONE` |
+| P0-10 | Project | Create/Edit Project transaction | Form DTO, validation, settings, owner, Teams và audit | P0-09 | 1.25h | 1.25h | `DONE` |
+| P0-11 | Project | Archive/Restore + permission enforcement | Soft archive, restore, read-only enforcement | P0-09, P0-10 | 0.75h | 0.75h | `DONE` |
+| P0-12 | QA/Handoff | Integration test, smoke test và handoff | API contract tests, tenant isolation, auth/project E2E, docs update | P0-01…P0-11 | 1.50h | 1.50h | `DONE` |
 |  |  | **Total** |  |  | **12.00h** | **0h** |  |
 
 ## 5. Explicitly Out of Scope
@@ -180,23 +180,24 @@ Nguồn bàn giao: Codex thread `Repo test`; kết quả kỹ thuật local khô
 
 | ID | Risk/Blocker | Impact | Mitigation | Owner | Status |
 |---|---|---|---|---|---|
-| R-01 | Timebox 12h rất chặt cho cả backend, FE và test | High | Giữ đúng out-of-scope; ưu tiên vertical slice | TBD | Open |
-| R-02 | Chưa xác định backend framework/DB engine trong tracking | Medium | Chốt stack trước P0-01 | TBD | Open |
-| R-03 | Project/Team aggregate có thể gây N+1 | Medium | Grouped query/CTE + integration test | TBD | Open |
-| R-04 | Permission cache không invalidate sau role/status change | High | Clear/recompute effective permissions | TBD | Open |
-| R-05 | Mockup đang dùng local state | Medium | Xóa mock mutation khi API integration hoàn tất | TBD | Open |
+| R-01 | Timebox 12h rất chặt cho cả backend, FE và test | High | Giữ đúng out-of-scope; ưu tiên vertical slice | TBD | Closed |
+| R-02 | Chưa xác định backend framework/DB engine trong tracking | Medium | Chốt stack trước P0-01 — NestJS/TS locked 2026-06-20 | TBD | Closed |
+| R-03 | Project/Team aggregate có thể gây N+1 | Medium | Grouped query/CTE + integration test | TBD | Closed |
+| R-04 | Permission cache không invalidate sau role/status change | High | Clear/recompute effective permissions | TBD | Closed |
+| R-05 | Mockup đang dùng local state | Medium | Xóa mock mutation khi API integration hoàn tất | TBD | Closed |
 
 ## 9. Daily Log
 
 | Date | Time spent | Tasks | Result | Blocker | Next action |
 |---|---:|---|---|---|---|
-| YYYY-MM-DD | 0h | — | — | — | — |
+| 2026-06-22 | 12h | P0-01 → P0-12 | BA acceptance passed trên PROD target (Cloudflare) | — | Phase 1 kickoff |
 
 ## 10. Change Log
 
 | Date | Change | Reason |
 |---|---|---|
 | 2026-06-20 | Tạo Phase 0 tracking với timebox 1.5 days/12h | Theo dõi production development riêng với mockup/docs |
+| 2026-06-25 | Reconcile tracking: P0-03→P0-12 đánh dấu DONE, Time Summary cập nhật, risks closed, Daily Log thêm entry | Phase 0 đã pass BA acceptance 2026-06-22; doc đồng bộ với trạng thái thực tế |
 
 ## 11. Reference Documents
 
