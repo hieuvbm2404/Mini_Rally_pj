@@ -8,12 +8,12 @@
 | Timebox | **2 working days = 16 hours** |
 | Quy ước ngày công | 1 day = 8 hours |
 | Company scope | Single-company: `ACME Space Inc.` |
-| Modules | Backlog, Work Item Create, Work Item Detail, Task Management, Time Tracking, Content/Attachments, Activity Log |
+| Modules | Manage Projects/Teams/Users, Backlog, Work Item Create, Work Item Detail, Task Management, Time Tracking, Content/Attachments, Activity Log |
 | Trạng thái tổng thể | `READY FOR DEVELOPMENT PLANNING` |
 | Mockup | Phase 1 mockup đã có đủ màn hình chính |
 | SRS/DB mapping | Hoàn thành initial draft |
 | Production implementation | Chưa bắt đầu |
-| Ngày cập nhật gần nhất | 2026-06-24 |
+| Ngày cập nhật gần nhất | 2026-06-28 |
 
 > Status trong file này theo dõi **production development**. Mockup hoàn thành không đồng nghĩa task development đã Done.
 
@@ -34,12 +34,13 @@
 | Nhóm | Tổng task | Done | In Progress | Blocked | Not Started | Decided | Progress |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | DB & Contracts | 3 | 0 | 0 | 0 | 3 | 0 | 0% |
+| Manage Organization | 4 | 0 | 0 | 0 | 4 | 0 | 0% |
 | Backlog & Create | 4 | 0 | 0 | 0 | 3 | 1 | 0% |
 | Work Item Detail | 4 | 0 | 0 | 0 | 4 | 0 | 0% |
 | Task Management | 4 | 0 | 0 | 0 | 4 | 0 | 0% |
 | Time/Content/Activity | 5 | 0 | 0 | 0 | 4 | 1 | 0% |
 | Verification & Handoff | 2 | 0 | 0 | 0 | 2 | 0 | 0% |
-| **Total** | **22** | **0** | **0** | **0** | **20** | **2** | **0%** |
+| **Total** | **26** | **0** | **0** | **0** | **24** | **2** | **0%** |
 
 ### Time Summary
 
@@ -58,6 +59,10 @@
 | P1-01 | DB & Contracts | Verify/add Phase 1 DB migration | `work_items` fields for notes/release_notes/time fields, indexes, FK validation | Phase 0 DB | 2.0h | 0h | `NOT STARTED` |
 | P1-02 | DB & Contracts | Work Item API DTO/contracts | List/detail/create/update DTO, validation, permission rules | P1-01 | 2.0h | 0h | `NOT STARTED` |
 | P1-03 | DB & Contracts | Seed workflow status + sample project/team users | Defined/In-Progress/Completed, Story/Defect defaults | P1-01 | 1.0h | 0h | `NOT STARTED` |
+| P1-23 | Manage | Manage page shell + tabs | Workspace menu > Manage, tabs Projects/Teams/Users | Phase 0 App Shell | 0.75h | 0h | `NOT STARTED` |
+| P1-24 | Manage | Team list/filter/create/edit/deactivate | Teams list without Members/Capacity/Velocity/Actions columns; Create/Edit Team modal has Team Info and Members tabs | P1-01, P1-23 | 1.25h | 0h | `NOT STARTED` |
+| P1-25 | Manage | User list/invite/edit/deactivate | Users list, Invite User modal, role and team membership; project access derives from team | P1-01, P1-23 | 1.25h | 0h | `NOT STARTED` |
+| P1-26 | Manage | Project/team/user permission guards | Workspace Admin full access; backend rejects unauthorized mutations | P1-23, P1-24, P1-25 | 0.75h | 0h | `NOT STARTED` |
 | P1-04 | Backlog | Backlog List API + FE integration | Server pagination/filter/sort/resize persistence optional | P1-02 | 2.0h | 0h | `NOT STARTED` |
 | P1-05 | Backlog | Backlog columns finalization | Priority kept for Defect only; Status column renamed Schedule State | BA decided | 0.5h | 0h | `DECIDED` |
 | P1-06 | Create | Quick Create Story/Defect | Modal create, required validation, key generation | P1-02 | 1.5h | 0h | `NOT STARTED` |
@@ -93,12 +98,14 @@
 | Advanced time sheet | `DEFERRED` | Phase 1 chỉ field To Do/Actual tối thiểu |
 | Attachment preview/versioning | `DEFERRED` | Phase 1 chỉ upload/list/download/delete cơ bản |
 | Full audit admin screen | `DEFERRED` | Phase 1 chỉ Revision History trong item/task |
+| Team capacity/velocity management trong Manage Team | `DEFERRED` | Không thuộc Create/Edit Team Phase 1; có thể define ở Iteration planning |
 
 ## 6. Suggested Execution Order
 
 ```text
 P1-01 DB migration
 → P1-02 API DTO/contracts
+→ P1-23/P1-24/P1-25 Manage projects/teams/users
 → P1-04 Backlog list
 → P1-06 Quick create
 → P1-08 Work Item detail
@@ -128,6 +135,19 @@ P1-01 DB migration
 - [ ] Project/Team bắt buộc hợp lệ với user access.
 - [ ] Create sinh `item_key` atomically theo project.
 - [ ] Create with details mở detail của item vừa tạo.
+
+### Manage Projects / Teams / Users
+
+- [ ] Workspace dropdown `Manage` mở Manage page.
+- [ ] Manage page có tabs `Projects`, `Teams`, `Users`.
+- [ ] Teams list chỉ có Key, Team, Project, Status, Lead, Updated.
+- [ ] Teams list không có Members, Capacity, Velocity, Actions columns.
+- [ ] Create/Edit Team modal có tabs `Team Info` và `Members`.
+- [ ] Team Info tab có Project, Team lead, Team name, Team key, Description, Status.
+- [ ] Members tab có searchable member selector.
+- [ ] Create Team không có Capacity/Velocity fields.
+- [ ] Users tab có Invite User với role và team membership; không assign project trực tiếp.
+- [ ] Backend enforce permission cho create/edit/archive/deactivate/reactivate.
 
 ### Work Item Detail
 
@@ -164,6 +184,8 @@ P1-01 DB migration
 | P1-R03 | Actual nhập tay có thể lệch với time log sau này | Medium | Phase 1 manual; phase sau chuyển aggregate hoặc sync rule nếu có timesheet | BA/Tech | Decided |
 | P1-R04 | Rich text có rủi ro XSS | High | Sanitize server + client render safe HTML | Dev | Open |
 | P1-R05 | Attachment storage cần config S3/R2/LocalStack | Medium | Dùng abstraction storage service | DevOps | Open |
+| P1-R06 | Thêm Manage Teams/Users có thể làm Phase 1 vượt timebox 16h | Medium | Dev agent phải báo BA nếu effort vượt timebox; ưu tiên Create Team trước Invite User nếu cần chia nhỏ | BA/Tech | Open |
+| P1-R07 | Email invitation/token join flow có thể chưa sẵn trong development slice đầu | Medium | Phase 1 mô tả đủ nghiệp vụ; implementation đầu có thể add/invite user qua DB/API trước, sau đó bổ sung email token flow | BA/Tech | Open |
 
 ## 9. Daily Log
 
@@ -176,6 +198,8 @@ P1-01 DB migration
 | Date | Change | Reason |
 |---|---|---|
 | 2026-06-24 | Tạo Phase 1 tracking, checklist và SRS structure | Phase 0 đã pass acceptance, bắt đầu Phase 1 |
+| 2026-06-28 | Bổ sung Manage Projects/Teams/Users và Create Team vào Phase 1 | Team phải được tạo trước khi dùng trong Backlog/Iteration flows |
+| 2026-06-28 | Chốt User management: assign user vào Team, không assign Project trực tiếp | Project access derive từ Team -> Project; invite email join flow mô tả trong SRS, triển khai sau nếu cần |
 
 ## 11. Reference Documents
 
@@ -186,6 +210,7 @@ P1-01 DB migration
 - [`05_Time_Tracking/SRS.md`](05_Time_Tracking/SRS.md)
 - [`06_Content_Attachments/SRS.md`](06_Content_Attachments/SRS.md)
 - [`07_Activity_Log/SRS.md`](07_Activity_Log/SRS.md)
+- [`08_Manage_Projects_Teams_Users/SRS.md`](08_Manage_Projects_Teams_Users/SRS.md)
 - [`PHASE1_MOCKUP_CHECKLIST.md`](PHASE1_MOCKUP_CHECKLIST.md)
 - [`../Project_developement_plan.md`](../Project_developement_plan.md)
 - [`../../01_DB design/mini_rally_database_design.md`](../../01_DB%20design/mini_rally_database_design.md)
