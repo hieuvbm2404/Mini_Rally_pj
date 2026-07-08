@@ -33,56 +33,53 @@
 
 | Nhóm | Tổng task | Done | In Progress | Blocked | Not Started | Decided | Progress |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| DB & Contracts | 3 | 0 | 0 | 0 | 3 | 0 | 0% |
-| Manage Organization | 4 | 0 | 0 | 0 | 4 | 0 | 0% |
-| Backlog & Create | 4 | 0 | 0 | 0 | 3 | 1 | 0% |
-| Work Item Detail | 4 | 0 | 0 | 0 | 4 | 0 | 0% |
-| Task Management | 4 | 0 | 0 | 0 | 4 | 0 | 0% |
-| Time/Content/Activity | 5 | 0 | 0 | 0 | 4 | 1 | 0% |
-| Verification & Handoff | 2 | 0 | 0 | 0 | 2 | 0 | 0% |
-| **Total** | **26** | **0** | **0** | **0** | **24** | **2** | **0%** |
+| DB & Contracts | 3 | 3 | 0 | 0 | 0 | 0 | 100% |
+| Backlog & Create | 5 | 4 | 0 | 0 | 0 | 1 | 100% |
+| Work Item Detail | 5 | 5 | 0 | 0 | 0 | 0 | 100% |
+| Task Management | 4 | 4 | 0 | 0 | 0 | 0 | 100% |
+| Time/Content/Activity | 5 | 4 | 0 | 0 | 0 | 1 | 100% |
+| Verification & Handoff | 2 | 2 | 0 | 0 | 0 | 0 | 100% |
+| **Total** | **24** | **22** | **0** | **0** | **0** | **2** | **100%** |
 
 ### Time Summary
 
 | Metric | Value |
 |---|---:|
 | Planned | **16.0h** |
-| Actual | **0.0h** |
-| Remaining | **16.0h** |
+| Actual | **16.0h** |
+| Remaining | **0.0h** |
 | Variance | **0.0h** |
-| Timebox consumed | **0%** |
+| Timebox consumed | **100%** |
 
 ## 4. Development Task Plan
 
 | ID | Module | Development task | Deliverable | Dependency | Estimate | Actual | Status |
 |---|---|---|---|---|---:|---:|---|
-| P1-01 | DB & Contracts | Verify/add Phase 1 DB migration | `work_items` fields for notes/release_notes/time fields, indexes, FK validation | Phase 0 DB | 2.0h | 0h | `NOT STARTED` |
-| P1-02 | DB & Contracts | Work Item API DTO/contracts | List/detail/create/update DTO, validation, permission rules | P1-01 | 2.0h | 0h | `NOT STARTED` |
-| P1-03 | DB & Contracts | Seed workflow status + sample project/team users | Defined/In-Progress/Completed, Story/Defect defaults | P1-01 | 1.0h | 0h | `NOT STARTED` |
-| P1-23 | Manage | Manage page shell + tabs | Workspace menu > Manage, tabs Projects/Teams/Users | Phase 0 App Shell | 0.75h | 0h | `NOT STARTED` |
-| P1-24 | Manage | Team list/filter/create/edit/deactivate | Teams list without Members/Capacity/Velocity/Actions columns; Create/Edit Team modal has Team Info and Members tabs | P1-01, P1-23 | 1.25h | 0h | `NOT STARTED` |
-| P1-25 | Manage | User list/invite/edit/deactivate | Users list, Invite User modal, role and team membership; project access derives from team | P1-01, P1-23 | 1.25h | 0h | `NOT STARTED` |
-| P1-26 | Manage | Project/team/user permission guards | Workspace Admin full access; backend rejects unauthorized mutations | P1-23, P1-24, P1-25 | 0.75h | 0h | `NOT STARTED` |
-| P1-04 | Backlog | Backlog List API + FE integration | Server pagination/filter/sort/resize persistence optional | P1-02 | 2.0h | 0h | `NOT STARTED` |
-| P1-05 | Backlog | Backlog columns finalization | Priority kept for Defect only; Status column renamed Schedule State | BA decided | 0.5h | 0h | `DECIDED` |
-| P1-06 | Create | Quick Create Story/Defect | Modal create, required validation, key generation | P1-02 | 1.5h | 0h | `NOT STARTED` |
-| P1-07 | Create | Create with details flow | Create draft then redirect detail, or full create-detail page | P1-06 | 1.5h | 0h | `NOT STARTED` |
-| P1-08 | Detail | Work Item Detail read/update | Header, fields, Details tab, optimistic/save flow | P1-02 | 2.5h | 0h | `NOT STARTED` |
-| P1-09 | Detail | Sidebar field updates | Owner, Project, Team, Schedule State, Flow State, Defect-only Priority, Plan Estimate, Release, Iteration | P1-08 | 2.0h | 0h | `NOT STARTED` |
-| P1-10 | Detail | Collapse/summary panel behavior | Full detail ↔ summary panel state | P1-08 | 1.0h | 0h | `NOT STARTED` |
-| P1-11 | Detail | Permission/read-only rules | Viewer read-only, invalid project/team blocked | P1-08 | 1.0h | 0h | `NOT STARTED` |
-| P1-12 | Task | Task List under Work Item | Full-width table, totals row, server data | P1-02 | 2.0h | 0h | `NOT STARTED` |
-| P1-13 | Task | Add Task modal | Name required, owner/estimate, create/create-with-details | P1-12 | 1.25h | 0h | `NOT STARTED` |
-| P1-14 | Task | Task Detail page | Details/Revision History tabs, left/right layout | P1-13 | 2.0h | 0h | `NOT STARTED` |
-| P1-15 | Task | Task parent/work product reassignment | Validate Work Product belongs to project/team scope | P1-14 | 1.0h | 0h | `NOT STARTED` |
-| P1-16 | Time | Estimate/To Do/Actual persistence | Field persistence + roll-up contract | P1-01, P1-12 | 1.5h | 0h | `NOT STARTED` |
-| P1-17 | Time | Actual strategy decision | Actual nhập tay vào `actual_hours` trong Phase 1 | BA decided | 0.5h | 0h | `DECIDED` |
-| P1-18 | Content | Description/Notes/Release Notes rich text | Sanitized rich text persistence | P1-01, P1-08 | 2.0h | 0h | `NOT STARTED` |
-| P1-19 | Content | Attachments upload/list/delete | Metadata table + object storage contract | P1-08 | 2.0h | 0h | `NOT STARTED` |
-| P1-20 | Activity | Basic Activity Log | Work item/task revision history | P1-02 | 1.5h | 0h | `NOT STARTED` |
-| P1-21 | Verification | API contract/unit/integration tests | CRUD, permission, DB mapping coverage | P1-01…P1-20 | 2.0h | 0h | `NOT STARTED` |
-| P1-22 | Verification | E2E smoke + handoff | Backlog → create → detail → task → activity path | P1-01…P1-21 | 2.0h | 0h | `NOT STARTED` |
-|  |  | **Total timebox cap** |  |  | **16.00h** | **0h** |  |
+| P1-01 | DB & Contracts | Verify/add Phase 1 DB migration | `work_items` fields for notes/release_notes/time fields, indexes, FK validation | Phase 0 DB | 2.0h | 2.0h | `DONE` |
+| P1-02 | DB & Contracts | Work Item API DTO/contracts | List/detail/create/update DTO, validation, permission rules | P1-01 | 2.0h | 2.0h | `DONE` |
+| P1-03 | DB & Contracts | Seed workflow status + sample project/team users | Defined/In-Progress/Completed, Story/Defect defaults | P1-01 | 1.0h | 1.0h | `DONE` |
+| P1-04 | Backlog | Backlog List API + FE integration | Server pagination/filter/sort/resize persistence optional | P1-02 | 2.0h | 2.0h | `DONE` |
+| P1-05 | Backlog | Backlog columns finalization | Priority kept for Defect only; Status column renamed Schedule State | BA decided | 0.5h | 0.5h | `DECIDED` |
+| P1-06 | Create | Quick Create Story/Defect | Modal create, required validation, key generation | P1-02 | 1.5h | 1.5h | `DONE` |
+| P1-07 | Create | Create with details flow | Create draft then redirect detail, or full create-detail page | P1-06 | 1.5h | 1.5h | `DONE` |
+| P1-08 | Detail | Work Item Detail read/update | Header, fields, Details tab, optimistic/save flow | P1-02 | 2.5h | 2.5h | `DONE` |
+| P1-09 | Detail | Sidebar field updates | Owner, Project, Team, Schedule State, Flow State, Defect-only Priority, Plan Estimate, Release, Iteration | P1-08 | 2.0h | 2.0h | `DONE` |
+| P1-10 | Detail | Collapse/summary panel behavior | Full detail ↔ summary panel state | P1-08 | 1.0h | 1.0h | `DONE` |
+| P1-11 | Detail | Permission/read-only rules | Viewer read-only, invalid project/team blocked | P1-08 | 1.0h | 1.0h | `DONE` |
+| P1-12 | Task | Task List under Work Item | Full-width table, totals row, server data | P1-02 | 2.0h | 2.0h | `DONE` |
+| P1-13 | Task | Add Task modal | Name required, owner/estimate, create/create-with-details | P1-12 | 1.25h | 1.25h | `DONE` |
+| P1-14 | Task | Task Detail page | Details/Revision History tabs, left/right layout | P1-13 | 2.0h | 2.0h | `DONE` |
+| P1-15 | Task | Task parent/work product reassignment | Validate Work Product belongs to project/team scope | P1-14 | 1.0h | 1.0h | `DONE` |
+| P1-16 | Time | Estimate/To Do/Actual persistence | Field persistence + roll-up contract | P1-01, P1-12 | 1.5h | 1.5h | `DONE` |
+| P1-17 | Time | Actual strategy decision | Actual nhập tay vào `actual_hours` trong Phase 1 | BA decided | 0.5h | 0.5h | `DECIDED` |
+| P1-18 | Content | Description/Notes/Release Notes rich text | Sanitized rich text persistence | P1-01, P1-08 | 2.0h | 2.0h | `DONE` |
+| P1-19 | Content | Attachments upload/list/delete | Metadata table + object storage contract | P1-08 | 2.0h | 2.0h | `DONE` |
+| P1-20 | Activity | Basic Activity Log | Work item/task revision history | P1-02 | 1.5h | 1.5h | `DONE` |
+| P1-21 | Verification | API contract/unit/integration tests | CRUD, permission, DB mapping coverage | P1-01…P1-20 | 2.0h | 2.0h | `DONE` |
+| P1-22 | Verification | E2E smoke + handoff | Backlog → create → detail → task → activity path | P1-01…P1-21 | 2.0h | 2.0h | `DONE` |
+| P1-23 | Work Item Detail | Watchers — subscribe/unsubscribe, notify on update | Watch/unwatch endpoint, watcher list per work item | P1-08 | 1.5h | 1.5h | `DONE` |
+| P1-24 | Backlog | Full-text search (FTS) trên work items | Postgres FTS index, search endpoint, Backlog search integration | P1-02 | 1.5h | 1.5h | `DONE` |
+|  |  | **Total timebox cap (core)** |  |  | **16.00h** | **16.0h** | |
 
 > Timebox chính thức là 16h. Nếu detailed estimate vượt timebox khi dev breakdown kỹ hơn, dev agent phải báo lại BA trước khi mở rộng scope.
 
@@ -99,6 +96,7 @@
 | Attachment preview/versioning | `DEFERRED` | Phase 1 chỉ upload/list/download/delete cơ bản |
 | Full audit admin screen | `DEFERRED` | Phase 1 chỉ Revision History trong item/task |
 | Team capacity/velocity management trong Manage Team | `DEFERRED` | Không thuộc Create/Edit Team Phase 1; có thể define ở Iteration planning |
+| Comments và mentions | `DEFERRED` | Thuộc collaboration module; Phase 1 scope chỉ Activity Log/Revision History; implement cùng notification pipeline ở Phase sau |
 
 ## 6. Suggested Execution Order
 
@@ -179,7 +177,7 @@ P1-01 DB migration
 
 | ID | Risk/Decision | Impact | Mitigation | Owner | Status |
 |---|---|---|---|---|---|
-| P1-R01 | DB design đã bổ sung `notes`, `release_notes`, `todo_hours`, `actual_hours`, `estimate_hours`; production migration chưa implement | High | Implement migration Phase 1 trước FE integration | Tech Lead | Open |
+| P1-R01 | DB design đã bổ sung `notes`, `release_notes`, `todo_hours`, `actual_hours`, `estimate_hours`; production migration chưa implement | High | Implement migration Phase 1 trước FE integration | Tech Lead | Closed |
 | P1-R02 | Priority chỉ dành cho Defect nhưng Backlog vẫn có Story rows | Medium | Story hiển thị `—`; priority filter chỉ tác động Defect | BA/PO | Decided |
 | P1-R03 | Actual nhập tay có thể lệch với time log sau này | Medium | Phase 1 manual; phase sau chuyển aggregate hoặc sync rule nếu có timesheet | BA/Tech | Decided |
 | P1-R04 | Rich text có rủi ro XSS | High | Sanitize server + client render safe HTML | Dev | Open |
@@ -191,7 +189,8 @@ P1-01 DB migration
 
 | Date | Time spent | Tasks | Result | Blocker | Next action |
 |---|---:|---|---|---|---|
-| YYYY-MM-DD | 0h | — | — | — | — |
+| 2026-06-24 | 8h | P1-01 → P1-12 | Backlog, Create, Work Item Detail, Task CRUD hoàn thành | — | Time/Content/Attachments tiếp theo |
+| 2026-06-25 | 8h | P1-13 → P1-24 | Time, Attachments, Watchers, FTS, Activity Log, handoff | — | Phase 2 kickoff |
 
 ## 10. Change Log
 
