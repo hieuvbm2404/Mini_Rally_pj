@@ -9,7 +9,7 @@ Phase 3 is split into smaller slices so each mockup and SRS can be approved befo
 1. P3.1 Team Status.
 2. P3.2 Release Management.
 3. P3.3 Milestones.
-4. P3.4 Quality / Defect dashboard, with workflow actions deferred.
+4. P3.4 Quality / Defect dashboard, create/edit, shared detail and core workflow.
 
 BA decisions already confirmed:
 
@@ -19,7 +19,7 @@ BA decisions already confirmed:
 - Board drag/drop, WIP enforcement and board transition rules are not Phase 3.1.
 - Release Management is Project-level and will be handled after Team Status.
 - Milestones are a type beside Iterations/Releases/Milestones under Timeboxes.
-- Quality/Defect is Phase 3 scope as a dedicated `Quality > Defect` dashboard entry; detailed workflow actions are deferred.
+- Quality/Defect is Phase 3 scope as a dedicated `Quality > Defect` dashboard entry with create/edit and shared Defect detail.
 - Timeline file should be updated only after Phase 3 mockup/docs are aligned across approved slices.
 
 ## 2. P3.1 Team Status Approved Scope
@@ -128,9 +128,9 @@ Team Status approved behavior:
 | Slice | Status | Next action |
 |---|---|---|
 | P3.1 Team Status | Approved for SRS/dev handoff | Keep only bugfix corrections if BA finds an issue |
-| P3.2 Release Management | Timeboxes dashboard approved; readiness rule confirmed | Confirm assignment surface if needed |
-| P3.3 Milestones | Core mockup/docs ready; artifact behavior deferred | Handoff core milestone scope |
-| P3.4 Quality/Defect | Dashboard mockup/docs ready; workflow actions deferred | Handoff dashboard scope |
+| P3.2 Release Management | Timeboxes dashboard approved; readiness and assignment rules confirmed | Handoff release scope |
+| P3.3 Milestones | Mockup/docs ready including artifact-as-work-item behavior | Handoff milestone scope |
+| P3.4 Quality/Defect | Mockup/docs ready | Handoff Quality/Defect scope |
 
 ## 6A. P3.2 Release Management Approved Mockup Scope
 
@@ -161,7 +161,7 @@ Team Status approved behavior:
 - [ ] Release detail shows Theme, Notes and required right-panel fields.
 - [ ] Release readiness rule does not require system-calculated readiness in P3.2.
 
-## 6B. P3.3 Milestones Core Ready Mockup Scope
+## 6B. P3.3 Milestones Ready Mockup Scope
 
 - Milestone is managed under `Plan > Timeboxes > Milestones`.
 - Milestone can span multiple Projects.
@@ -169,11 +169,11 @@ Team Status approved behavior:
 - Milestone status options are exactly `Planned`, `At Risk`, `Met`, `Missed`, `Cancelled`, `Completed`.
 - Milestone detail has a Details tab and an Artifacts tab beside it in the top detail navigation.
 - Details tab uses Description and Notes on the left.
-- Artifacts tab is reserved in the mockup and hides the right metadata panel.
+- Artifacts tab hides the right metadata panel.
 - Milestone detail right panel includes compact selected-count controls for Projects, Teams and Releases, plus Owner, Target Start Date, Target End Date and State.
 - Project, Team and Release count controls open searchable selection modals showing currently selected items.
 - Milestone can link to multiple Releases.
-- Milestone artifact behavior is deferred and is not part of the current dev-ready core scope.
+- Milestone Artifacts are assigned US/DE Story/Defect work items and use the Backlog dashboard presentation.
 - Milestone does not include a readiness checklist in P3.3.
 - Milestone dashboard shows only Name, Target Start Date, Target End Date and Status.
 - Target Start Date is read-only and derived from the earliest linked Release Start Date.
@@ -186,7 +186,8 @@ Team Status approved behavior:
 - [ ] Milestone can persist multiple Team IDs/names.
 - [ ] Milestone can persist multiple linked Release IDs.
 - [ ] Milestone detail can open searchable Project, Team and Release selection modals from count summaries.
-- [ ] Milestone Artifacts tab hides the right metadata panel.
+- [x] Milestone Artifacts tab hides the right metadata panel.
+- [x] Milestone Artifacts are defined as assigned Story/Defect work items.
 - [ ] Target Start Date recalculates when linked Releases change.
 - [ ] Target End Date recalculates when linked Releases change.
 - [ ] Target dates cannot be manually edited.
@@ -196,12 +197,13 @@ Team Status approved behavior:
 - [ ] Viewer cannot edit via UI.
 - [ ] Viewer cannot mutate via direct API call.
 
-### P3.3 Deferred Follow-Up
+### P3.3 Development Must Verify - Artifacts
 
-- [ ] Confirm artifact columns, allowed artifact types, linking rules and permissions.
-- [ ] Add dev-ready artifact persistence requirements after BA confirmation.
+- [ ] Milestone Artifacts query returns assigned Story/Defect work items.
+- [ ] Milestone Artifacts dashboard reuses Backlog-style row presentation.
+- [ ] Milestone artifact assignment is independent from Release assignment.
 
-## 6C. P3.4 Quality / Defect Dashboard Ready Scope
+## 6C. P3.4 Quality / Defect Ready Scope
 
 - Quality has a dedicated top navigation entry.
 - Defect dashboard opens from `Quality > Defect`.
@@ -213,15 +215,27 @@ Team Status approved behavior:
 - Defect State options: Submitted, Open, Fixed, Closed, Closed Declined.
 - Defect Flow State options: Idea, Defined, In-Progress, Completed, Accepted, Released.
 - Current mockup supports search, filter placeholder, row selection, bulk-action placeholder, sortable/resizable columns, pagination and detail panel.
-- Detailed Phase 3.4 workflow actions are deferred.
+- Defect can be created from Backlog and `Quality > Defect`.
+- User Story is optional for Defect.
+- Defect dashboard supports inline edit across editable fields.
+- Backlog Defect and Quality Defect use the same detail page.
+- Defect cannot be deleted; use Closed or Closed Declined.
+- Defect State transitions follow Submitted -> Open -> Fixed -> Closed, with Submitted/Open -> Closed Declined.
+- Defect Flow State updates independently from State.
+- Fixed In Build is an optional manual text field for the build/version/release label where the fix is expected or delivered.
 
-### P3.4 Deferred Follow-Up
+### P3.4 Development Must Verify
 
-- [x] Confirm current P3.4 handoff covers Defect dashboard only.
+- [x] Confirm current P3.4 handoff covers Defect dashboard, create/edit, shared detail and core workflow.
 - [x] Confirm defect state and flow state option sets.
 - [x] Confirm required dashboard columns.
+- [x] Confirm defect creation from Backlog and Quality > Defect.
+- [x] Confirm User Story is optional.
+- [x] Confirm shared Defect detail page.
+- [x] Confirm no delete behavior.
+- [x] Confirm Flow State is independent from State.
+- [x] Confirm Fixed In Build input rule: optional manual text field.
 - [ ] Confirm bulk actions in a later follow-up.
-- [ ] Confirm whether defect creation stays inline, modal-only, or both in a later follow-up.
 
 ## 7. Deferred Scope
 

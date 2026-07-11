@@ -5,12 +5,12 @@
 | Attribute | Value |
 |---|---|
 | Module ID | `P3-MILESTONES` |
-| Status | Core Ready / Artifact behavior deferred |
+| Status | Ready for Development |
 | Updated date | 2026-07-11 |
 | Scope | Plan > Timeboxes > Milestones |
 | Priority | Phase 3 candidate |
 | Depends on | Phase 2.2 Timeboxes/Iterations, Phase 3.2 Release Management |
-| Not included | Team Board, advanced portfolio roadmap, final Milestone artifact behavior |
+| Not included | Team Board, advanced portfolio roadmap, readiness checklist |
 
 ## 1. Goal
 
@@ -23,7 +23,8 @@ User opens Plan > Timeboxes
 -> User switches Type to Milestones
 -> User creates or opens a Milestone
 -> User links it to one or more Projects, Teams and Releases
--> Artifact behavior is deferred for follow-up confirmation
+-> User assigns Story/Defect work items to the Milestone
+-> Milestone Artifacts dashboard shows assigned Story/Defect items
 -> System derives target start/end dates from linked Releases
 -> Team reviews name, target dates, status and detail metadata
 ```
@@ -45,11 +46,13 @@ User opens Plan > Timeboxes
 | P3-MS-FR-011 | Target Start Date is derived from the earliest Start Date among linked Releases. |
 | P3-MS-FR-012 | Target End Date is derived from the latest Release Date among linked Releases. |
 | P3-MS-FR-013 | Target Start Date and Target End Date are read-only derived fields for Milestones. |
-| P3-MS-FR-014 | Milestone artifact behavior is deferred and is not part of the current dev-ready core SRS. |
+| P3-MS-FR-014 | Milestone Artifacts are Story/Defect work items assigned to the Milestone. |
 | P3-MS-FR-015 | Milestone does not include a readiness checklist in Phase 3.3. |
 | P3-MS-FR-016 | Milestone detail shows Projects, Teams and Releases as selected-count summary controls in the right metadata panel. |
 | P3-MS-FR-017 | Clicking a Projects, Teams or Releases summary opens a selection modal with search and checkbox selection. |
-| P3-MS-FR-018 | Mockup reserves a dedicated Artifacts tab beside Details; the right metadata panel is hidden while Artifacts is active. Final artifact behavior is deferred. |
+| P3-MS-FR-018 | Milestone detail has a dedicated Artifacts tab beside Details; the right metadata panel is hidden while Artifacts is active. |
+| P3-MS-FR-019 | Milestone Artifacts dashboard uses the same presentation pattern as Backlog for assigned Story/Defect items. |
+| P3-MS-FR-020 | Milestone Artifacts dashboard supports search, sort, resizable columns, pagination and inline edit where fields are editable. |
 
 ## 4. Data Source Rules
 
@@ -60,13 +63,60 @@ User opens Plan > Timeboxes
 - Target End Date equals the latest `releaseDate` among linked Releases.
 - If the linked Release list changes, target dates must be recalculated immediately.
 - Target dates are not manually editable for Milestones.
-- Milestone artifact data model, allowed artifact types, linking behavior and permissions are deferred for follow-up confirmation.
+- Milestone Artifacts are assigned Story/Defect work items, not uploaded files or external links in Phase 3.3.
+- Milestone Artifact row data should reuse the Backlog work item list DTO where possible.
+- A Story/Defect can be assigned to Milestone independently from Release assignment.
 - Projects, Teams and Releases are shown as compact selected-count summaries in the right metadata panel.
 - User can click each summary to open a searchable modal and review/edit the selected items.
-- Mockup shows an Artifacts tab beside Details with no right metadata panel, but artifact requirements are not final.
+- Mockup shows an Artifacts tab beside Details with no right metadata panel.
 - Milestone does not include readiness checklist behavior in Phase 3.3.
 
-## 5. Deferred Follow-Up Confirmations
+## 5. API Contracts
+
+### 5.1 List Milestone Artifacts
+
+```http
+GET /api/milestones/{milestoneId}/artifacts?search={search}&page={page}&pageSize={pageSize}&sort={field}:{direction}
+```
+
+Response:
+
+```ts
+type MilestoneArtifactListResponse = {
+  items: BacklogWorkItemListItemDto[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+```
+
+Rules:
+
+- Artifact rows reuse the Backlog work item list DTO where possible.
+- Valid artifact item types are Story and Defect.
+- The response is filtered to work items assigned to the Milestone.
+- Artifact dashboard inline edit must follow the same editability rules as Backlog.
+
+### 5.2 Assign Milestone Artifacts
+
+```http
+PUT /api/milestones/{milestoneId}/artifacts
+Content-Type: application/json
+
+{
+  "workItemIds": ["US-4821", "DE-1142"]
+}
+```
+
+Rules:
+
+- The payload replaces the Milestone artifact assignment list.
+- Each work item must be accessible to the current user.
+- Each work item must belong to an allowed Project/Team scope for the Milestone.
+- Milestone artifact assignment is independent from Release assignment.
+- Viewer mutation must return 403.
+
+## 6. BA Confirmations
 
 | ID | Question | Current note |
 |---|---|---|
@@ -76,9 +126,10 @@ User opens Plan > Timeboxes
 | P3-MS-Q04 | Does Milestone need readiness checklist? | Confirmed: no readiness checklist |
 | P3-MS-Q05 | Final status options? | Confirmed: Planned, At Risk, Met, Missed, Cancelled, Completed |
 | P3-MS-Q06 | Can Milestone span multiple Projects and Teams? | Confirmed: multiple Projects and multiple Teams |
-| P3-MS-Q07 | What exact artifact behavior does Milestone need? | Deferred follow-up; not blocking Milestone core handoff |
+| P3-MS-Q07 | What exact artifact behavior does Milestone need? | Confirmed: assigned US/DE Story/Defect work items, shown like Backlog |
+| P3-MS-Q08 | Does Milestone need artifact upload/link objects? | Confirmed: no, Phase 3.3 artifacts are assigned work items |
 
-## 6. Acceptance Criteria
+## 7. Acceptance Criteria
 
 1. Milestones are visible as Phase 3 scope.
 2. Milestone list/create/detail are available in mockup.
@@ -87,5 +138,7 @@ User opens Plan > Timeboxes
 5. Target Start Date is calculated from the earliest linked Release start date.
 6. Target End Date is calculated from the latest linked Release end/release date.
 7. Milestone supports multiple Projects and multiple Teams.
-8. Milestone artifact behavior is excluded from dev-ready acceptance criteria until BA confirmation.
+8. Milestone Artifacts tab lists assigned Story/Defect work items using Backlog-style dashboard presentation.
 9. Milestone dashboard remains limited to Name, Target Start Date, Target End Date and Status.
+10. Milestone does not include artifact upload/link objects in Phase 3.3.
+11. Milestone does not include a readiness checklist.
