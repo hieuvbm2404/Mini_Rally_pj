@@ -5,13 +5,13 @@
 | Attribute | Value |
 |---|---|
 | Phase | Phase 3 - Team Status, Release Management, Milestones, Quality/Defect |
-| Current delivery slice | P3.2 - Release Management documentation alignment |
+| Current delivery slice | Phase 3 core documentation handoff |
 | Company scope | Single-company: `ACME Space Inc.` |
-| Overall status | `P3.1 READY; P3.2 RELEASE DOCS UPDATED WITH OPEN BA CONFIRMATIONS` |
+| Overall status | `P3.1 READY; P3.2 READY; P3.3 CORE READY; P3.4 DASHBOARD READY` |
 | P3.1 Mockup | Approved |
 | P3.1 SRS | Ready for Development |
 | Production implementation | Not started |
-| Last updated | 2026-07-08 |
+| Last updated | 2026-07-11 |
 
 BA decisions:
 
@@ -19,9 +19,11 @@ BA decisions:
 - Team Board moves to Phase 4.
 - Team Board menu can remain visible in the mockup for now, but it is not part of P3.1.
 - P3.2 Release Management Timeboxes dashboard behavior is documented: inline edit, resizable columns and locked create modal type.
-- P3.2 still requires final BA confirmations for deeper business rules before it is marked fully Ready for Development.
-- P3.3 Milestones remains pending later documentation/review.
-- P3.4 Quality/Defect requires separate mockup approval before its SRS/checklist is finalized.
+- P3.2 Release readiness is user-managed from linked US/DE release notes; no system readiness calculation is required in P3.2.
+- P3.3 Milestones can span multiple projects, multiple teams and multiple releases; readiness checklist is not required.
+- P3.3 Milestone dashboard shows only Name, Target Start Date, Target End Date and Status.
+- P3.3 Milestone detail now uses compact input-like count controls for Projects/Teams/Releases with searchable selection modals. A dedicated Artifacts tab is reserved in the mockup, but artifact behavior is deferred and not blocking core handoff.
+- P3.4 Quality/Defect has a dedicated `Quality > Defect` dashboard. Dashboard columns and field option sets are confirmed; detailed workflow actions are deferred.
 - Timeline file should be updated only after Phase 3 documentation and mockup are aligned across approved slices.
 
 ## 2. Status Legend
@@ -30,6 +32,8 @@ BA decisions:
 |---|---|
 | `NOT STARTED` | Production code not started |
 | `READY` | BA/mockup/SRS are ready for development |
+| `CORE READY` | Core scope is ready; explicitly deferred sub-scope remains outside handoff |
+| `DASHBOARD READY` | Dashboard scope is ready; workflow actions are deferred |
 | `IN PROGRESS` | Development in progress |
 | `BLOCKED` | Cannot continue without dependency/decision |
 | `IN REVIEW` | Code complete, under review/test |
@@ -42,9 +46,9 @@ BA decisions:
 | Group | Total tasks | Ready | Done | In Progress | Blocked | Not Started | Status |
 |---|---:|---:|---:|---:|---:|---:|---|
 | Team Status P3.1 | 12 | 12 | 0 | 0 | 0 | 12 | `READY` |
-| Release Management P3.2 | 12 | 7 | 0 | 0 | 0 | 12 | `BUSINESS CONFIRMATIONS OPEN` |
-| Milestones P3.3 | 7 | 0 | 0 | 0 | 0 | 7 | `PENDING MOCKUP` |
-| Quality/Defect P3.4 | TBD | 0 | 0 | 0 | 0 | TBD | `PENDING MOCKUP` |
+| Release Management P3.2 | 12 | 12 | 0 | 0 | 0 | 12 | `READY` |
+| Milestones P3.3 | 10 | 9 | 0 | 0 | 0 | 10 | `CORE READY` |
+| Quality/Defect P3.4 | 8 | 6 | 0 | 0 | 0 | 8 | `DASHBOARD READY` |
 
 ## 4. Development Task Plan - P3.1 Team Status
 
@@ -122,19 +126,59 @@ P3.2 Timeboxes dashboard mockup is approved. Current confirmed direction:
 | P3-REL-09 | Security | Permission guards | Viewer read-only and API 403 | P3-REL-01 | TBD | 0h | `NOT STARTED` |
 | P3-REL-10 | Verification | Release dashboard tests | Inline edit/resize/type lock/state enum | P3-REL-01..09 | TBD | 0h | `NOT STARTED` |
 | P3-REL-11 | Verification | Release detail tests | Detail fields and permissions | P3-REL-08 | TBD | 0h | `NOT STARTED` |
-| P3-REL-12 | BA | Close open business rule | Release readiness rule | BA | TBD | 0h | `BLOCKED` |
+| P3-REL-12 | BA | Document readiness rule | User gathers readiness from linked US/DE release notes | BA | TBD | 0h | `READY` |
 
 ## 8. Development Task Plan - P3.3 Milestones
 
-P3.3 is pending later mockup/docs review. Current remembered direction:
+P3.3 core scope is ready for handoff. Current confirmed direction:
 
 - Milestones live as a type beside Iterations/Releases/Milestones under Timeboxes.
+- Milestones can span multiple Projects and multiple Teams.
+- Milestones can link multiple Releases.
+- Target Start Date is derived from the earliest linked Release start date.
+- Target End Date is derived from the latest linked Release end/release date.
+- Milestone artifact behavior is deferred and excluded from dev-ready core scope for now.
+- Milestones do not include a readiness checklist.
+- Milestone dashboard shows only Name, Target Start Date, Target End Date and Status.
+- Milestone detail right panel keeps Projects/Teams/Releases compact as selected-count summaries; each opens a searchable selection modal.
+- A dedicated Artifacts tab is reserved beside Details; artifact columns/types/linking behavior are deferred follow-up.
 
-Detailed task plan will be refreshed only after Milestones mockup/docs are explicitly approved.
+| ID | Module | Development task | Deliverable | Dependency | Estimate | Actual | Status |
+|---|---|---|---|---|---:|---:|---|
+| P3-MS-01 | Contract | Define Milestone DTO/OpenAPI | List/create/detail/update contracts with project/team/release relations | P2 Timeboxes, P3.2 Releases | TBD | 0h | `READY` |
+| P3-MS-02 | Backend | Implement Milestone model | Multi-project, multi-team, multi-release fields | P3-MS-01 | TBD | 0h | `READY` |
+| P3-MS-03 | Backend | Milestone list query | Timeboxes Milestone dashboard with Name/Target dates/Status | P3-MS-02 | TBD | 0h | `READY` |
+| P3-MS-04 | Backend | Derived target dates | Earliest linked Release start and latest linked Release end | P3-MS-02 | TBD | 0h | `READY` |
+| P3-MS-05 | Backend | Milestone update API | Name, status, project/team/release relations and derived date recalculation | P3-MS-02 | TBD | 0h | `READY` |
+| P3-MS-06 | Frontend | Milestone dashboard | Four-column Timeboxes table with resize support | P3-MS-03 | TBD | 0h | `READY` |
+| P3-MS-07 | Frontend | Milestone detail | Details tab plus right metadata panel | P3-MS-05 | TBD | 0h | `READY` |
+| P3-MS-08 | Frontend | Relation selection modals | Searchable Projects/Teams/Releases selection from compact count controls | P3-MS-05 | TBD | 0h | `READY` |
+| P3-MS-09 | Security | Permission guards | Viewer read-only and mutation 403 | P3-MS-01 | TBD | 0h | `READY` |
+| P3-MS-10 | Deferred | Artifact behavior | Artifact columns/types/linking/permissions to be defined later | BA confirmation | TBD | 0h | `DEFERRED` |
 
 ## 9. Development Task Plan - P3.4 Quality/Defect
 
-P3.4 is pending mockup review. Quality/Defect remains Phase 3 scope, but no dev-ready SRS is finalized yet.
+P3.4 has a dedicated `Quality > Defect` dashboard entry in the mockup. Confirmed dashboard columns: Rank, ID, Name, User Story, Severity, Priority, State, Flow State, Fixed In Build, Iteration, Submitted By and Owner.
+
+Confirmed defect option sets:
+
+- Severity: None, Critical, Major Problem, Minor Problem, Trivial.
+- Priority: None, Urgent, High, Normal, Low.
+- State: Submitted, Open, Fixed, Closed, Closed Declined.
+- Flow State: Idea, Defined, In-Progress, Completed, Accepted, Released.
+
+Detailed defect workflow actions are deferred. The Phase 3.4 dashboard scope is ready for handoff.
+
+| ID | Module | Development task | Deliverable | Dependency | Estimate | Actual | Status |
+|---|---|---|---|---|---:|---:|---|
+| P3-QA-01 | Contract | Define Defect dashboard DTO/OpenAPI | Same Defect work items as Backlog with Quality dashboard fields | Phase 2 Backlog | TBD | 0h | `READY` |
+| P3-QA-02 | Backend | Defect dashboard query | Search/sort/page data for confirmed columns | P3-QA-01 | TBD | 0h | `READY` |
+| P3-QA-03 | Backend | Defect field option sets | Severity, Priority, State and Flow State enums | P3-QA-01 | TBD | 0h | `READY` |
+| P3-QA-04 | Frontend | Quality > Defect route | Dedicated dashboard entry under Quality menu | App navigation | TBD | 0h | `READY` |
+| P3-QA-05 | Frontend | Defect dashboard table | Backlog-style table with confirmed columns, resize/sort/page/search | P3-QA-02 | TBD | 0h | `READY` |
+| P3-QA-06 | Frontend | Inline field controls | Severity/Priority/State/Flow State dropdowns and Owner edit | P3-QA-03 | TBD | 0h | `READY` |
+| P3-QA-07 | Security/Verification | Defect permissions and tests | Viewer read-only, mutation 403, dashboard smoke tests | P3-QA-01..06 | TBD | 0h | `READY` |
+| P3-QA-08 | Deferred | Workflow actions | Transition rules, bulk actions and create/edit flow | BA confirmation | TBD | 0h | `DEFERRED` |
 
 ## 10. Deferred Items And Scope Boundaries
 
@@ -145,16 +189,14 @@ P3.4 is pending mockup review. Quality/Defect remains Phase 3 scope, but no dev-
 | WIP limits | `DEFERRED` | Phase 4 |
 | Saved Team Status views | `DEFERRED` | Future |
 | Advanced charts/reports | `DEFERRED` | Reports phase |
+| Milestone artifact behavior | `DEFERRED` | Follow-up after BA confirmation |
+| Defect workflow actions | `DEFERRED` | Follow-up after BA confirmation |
 
-## 11. Open BA Confirmations
+## 11. Deferred Follow-Ups
 
-No open BA confirmation remains for P3.1 Team Status.
+No open BA confirmation blocks Phase 3 core handoff.
 
-Open confirmations for later Phase 3 slices:
+Deferred follow-ups:
 
-- P3.2 Release readiness rule.
-- P3.3 final Milestone status enum.
-- P3.3 Milestone relationship to Release.
-- P3.3 Owner field requirement.
-- P3.3 dedicated Milestone columns.
-- P3.4 Quality/Defect screen scope and workflow.
+- P3.3 artifact behavior confirmation: columns, allowed artifact types, linking rules and permissions.
+- P3.4 Quality/Defect detailed workflow: transitions between confirmed states, bulk actions and create/edit flow.

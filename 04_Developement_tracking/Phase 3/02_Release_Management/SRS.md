@@ -5,8 +5,8 @@
 | Attribute | Value |
 |---|---|
 | Module ID | `P3-RELEASE-MANAGEMENT` |
-| Status | Mockup Approved / Business Rules Partially Pending |
-| Updated date | 2026-07-08 |
+| Status | Ready for Development |
+| Updated date | 2026-07-11 |
 | Scope | `Plan > Timeboxes > Releases` and Release detail direction |
 | Priority | P3.2 - required |
 | Depends on | Phase 1 Work Item base, Phase 2.1 Backlog Enhancement, Phase 2.2 Timeboxes/Iterations, Phase 2.3 Iteration Status |
@@ -276,13 +276,11 @@ type ReleaseDetailDto = ReleaseListItemDto & {
 | P3-REL-TS-009 | Viewer calls PATCH API | API returns 403 |
 | P3-REL-TS-010 | Open Release detail | Theme/Notes and right-panel fields are shown |
 
-## 11. Open BA Confirmations
-
-These require BA confirmation before marking P3.2 fully Ready for Development:
+## 11. BA Confirmations
 
 | ID | Question | Current recommendation |
 |---|---|---|
-| P3-REL-Q01 | What is the final Release readiness rule? | BA will confirm later |
+| P3-REL-Q01 | What is the final Release readiness rule? | Confirmed: user manually gathers readiness information from linked US/DE release notes. |
 | P3-REL-Q02 | Is Release assignment managed from Backlog/Work Item Detail only, or also from Release detail? | Recommended: both eventually; MVP can use Backlog/Detail assignment first |
 
 ## 12. Ready Checklist
@@ -297,4 +295,4 @@ These require BA confirmation before marking P3.2 fully Ready for Development:
 - [x] Version is optional.
 - [x] Plan Estimate is manual input.
 - [x] Accepted releases remain editable for authorized users.
-- [ ] Release readiness rule confirmed.
+- [x] Release readiness rule confirmed.
