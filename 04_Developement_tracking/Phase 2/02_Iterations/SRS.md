@@ -20,7 +20,7 @@ The BA decision is:
 
 - Use the Rally-compatible label `Timeboxes` in navigation.
 - Inside Timeboxes, focus P2.2 only on `Iterations`.
-- `Releases` and `Milestones` may appear as future type placeholders in mockup, but are not part of P2.2 development.
+- `Releases` and `Milestones` are hidden in Phase 2 UI and return in Phase 3.
 - Release Management and Milestones move to Phase 3.
 
 The purpose of this slice is to let a user list, search, sort, create and open Iteration details with the same full-page detail pattern already used by Backlog Work Item Detail.
@@ -100,8 +100,9 @@ Nghiệp vụ chính:
 | P2-IT-FR-001B | Iterations list only shows Iterations belonging to the selected Project/Team context. |
 | P2-IT-FR-001C | Create Iteration auto-fills Project and Team from current context. |
 | P2-IT-FR-001D | Workspace Admin may override Project/Team in create/detail, but selected Team must be valid for selected Project. |
+| P2-IT-FR-001E | `All Teams` is allowed as a Phase 2 context; permission-specific create/edit restrictions are deferred. |
 | P2-IT-FR-002 | Timeboxes page defaults to type `Iterations`. |
-| P2-IT-FR-003 | Type dropdown may show `Iterations`, `Releases`, `Milestones`, but production P2.2 only implements Iterations. |
+| P2-IT-FR-003 | Type dropdown is hidden in Phase 2; Timeboxes shows Iterations only. |
 | P2-IT-FR-004 | Releases and Milestones are explicitly out of scope for P2.2 and must not block Iteration delivery. |
 | P2-IT-FR-005 | Iterations list displays columns: Name, Theme, Start Date, End Date, Project, Planned Velocity, Task Estimate, State. |
 | P2-IT-FR-006 | User can search iterations by Name, Theme, Project or State. |
@@ -111,7 +112,7 @@ Nghiệp vụ chính:
 | P2-IT-FR-010 | User with manage iteration permission can open quick create modal with `Create Iteration`. |
 | P2-IT-FR-011 | Quick create modal contains Type, Project, Team, Name, Start Date, End Date, State. |
 | P2-IT-FR-012 | Quick create modal required fields: Name, Start Date, End Date, State. |
-| P2-IT-FR-013 | Quick create `Create Timebox` creates an Iteration without opening detail after successful save. |
+| P2-IT-FR-013 | Quick create `Create Iteration` creates an Iteration without opening detail after successful save. |
 | P2-IT-FR-014 | Quick create `Create with details` opens a full-page Iteration detail view. |
 | P2-IT-FR-015 | Clicking an existing Iteration row opens the same full-page Iteration detail view. |
 | P2-IT-FR-016 | Iteration detail header shows back button, type badge, iteration key/id and iteration name. |
@@ -136,17 +137,17 @@ Nghiệp vụ chính:
 |---|---|---|
 | Navigation | `Plan > Timeboxes` | Opens Iteration Management |
 | Page title | `Timeboxes` | No subtitle under title |
-| Type dropdown | Iterations/Releases/Milestones | P2.2 supports Iterations; other types are disabled/placeholder or routed later |
+| Type dropdown | Hidden in Phase 2 | P2.2 supports Iterations only; Release/Milestone options return in Phase 3 |
 | Search | `Search iterations...` | Search by name/theme/project/state |
 | State filter | Show filter banner | Filter by Iteration state |
 | List | `IterationsPage` table | Dense list, 11px typography, sortable headers |
 | Create button | `Create Iteration` | Opens quick create modal |
-| Quick create modal | `New Timebox` | Type/Project/Team/Name/Start Date/End Date/State |
+| Quick create modal | `New Iteration` | Project/Team/Name/Start Date/End Date/State |
 | Create with details | Modal secondary action | Opens full-page detail, not modal detail |
 | Row click | Any iteration row | Opens full-page detail |
 | Detail left | Theme, Notes editors | Editable rich-text/text fields |
 | Detail right | Project/Team/date/state/velocity | Editable fields with validation |
-| Detail header | Type badge, ID, name | No `Create Timebox` button in header |
+| Detail header | Type badge, ID, name | No create button in header |
 | Assigned work items | Iteration detail follow-up panel/section if implemented | Review/search existing Backlog Story/Defect assigned by `iterationId` |
 
 ## 7. Data Model And Field Mapping
@@ -434,7 +435,7 @@ Role guidance:
 14. `Create with details` opens full-page detail, not a modal detail.
 15. Clicking an existing row opens full-page detail.
 16. Detail header has back button, type badge, id/key and name.
-17. Detail header does not show `Create Timebox`.
+17. Detail header does not show a create button.
 18. Detail has left editors Theme and Notes.
 19. Detail right panel has Project, Team, Start Date, End Date, State and Planned Velocity.
 20. Project/Team context is not duplicated in the top context bar while user is in Timeboxes detail.
@@ -454,7 +455,7 @@ Role guidance:
 | P2-IT-TS-002 | Search `authentication` | Sprint 24.3 or matching rows are shown |
 | P2-IT-TS-003 | Filter State = Planning | Only Planning iterations show |
 | P2-IT-TS-004 | Sort Start Date descending | Newest iteration appears first |
-| P2-IT-TS-005 | Click Create Iteration | New Timebox modal opens |
+| P2-IT-TS-005 | Click Create Iteration | New Iteration modal opens |
 | P2-IT-TS-006 | Submit quick create with missing Start Date | Inline validation blocks submit |
 | P2-IT-TS-007 | Click Create with details | Full-page detail opens |
 | P2-IT-TS-008 | Click existing Sprint 24.3 row | Full-page detail opens with Sprint 24.3 values |
@@ -465,7 +466,7 @@ Role guidance:
 | P2-IT-TS-013 | Switch workspace selector to another Team | Iterations list reloads and only shows Iterations for that Team/Project |
 | P2-IT-TS-014 | Create Iteration after selecting Core Platform team | Project and Team fields default to Nexus Platform 2025 / Core Platform |
 | P2-IT-TS-015 | Workspace Admin selects Team outside selected Project | Validation rejects invalid Project/Team pair |
-| P2-IT-TS-016 | Switch Type to Releases/Milestones in P2.2 production | Not implemented/disabled/placeholder; no P2.2 dev scope |
+| P2-IT-TS-016 | Inspect Timeboxes type options in P2.2 production | Release/Milestone options are not visible; no P2.2 dev scope |
 | P2-IT-TS-017 | Assign existing Story from same Project/Team to Sprint 24.3 | Story is assigned and appears in Iteration Status |
 | P2-IT-TS-018 | Assign item from another Team | Validation rejects assignment |
 | P2-IT-TS-019 | Unassign an item from Sprint 24.3 | Item leaves Iteration Status but remains in Backlog |

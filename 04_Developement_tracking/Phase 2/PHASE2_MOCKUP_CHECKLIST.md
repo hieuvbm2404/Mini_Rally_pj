@@ -20,6 +20,13 @@ BA decision 2026-06-28:
 - Create Work Item and Create Iteration auto-fill Project/Team from the selected context.
 - Current mock account is Workspace Admin, so admin may switch Project/Team in create/edit forms where enabled; final Project/Team must still be a valid pair.
 
+BA decision 2026-07-06:
+
+- `All Teams` is allowed as a valid Phase 2 context for Backlog, Timeboxes/Iterations and Iteration Status.
+- Permission-specific restrictions for create/edit under `All Teams` are deferred to the permissions phase.
+- Phase 2 UI hides Release and Milestone type options; those return in Phase 3.
+- Backlog and Iteration Status move controls call the real rank/LexoRank behavior, not visual-only mock movement.
+
 ## 1A. Global Project/Team Context Rules
 
 | Rule | Requirement |
@@ -63,7 +70,7 @@ Backlog Phase 2.1 inherits Phase 1 Backlog and adds:
 | Inline edit | Iteration | Done | `BacklogPage.tsx` | Select Timeboxes Iteration or Unscheduled |
 | Detail panel | Iteration field | Done | `WorkItemDetailPage.tsx` | Right panel uses same assignment options |
 | Bulk action | Assign selected rows to release | Done | `BacklogPage.tsx` | Local mock |
-| Backlog reorder | Move up/down rank controls | Done | `BacklogPage.tsx` | Production should use rank/LexoRank |
+| Backlog reorder | Move up/down rank controls | Done | `BacklogPage.tsx` | Calls production rank/LexoRank behavior |
 | Pagination | 10/25/50/100 | Done | `BacklogPage.tsx` | Inherits Phase 1 |
 | Column resize | Resizable columns | Done | `BacklogPage.tsx` | Inherits Phase 1 |
 | Create Work Item | Story/Defect only | Done | `BacklogPage.tsx` | Inherits Phase 1 decision |
@@ -76,7 +83,7 @@ P2.2 focuses on Iterations inside `Plan > Timeboxes`.
 Included:
 
 - Navigation label `Timeboxes`.
-- Type dropdown with `Iterations / Releases / Milestones`, but production P2.2 implements only Iterations.
+- Phase 2 shows Iterations only; Release and Milestone type options are hidden until Phase 3.
 - Iterations list view.
 - Search, state filter, sortable columns.
 - Quick create modal.
@@ -100,12 +107,12 @@ Not included:
 |---|---|---:|---|---|
 | Navigation | `Plan > Timeboxes` | Done | `layout.tsx` | Plan submenu label is Timeboxes |
 | Page title | Timeboxes | Done | `IterationsPage.tsx` | Subtitle removed |
-| Type dropdown | Iterations/Releases/Milestones | Done | `IterationsPage.tsx` | Iterations is P2.2 scope; others Phase 3 |
+| Type dropdown | Hidden in Phase 2 | Done | `IterationsPage.tsx` | Iterations is P2.2 scope; Releases/Milestones return in Phase 3 |
 | Iterations list | Name, Theme, Start Date, End Date, Project, Planned Velocity, Task Estimate, State | Done | `IterationsPage.tsx` | Rally-like list style |
 | Search | Search iterations | Done | `IterationsPage.tsx` | Searches name/theme/project/state |
 | Filter | State filter | Done | `IterationsPage.tsx` | All/Planning/Committed/Accepted |
 | Sort | Header sort icons | Done | `IterationsPage.tsx` | Text/date/number/state sorting |
-| Quick create | New Timebox modal | Done | `IterationsPage.tsx` | Type, Project, Team, Name, Start Date, End Date, State |
+| Quick create | New Iteration modal | Done | `IterationsPage.tsx` | Project, Team, Name, Start Date, End Date, State |
 | Context default | Project/Team auto-fill from workspace selector | Business rule | `layout.tsx`, `IterationsPage.tsx` | Admin can override with valid Project/Team pair |
 | Required fields | Name, Start Date, End Date, State | Done | `IterationsPage.tsx` | Visual required markers in mock |
 | Create with details | Opens full-page detail | Done | `IterationsPage.tsx` | Not modal detail |
@@ -202,7 +209,7 @@ The current Team Board mockup direction is preserved under Phase 3 documentation
 | P2-BL-DC-001 | Backlog Phase 2.1 still shows only Story and Defect | Decided |
 | P2-BL-DC-002 | Iteration assignment is in Backlog Phase 2.1 as a Work Item field, but Sprint Planning/metrics are not | Decided |
 | P2-BL-DC-003 | Inline edit is allowed for selected Backlog fields | Decided |
-| P2-BL-DC-004 | Production reorder uses rank/LexoRank; mockup uses move controls | Decided |
+| P2-BL-DC-004 | Move controls call production rank/LexoRank reorder behavior | Decided |
 | P2-BL-DC-005 | Quick search stays outside Manage Filters | Decided |
 | P2-BL-DC-006 | Manage Filters supports multi-column filter selection | Decided |
 | P2-BL-DC-007 | Backlog header/list typography uses 11px | Decided |

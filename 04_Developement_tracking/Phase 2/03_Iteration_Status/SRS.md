@@ -100,6 +100,7 @@ Nghiệp vụ chính:
 | P2-IS-FR-006 | Iteration selector combines Iteration name and date range in one control. |
 | P2-IS-FR-007 | Iteration selector reads its options from `Plan > Timeboxes` Iteration records. |
 | P2-IS-FR-007A | Iteration selector options are filtered by the current workspace selector Project/Team context. |
+| P2-IS-FR-007B | `All Teams` is allowed as a Phase 2 context; permission-specific create/edit restrictions are deferred. |
 | P2-IS-FR-008 | User can move to previous/next Iteration with arrow controls. |
 | P2-IS-FR-009 | User can open the selector dropdown and choose another Iteration. |
 | P2-IS-FR-010 | Changing Iteration refreshes metrics and the work item list for the selected Iteration. |
@@ -148,6 +149,7 @@ Nghiệp vụ chính:
 | P2-IS-FR-048 | `Create Item` creates the new work item in the selected Iteration and returns to the Iteration Status list. |
 | P2-IS-FR-049 | `Create with details` creates or initializes a draft work item and opens the full Work Item Detail page, same pattern as Backlog create-with-details. |
 | P2-IS-FR-050 | List pagination follows Backlog pagination behavior. |
+| P2-IS-FR-051 | If rank controls are enabled, move up/down calls the production rank/LexoRank behavior and refreshes the Iteration Status list. |
 
 ## 6. Screen Mapping With Mockup
 

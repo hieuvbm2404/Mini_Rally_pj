@@ -9,15 +9,21 @@
 | Suggested timebox | 37.0 hours |
 | Company scope | Single-company: `ACME Space Inc.` |
 | Modules in Phase 2 | Backlog Enhancement, Iteration Management, Iteration Status |
-| Overall status | `READY FOR DEVELOPMENT PLANNING` |
+| Overall status | `BA/SRS READY; DEV IN REVIEW / GAP FIXING` |
 | Mockup | P2.1, P2.2 and P2.3 updated |
-| SRS/DB mapping | P2.1, P2.2 and P2.3 drafts complete |
-| Production implementation | Not started |
-| Last updated | 2026-06-28 |
+| SRS/DB mapping | P2.1, P2.2 and P2.3 reconciled for dev handoff |
+| Production implementation | In review / gap fixing in Rally prod |
+| Last updated | 2026-07-12 |
 
 > BA decision 2026-06-28: `Team Board` and `Team Status` are moved out of Phase 2 and into Phase 3. Phase 2 focuses on `Project -> Team -> Backlog -> Timeboxes/Iterations -> Iteration Status`.
 
 > BA decision 2026-06-28: Workspace selector Project/Team is the global Phase 2 context. Backlog, Timeboxes/Iterations, Iteration Status and related records must be filtered by the selected Project/Team. Create Work Item and Create Iteration auto-fill Project/Team from this context. Current mock account is Workspace Admin, so admin may change Project/Team in create/edit forms where enabled, but the selected Team must belong to the selected Project.
+
+> BA decision 2026-07-06: `All Teams` is valid as a Phase 2 context for Backlog, Timeboxes/Iterations and Iteration Status. Permission-specific create/edit restrictions under `All Teams` are deferred to the permissions phase.
+
+> BA decision 2026-07-06: Phase 2 Timeboxes shows Iterations only. Release and Milestone type options are hidden in Phase 2 and return in Phase 3.
+
+> BA decision 2026-07-06: Backlog and Iteration Status move controls must call the real rank/LexoRank reorder behavior. They are not visual-only mock controls.
 
 ## 2. Status Legend
 
@@ -30,15 +36,16 @@
 | `DONE` | Code, tests and acceptance criteria passed |
 | `DEFERRED` | Moved out of current phase/slice |
 | `DECIDED` | BA/PO decision made |
+| `BA READY` | BA document/mockup scope is ready for dev handoff |
 
 ## 3. Progress Summary
 
-| Group | Total tasks | Done | In Progress | Blocked | Not Started | Progress |
-|---|---:|---:|---:|---:|---:|---:|
-| Backlog Enhancement P2.1 | 9 | 0 | 0 | 0 | 9 | 0% |
-| Iteration Management P2.2 | 12 | 0 | 0 | 0 | 12 | 0% |
-| Iteration Status P2.3 | 13 | 0 | 0 | 0 | 13 | 0% |
-| **Total active Phase 2** | **34** | **0** | **0** | **0** | **34** | **0%** |
+| Group | BA/SRS status | Dev/prod status | Current note |
+|---|---|---|---|
+| Backlog Enhancement P2.1 | `BA READY` | `IN REVIEW` | Prod exists; filter/server-side sort gaps remain for follow-up. |
+| Iteration Management P2.2 | `BA READY` | `IN REVIEW` | Prod exists; Task Estimate roll-up, validation and Project/Team edit rule need review. |
+| Iteration Status P2.3 | `BA READY` | `IN REVIEW` | Prod exists; inline edit, column resize, Add Item fields and pagination need review. |
+| **Total active Phase 2** | **BA READY** | **IN REVIEW / GAP FIXING** | Do not mark Phase 2 Done until prod gaps pass acceptance. |
 
 ### Time Summary
 
@@ -47,9 +54,11 @@
 | Planned for P2.1 | 9.0h |
 | Planned for P2.2 | 14.0h |
 | Planned for P2.3 | 14.0h |
-| Actual | 0.0h |
-| Remaining active Phase 2 | 37.0h |
-| Variance | 0.0h |
+| Actual | Tracked in Rally prod status, not this BA plan |
+| Remaining active Phase 2 | Gap-fixing effort TBD from prod issue breakdown |
+| Variance | TBD after prod gap fixing is estimated |
+
+> The task breakdown below remains the BA implementation checklist. Current dev status is summarized above from the Rally prod audit; individual task-level prod status should be updated when the gap-fixing tickets are split.
 
 ## 4. Development Task Plan - P2.1 Backlog Enhancement
 
@@ -125,7 +134,7 @@ Mandatory rules for development:
 - Iteration Status selector must show only Iterations in the selected Project/Team context.
 - Create Work Item and Create Iteration must auto-fill Project and Team from the active workspace selector context.
 - Workspace Admin can change Project/Team in create/edit forms where enabled; validation must still enforce Team belongs to Project.
-- Iteration belongs to exactly one Project and Team context for Phase 2.
+- Iteration belongs to a Project/Team context for Phase 2. `All Teams` is a valid list context; permission-specific create/edit behavior for that context is deferred.
 - A backlog work item can be assigned to an Iteration only when Project and Team match the Iteration context.
 - Backlog list and Work Item Detail must expose the Work Item `Iteration` field.
 - Iteration Status reads assigned work items from the same backlog/work item source of truth. It must not keep a separate execution-only item store.
@@ -194,7 +203,7 @@ Team Board and Team Status are intentionally not included in Phase 2 execution o
 - [ ] User can filter Iterations by State.
 - [ ] User can sort Iteration list columns.
 - [ ] `Create Iteration` opens quick create modal.
-- [ ] Quick create modal includes Type, Project, Team, Name, Start Date, End Date, State.
+- [ ] Quick create modal includes Project, Team, Name, Start Date, End Date, State.
 - [ ] Quick create auto-fills Project and Team from workspace selector context.
 - [ ] Workspace Admin can override Project/Team when enabled, but Team must belong to Project.
 - [ ] Name, Start Date, End Date and State are required.
@@ -222,7 +231,7 @@ Team Board and Team Status are intentionally not included in Phase 2 execution o
 - [ ] Top Project/Release/Iteration/Team context filter bar is not displayed.
 - [ ] Iteration selector combines Iteration name and date range in one control.
 - [ ] Iteration selector options come from Timeboxes Iteration records.
-- [ ] Iteration selector only shows Iterations in the selected Project/Team context.
+- [ ] Iteration selector shows Iterations in the selected Project/Team context, including valid `All Teams` behavior.
 - [ ] Changing Iteration refreshes metrics and list.
 - [ ] Metric strip shows Planned Velocity, Iteration End, Accepted, Defects and Tasks.
 - [ ] Defects metric counts work items of type Defect in selected Iteration.
@@ -250,7 +259,7 @@ Team Board and Team Status are intentionally not included in Phase 2 execution o
 | P2-IT-R01 | DB currently calls entity `sprints`, UI calls it `Iterations` | Medium | Use `planning.sprints` backend table with `Iteration` UI/API naming or document alias clearly | BA/Tech | Open |
 | P2-IT-R02 | Theme, Notes, Planned Velocity may need DB extension | High | Decide migration before FE integration | Tech Lead | Open |
 | P2-IT-R03 | Iteration state labels differ from DB states | Medium | Map Planning/Committed/Accepted to future/active/closed or store UI enum | Dev | Open |
-| P2-IT-R04 | Releases/Milestones visible as type options may confuse scope | Low | Mark as Phase 3 in SRS and disable/placeholder in production if needed | BA | Decided |
+| P2-IT-R04 | Releases/Milestones visible as type options may confuse scope | Low | Hide Release/Milestone type options in Phase 2; restore them in Phase 3 | BA | Decided |
 | P2-IT-R05 | Date overlap policy not fully decided | Medium | Default warn-only unless same-team overlap must be blocked later | BA/PO | Open |
 | P2-IT-R06 | Existing backlog assignment is required for Iteration Status to link with Backlog | High | Keep assignment as Work Item `iterationId` field in Backlog/Detail and test before P2.3 | BA/Dev | Decided |
 | P2-IS-R01 | Iteration Status Schedule State differs from Backlog sample statuses | Medium | Use P2.3 enum Idea/Defined/In-Progress/Completed/Accepted/Release and map legacy values explicitly | BA/Dev | Decided |
@@ -277,6 +286,8 @@ Team Board and Team Status are intentionally not included in Phase 2 execution o
 | 2026-06-28 | Moved Team Board and Team Status from Phase 2 to Phase 3 | Phase 2 focuses Iteration Status linked with Backlog |
 | 2026-06-28 | Added existing Backlog-to-Iteration assignment into P2.2 | Close business gap for Iteration Status source data |
 | 2026-06-28 | Added global workspace selector Project/Team context rules | Ensure Backlog, Iterations and Iteration Status filter and create records under the selected Project/Team |
+| 2026-07-12 | Reconciled Phase 2 tracking status with prod audit conclusion | BA/SRS is ready; Rally prod is in review/gap fixing, not not-started |
+| 2026-07-12 | Added All Teams, hidden Release/Milestone type options and rank/LexoRank rules | Resolve Phase 2 documentation mismatches found in audit |
 
 ## 15. Reference Documents
 
