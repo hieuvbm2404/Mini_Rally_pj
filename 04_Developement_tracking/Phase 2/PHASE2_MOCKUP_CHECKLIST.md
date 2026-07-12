@@ -12,8 +12,8 @@ Phase 2 is Agile Execution. Current Phase 2 capabilities:
 
 BA decision 2026-06-28:
 
-- `Team Board` moves to Phase 3.
 - `Team Status` moves to Phase 3.
+- `Team Board` moves to Backlog for the future.
 - Phase 2 focuses on `Iteration Status` linked with Backlog.
 - Release Management and Milestones are not Phase 2. They remain Phase 3 scope.
 - Workspace selector Project/Team context controls Phase 2 data visibility: Backlog, Timeboxes/Iterations, Iteration Status and related records show only data for the selected Project/Team.
@@ -97,7 +97,7 @@ Not included:
 
 - Release CRUD/detail/readiness.
 - Milestones.
-- Start/Close workflow with carry-over.
+- Dedicated carry-over workflow/modal.
 - Iteration Status metrics.
 - Team Board, Team Status or Board drag/drop execution.
 
@@ -130,12 +130,12 @@ Not included:
 |---|---|---|
 | Release Management | Deferred | Phase 3 - Release Management |
 | Milestones | Deferred | Phase 3 - delivery checkpoint |
-| Start/Close iteration workflow | Deferred | Phase 3 or later |
-| Carry-over unfinished work | Deferred | Needs lifecycle rules |
+| Dedicated Start/Close workflow | Not required by confirmed baseline | User changes Iteration status manually |
+| Carry-over unfinished work | Not required by confirmed baseline | Teams manually move Story/Defect items between Iterations |
 | Burndown/velocity reporting | Deferred | Reports or future Iteration analytics |
-| Team Board | Deferred | Phase 3 |
+| Team Board | Future backlog | Optional future board view |
 | Team Status | Deferred | Phase 3 |
-| Board drag/drop | Deferred | Phase 3 |
+| Board drag/drop | Future backlog | Optional future board behavior |
 
 ## 6A. P2.3 Iteration Status Scope
 
@@ -167,7 +167,7 @@ Included:
 
 | Area | Requirement | Mockup status | Mockup source | Notes |
 |---|---|---:|---|---|
-| Navigation | `Track > Iteration Status` | Done | `layout.tsx` | Team Board/Team Status moved to Phase 3 |
+| Navigation | `Track > Iteration Status` | Done | `layout.tsx` | Team Status is Phase 3; Team Board is future backlog |
 | Page title | Title is `Iteration` | Done | `IterationStatusPage.tsx` | Replaces old `Iteration Status` header text |
 | Context bar | Remove Project/Release/Iteration/Team top context filters | Done | `IterationStatusPage.tsx`, `layout.tsx` | Avoid duplicated Rally-like context controls |
 | Saved Views | Remove Saved Views | Done | `IterationStatusPage.tsx` | Deferred |
@@ -193,14 +193,14 @@ Follow-up notes to avoid scope loss:
 - Define permissions for PO/PM/Developer/Tester/Viewer.
 - Move existing backlog items into an Iteration by updating the Work Item Iteration field from Backlog list or Work Item Detail.
 - Keep Team Board and Team Status out of Phase 2.
-- Keep Board drag/drop, Start/Close Iteration, and carry-over workflow as Phase 3 or later.
+- Keep Board drag/drop out of Phase 2; dedicated Start/Close and carry-over workflow is not required by the confirmed baseline.
 - Keep Release and Milestone management in Phase 3.
 
-## 6C. Moved To Phase 3
+## 6C. Moved To Later Phases
 
-`Team Board` and `Team Status` are no longer Phase 2 scope.
+`Team Status` and `Team Board` are no longer Phase 2 scope.
 
-The current Team Board mockup direction is preserved under Phase 3 documentation so it is not lost, but dev agents must not prioritize it while implementing Phase 2.
+Team Status is preserved under Phase 3 documentation. Team Board is preserved under Future Backlog documentation so it is not lost, but dev agents must not prioritize it in current planned phases.
 
 ## 7. BA Decisions
 
@@ -230,7 +230,7 @@ The current Team Board mockup direction is preserved under Phase 3 documentation
 | P2-CONTEXT-DC-001 | Workspace selector Project/Team is the global data context for Phase 2 Backlog, Timeboxes/Iterations and Iteration Status | Decided |
 | P2-CONTEXT-DC-002 | Create Work Item and Create Iteration auto-fill Project/Team from workspace selector context | Decided |
 | P2-CONTEXT-DC-003 | Workspace Admin may override Project/Team in enabled forms, but Team must belong to Project and Iteration assignment must match Project/Team | Decided |
-| P2-PHASE-DC-001 | Team Board moves to Phase 3 | Decided |
+| P2-PHASE-DC-001 | Team Board moves to Backlog for the future | Decided |
 | P2-PHASE-DC-002 | Team Status moves to Phase 3 | Decided |
 
 ## 8. Conclusion
@@ -239,11 +239,12 @@ Mockup coverage is enough to hand P2.1, P2.2 and P2.3 to development planning. E
 
 The global workspace selector Project/Team context is a Phase 2 business rule, not only a UI preference. Development must use it to filter data and default Project/Team on create flows.
 
-Phase 2 is now focused on Iteration Status linked with Backlog. Team Board and Team Status are Phase 3.
+Phase 2 is now focused on Iteration Status linked with Backlog. Team Status is Phase 3. Team Board is Backlog for the future.
 
 Primary SRS documents:
 
 - [`01_Backlog_Enhancement/SRS.md`](01_Backlog_Enhancement/SRS.md)
 - [`02_Iterations/SRS.md`](02_Iterations/SRS.md)
 - [`03_Iteration_Status/SRS.md`](03_Iteration_Status/SRS.md)
-- [`../Phase 3/01_Team_Board_Team_Status/SRS.md`](../Phase%203/01_Team_Board_Team_Status/SRS.md)
+- [`../Phase 3/01_Team_Status/SRS.md`](../Phase%203/01_Team_Status/SRS.md)
+- [`../Future_Backlog/01_Team_Board.md`](../Future_Backlog/01_Team_Board.md)

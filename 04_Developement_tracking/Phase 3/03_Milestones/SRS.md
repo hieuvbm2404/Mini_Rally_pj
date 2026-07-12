@@ -6,7 +6,7 @@
 |---|---|
 | Module ID | `P3-MILESTONES` |
 | Status | Ready for Development |
-| Updated date | 2026-07-11 |
+| Updated date | 2026-07-12 |
 | Scope | Plan > Timeboxes > Milestones |
 | Priority | Phase 3 candidate |
 | Depends on | Phase 2.2 Timeboxes/Iterations, Phase 3.2 Release Management |
@@ -53,6 +53,9 @@ User opens Plan > Timeboxes
 | P3-MS-FR-018 | Milestone detail has a dedicated Artifacts tab beside Details; the right metadata panel is hidden while Artifacts is active. |
 | P3-MS-FR-019 | Milestone Artifacts dashboard uses the same presentation pattern as Backlog for assigned Story/Defect items. |
 | P3-MS-FR-020 | Milestone Artifacts dashboard supports search, sort, resizable columns, pagination and inline edit where fields are editable. |
+| P3-MS-FR-021 | A Story/Defect can be assigned to multiple Milestones only if it remains within each Milestone's selected Project/Team scope. |
+| P3-MS-FR-022 | Removing a Story/Defect from a Milestone must not remove or change its Release assignment. |
+| P3-MS-FR-023 | Assigning a Story/Defect outside the Milestone's selected Project/Team scope must be rejected. |
 
 ## 4. Data Source Rules
 
@@ -66,6 +69,10 @@ User opens Plan > Timeboxes
 - Milestone Artifacts are assigned Story/Defect work items, not uploaded files or external links in Phase 3.3.
 - Milestone Artifact row data should reuse the Backlog work item list DTO where possible.
 - A Story/Defect can be assigned to Milestone independently from Release assignment.
+- Milestone artifact assignment is many-to-many from the Milestone perspective: a Milestone can have many Story/Defect artifacts, and the same Story/Defect may appear in more than one Milestone if the scope rules allow it.
+- Removing a Story/Defect from a Milestone only removes that Milestone relationship.
+- Adding or removing Milestone artifacts must not change Release assignment, Iteration assignment, Backlog rank or Work Item identity.
+- Each artifact must belong to one of the Milestone's selected Projects and, when Team scope is selected, one of the Milestone's selected Teams.
 - Projects, Teams and Releases are shown as compact selected-count summaries in the right metadata panel.
 - User can click each summary to open a searchable modal and review/edit the selected items.
 - Mockup shows an Artifacts tab beside Details with no right metadata panel.
@@ -114,6 +121,7 @@ Rules:
 - Each work item must be accessible to the current user.
 - Each work item must belong to an allowed Project/Team scope for the Milestone.
 - Milestone artifact assignment is independent from Release assignment.
+- Replacing the Milestone artifact list must not mutate Release assignment or Iteration assignment.
 - Viewer mutation must return 403.
 
 ## 6. BA Confirmations
@@ -128,6 +136,8 @@ Rules:
 | P3-MS-Q06 | Can Milestone span multiple Projects and Teams? | Confirmed: multiple Projects and multiple Teams |
 | P3-MS-Q07 | What exact artifact behavior does Milestone need? | Confirmed: assigned US/DE Story/Defect work items, shown like Backlog |
 | P3-MS-Q08 | Does Milestone need artifact upload/link objects? | Confirmed: no, Phase 3.3 artifacts are assigned work items |
+| P3-MS-Q09 | Can the same Story/Defect be linked to multiple Milestones? | Confirmed for Phase 3.3 if Project/Team scope allows it |
+| P3-MS-Q10 | Does Milestone assignment change Release assignment? | Confirmed: no, Milestone artifact assignment is independent |
 
 ## 7. Acceptance Criteria
 
@@ -142,3 +152,5 @@ Rules:
 9. Milestone dashboard remains limited to Name, Target Start Date, Target End Date and Status.
 10. Milestone does not include artifact upload/link objects in Phase 3.3.
 11. Milestone does not include a readiness checklist.
+12. Milestone artifact assignment rejects Story/Defect items outside selected Project/Team scope.
+13. Removing a Milestone artifact leaves Release and Iteration assignment unchanged.

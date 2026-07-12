@@ -6,7 +6,7 @@
 |---|---|
 | Module ID | `P3-RELEASE-MANAGEMENT` |
 | Status | Ready for Development |
-| Updated date | 2026-07-11 |
+| Updated date | 2026-07-12 |
 | Scope | `Plan > Timeboxes > Releases` and Release detail direction |
 | Priority | P3.2 - required |
 | Depends on | Phase 1 Work Item base, Phase 2.1 Backlog Enhancement, Phase 2.2 Timeboxes/Iterations, Phase 2.3 Iteration Status |
@@ -39,6 +39,7 @@ Release Management is Project-level, not Team-level. A Release may still display
 | P3-REL-DC-014 | A US/DE work item can be assigned to only one Release at a time | Decided |
 | P3-REL-DC-015 | Release has an Artifacts view that shows assigned US/DE work items using the Backlog table presentation | Decided |
 | P3-REL-DC-016 | Release detail includes a `Release Notes` rich text area for readiness notes gathered from assigned US/DE notes | Decided |
+| P3-REL-DC-017 | Reassigning a US/DE from one Release to another replaces the old Release assignment and refreshes old/new Release artifact views | Decided |
 
 ## 3. Business Flow
 
@@ -59,6 +60,7 @@ Release assignment flow:
 ```text
 Backlog / Work Item Detail or Release detail assigns Story/Defect items to a Release
 -> System enforces one active Release assignment per Story/Defect
+-> If the item already belongs to another Release, system replaces the old assignment
 -> Release dashboard shows roll-up values from assigned work items
 -> Release Artifacts view lists the assigned Story/Defect items
 -> Release detail shows task roll-up, accepted totals and Release Notes
@@ -103,6 +105,8 @@ Backlog / Work Item Detail or Release detail assigns Story/Defect items to a Rel
 | P3-REL-FR-033 | Release Artifacts view supports the same core dashboard behavior as Backlog: search, sort, resizable columns, pagination and inline edit where fields are editable. |
 | P3-REL-FR-034 | Release detail includes a `Release Notes` rich text area separate from Theme and Notes. |
 | P3-REL-FR-035 | Release readiness is user-managed from assigned US/DE release notes and the Release Notes field; system does not calculate readiness in Phase 3.2. |
+| P3-REL-FR-036 | After Release reassignment, the moved item disappears from the previous Release Artifacts view after refresh/refetch. |
+| P3-REL-FR-037 | After Release reassignment, old and new Release counters/roll-ups are recalculated and the user sees success or error feedback. |
 
 ## 5. Screen Mapping With Mockup
 
@@ -279,6 +283,10 @@ Rules:
 - Only Story/Defect work items are valid Release artifacts in Phase 3.2.
 - A Story/Defect can be assigned to only one Release at a time.
 - Assigning a Story/Defect to a new Release replaces the previous Release assignment.
+- The previous Release Artifacts view must no longer show the moved item after refresh/refetch.
+- Old and new Release roll-ups/counters must be recalculated after reassignment.
+- UI must show a toast or equivalent feedback for successful reassignment and validation failure.
+- Reassignment must not alter Iteration or Milestone assignment.
 - Release readiness is not system-calculated from artifacts in Phase 3.2.
 
 ## 8. Permissions
@@ -309,6 +317,7 @@ Rules:
 14. Backlog and Release detail can both assign Story/Defect work items to a Release.
 15. System enforces one active Release per Story/Defect.
 16. Release Notes is editable and separate from Theme and Notes.
+17. Reassigning a Story/Defect removes it from the previous Release Artifacts view after refresh/refetch and recalculates old/new Release counters.
 
 ## 10. Test Scenarios
 
@@ -325,7 +334,7 @@ Rules:
 | P3-REL-TS-009 | Viewer calls PATCH API | API returns 403 |
 | P3-REL-TS-010 | Open Release detail | Theme/Notes and right-panel fields are shown |
 | P3-REL-TS-011 | Assign a Story to a Release from Backlog | Story appears in Release Artifacts |
-| P3-REL-TS-012 | Assign the same Story to another Release | Previous Release assignment is replaced |
+| P3-REL-TS-012 | Assign the same Story to another Release | Previous Release assignment is replaced; old and new Release artifact lists/counters refresh |
 | P3-REL-TS-013 | Open Release Artifacts | Assigned Story/Defect rows use Backlog-style table behavior |
 | P3-REL-TS-014 | Edit Release Notes | Notes persist separately from Theme and Notes |
 
@@ -337,6 +346,7 @@ Rules:
 | P3-REL-Q02 | Is Release assignment managed from Backlog/Work Item Detail only, or also from Release detail? | Confirmed: support both Backlog/Work Item Detail and Release detail/artifact surface |
 | P3-REL-Q03 | Can a Story/Defect be assigned to multiple Releases? | Confirmed: one active Release only |
 | P3-REL-Q04 | Does Release have artifacts? | Confirmed: Release Artifacts are assigned Story/Defect work items |
+| P3-REL-Q05 | What happens when an item is moved between Releases? | Confirmed: one active Release is replaced; previous Release artifact list and counters must refresh |
 
 ## 12. Ready Checklist
 
@@ -354,3 +364,4 @@ Rules:
 - [x] Release assignment surfaces confirmed.
 - [x] Release artifact behavior confirmed.
 - [x] One active Release per Story/Defect confirmed.
+- [x] Release reassignment refresh behavior confirmed.
