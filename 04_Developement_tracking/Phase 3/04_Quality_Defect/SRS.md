@@ -6,7 +6,7 @@
 |---|---|
 | Module ID | `P3-QUALITY-DEFECT` |
 | Status | Ready for Development |
-| Updated date | 2026-07-11 |
+| Updated date | 2026-07-12 |
 | Scope | `Quality > Defect` dashboard, Defect create/edit, shared Defect detail |
 | Priority | Phase 3 candidate |
 | Depends on | Phase 1 Work Item base, Phase 2 Backlog/Detail behavior |
@@ -19,7 +19,7 @@
 - Current mockup opens a defect dashboard using the Backlog dashboard template.
 - Defects shown in `Quality > Defect` are the same Defect work items used in Backlog; Quality is a dedicated defect view, not a separate defect source.
 - Confirmed dashboard columns: Rank, ID, Name, User Story, Severity, Priority, State, Flow State, Fixed In Build, Iteration, Submitted By and Owner.
-- Dashboard supports search, filter placeholder, row selection, bulk-action placeholder, sortable/resizable columns, pagination and detail panel.
+- Dashboard supports search, filter placeholder, row selection, disabled/future bulk-action placeholder, sortable/resizable columns, pagination and detail panel.
 - Defect can be created from Backlog and from `Quality > Defect`.
 - Linked User Story is optional when creating or editing a Defect.
 - Defect dashboard supports inline edit across editable fields.
@@ -27,6 +27,8 @@
 - Defect cannot be deleted in Phase 3; use `Closed` or `Closed Declined`.
 - Defect Flow State updates independently from Defect State.
 - Permission rules are not finalized in Phase 3.4.
+- Reopen from `Closed` or `Closed Declined` is not part of Phase 3.4 acceptance until BA confirms permission, reason and audit rules.
+- Bulk actions are not executable in Phase 3.4; any visible bulk-action placeholder must be disabled or clearly treated as future scope.
 
 ## 2. Confirmed Dashboard Columns
 
@@ -64,15 +66,17 @@
 | P3-QA-FR-013 | Defect Flow State options are exactly `Idea`, `Defined`, `In-Progress`, `Completed`, `Accepted`, `Released`. |
 | P3-QA-FR-014 | Defect Flow State can be updated independently from Defect State. |
 | P3-QA-FR-015 | Fixed In Build is an optional manual text field that captures the build/version/release label where the defect fix is expected or delivered. |
+| P3-QA-FR-016 | Bulk actions must not execute in Phase 3.4 until BA confirms available actions and permissions. |
+| P3-QA-FR-017 | Reopen from Closed/Closed Declined is deferred and must not be required for Phase 3.4 acceptance. |
 
 ## 4. BA Confirmations
 
 | ID | Question | Current note |
 |---|---|---|
 | P3-QA-Q01 | Does P3.4 cover only Defect dashboard or wider Quality workflows? | Confirmed: dashboard plus create/edit/detail behavior |
-| P3-QA-Q02 | What is the final defect lifecycle/state transition set? | Confirmed: Submitted -> Open -> Fixed -> Closed; Submitted/Open -> Closed Declined; reopen returns to Open if allowed later |
+| P3-QA-Q02 | What is the final defect lifecycle/state transition set? | Confirmed: Submitted -> Open -> Fixed -> Closed; Submitted/Open -> Closed Declined; reopen is deferred until permission/audit rules are confirmed |
 | P3-QA-Q03 | Which columns are required on the Defect dashboard? | Confirmed: Rank, ID, Name, User Story, Severity, Priority, State, Flow State, Fixed In Build, Iteration, Submitted By, Owner |
-| P3-QA-Q04 | Which bulk actions are in Phase 3.4? | Deferred; permission/bulk rules are not considered yet |
+| P3-QA-Q04 | Which bulk actions are in Phase 3.4? | Deferred; bulk-action placeholder must be disabled/future only |
 | P3-QA-Q05 | Is defect creation supported? | Confirmed: create from Backlog and Quality > Defect |
 | P3-QA-Q06 | Is User Story required for Defect? | Confirmed: optional |
 | P3-QA-Q07 | Can Defect be deleted? | Confirmed: no; use Closed or Closed Declined |
@@ -97,8 +101,8 @@
 | Fixed | Closed | Fix is verified/accepted and defect is closed. |
 | Submitted | Closed Declined | Defect is declined without active work. |
 | Open | Closed Declined | Defect is declined after triage. |
-| Closed | Open | Reopen path; permission rule TBD. |
-| Closed Declined | Open | Reopen path; permission rule TBD. |
+| Closed | Open | Deferred; not required for Phase 3.4 acceptance until permission, reason and audit rules are confirmed. |
+| Closed Declined | Open | Deferred; not required for Phase 3.4 acceptance until permission, reason and audit rules are confirmed. |
 
 Notes:
 
@@ -158,6 +162,8 @@ Rules:
 - `fixedInBuild` is optional manual text.
 - Defect delete endpoint is not part of Phase 3.4.
 - Invalid State, Flow State, Severity and Priority values must be rejected.
+- Reopen from `Closed` or `Closed Declined` should be rejected or hidden in Phase 3.4 unless BA later confirms permission and audit behavior.
+- Bulk action endpoints are out of scope for Phase 3.4.
 
 ### 7.3 Defect Detail
 
@@ -178,3 +184,5 @@ Backlog Defect and `Quality > Defect` must navigate to the same Defect detail pa
 11. State transition rules follow the confirmed State flow.
 12. Flow State can be changed independently from State.
 13. Fixed In Build is visible on dashboard/detail as an optional manual text field.
+14. Bulk action placeholder is disabled/future and does not execute Phase 3.4 mutations.
+15. Reopen from Closed/Closed Declined is not required for Phase 3.4 acceptance.

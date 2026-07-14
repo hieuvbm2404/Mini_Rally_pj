@@ -19,7 +19,7 @@ P2.3 provides a Rally-like Iteration Status screen where users can select an Ite
 The BA decision is:
 
 - Scope is `Iteration Status` only.
-- Phase 2 `Track` delivery is `Iteration Status` only. `Team Board` and `Team Status` are moved to Phase 3.
+- Phase 2 `Track` delivery is `Iteration Status` only. `Team Status` is moved to Phase 3 and `Team Board` is moved to Backlog for the future.
 - Iteration selector must read from Iteration records created under `Plan > Timeboxes`.
 - The list behavior must inherit Phase 2.1 Backlog Enhancement patterns.
 - Existing backlog assignment into an Iteration is not done from the Add Item modal; it is handled through the Work Item `Iteration` field in Backlog list and Work Item Detail.
@@ -50,7 +50,7 @@ Permission granularity is deferred. Current P2.3 mockup assumes admin/full acces
 
 | Term | Meaning in Mini Rally |
 |---|---|
-| Track | Execution navigation group. In Phase 2 it delivers Iteration Status only. Team Board and Team Status are Phase 3. |
+| Track | Execution navigation group. In Phase 2 it delivers Iteration Status only. Team Status is Phase 3 and Team Board is Backlog for the future. |
 | Iteration Status | P2.3 screen for tracking one selected Iteration. |
 | Iteration | Timebox/Sprint-like record created under `Plan > Timeboxes`. |
 | Work item in Iteration | Work item with `iterationId` equal to the selected Iteration. |
@@ -93,7 +93,7 @@ Nghiệp vụ chính:
 | ID | Requirement |
 |---|---|
 | P2-IS-FR-001 | User can open `Track > Iteration Status`. |
-| P2-IS-FR-002 | Phase 2 implements only `Track > Iteration Status`; `Team Board` and `Team Status` are Phase 3 scope. |
+| P2-IS-FR-002 | Phase 2 implements only `Track > Iteration Status`; `Team Status` is Phase 3 scope and `Team Board` is Future Backlog scope. |
 | P2-IS-FR-003 | Page title is `Iteration`. |
 | P2-IS-FR-004 | Page must not show the old top context filter bar for Project, Release, Iteration and Team. |
 | P2-IS-FR-005 | Page must not show `Saved Views` in P2.3. |
@@ -155,7 +155,7 @@ Nghiệp vụ chính:
 
 | UI area | Mockup component | Production behavior |
 |---|---|---|
-| Navigation | Top nav `Track` entry/dropdown | Open Iteration Status; Team Board/Team Status are Phase 3 entries |
+| Navigation | Top nav `Track` entry/dropdown | Open Iteration Status; Team Status is Phase 3 and Team Board is Future Backlog |
 | Breadcrumb | `Nexus Platform 2025 > Track > Iteration Status` | Shows current project and module location |
 | Page title | `Iteration` | No old `Iteration Status` page title in content header |
 | Iteration selector | Combined name/date selector with arrows | Reads Iteration records from Timeboxes |
@@ -439,7 +439,7 @@ Detailed role matrix for PO/PM/Developer/Tester/Viewer is deferred. API must not
 
 - [ ] User can open `Track > Iteration Status`.
 - [ ] Phase 2 implements Iteration Status only under Track.
-- [ ] Team Board and Team Status are Phase 3 scope.
+- [ ] Team Status is Phase 3 scope and Team Board is Future Backlog scope.
 - [ ] Iteration Status respects the active workspace selector Project/Team context.
 - [ ] Page title is `Iteration`.
 - [ ] No top context filter bar is displayed on Iteration Status.
@@ -499,11 +499,11 @@ Suggested P2.3 estimate: 14.0h.
 
 | Item | Status | Target/reason |
 |---|---|---|
-| Team Board | Deferred | Phase 3 |
+| Team Board | Future backlog | Optional future board view |
 | Team Status | Deferred | Phase 3 |
-| Board drag/drop execution | Deferred | Phase 3 |
+| Board drag/drop execution | Future backlog | Optional future board behavior |
 | Existing backlog assignment from Add Item modal | Deferred | Assignment is handled through the Work Item `Iteration` field in Backlog list and Work Item Detail |
-| Start Iteration / Close Iteration | Deferred | Needs lifecycle/carry-over rules |
+| Dedicated Start/Close/carry-over workflow | Not required | Confirmed baseline uses manual Iteration status changes and manual Story/Defect movement between Iterations |
 | Carry-over unfinished work | Deferred | Depends on Close Iteration workflow |
 | Saved Views | Deferred | Can be added after list/filter contract stabilizes |
 | Release and Milestone management | Deferred | Phase 3 |

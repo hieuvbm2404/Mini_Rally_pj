@@ -15,7 +15,7 @@
 | Production implementation | In review / gap fixing in Rally prod |
 | Last updated | 2026-07-12 |
 
-> BA decision 2026-06-28: `Team Board` and `Team Status` are moved out of Phase 2 and into Phase 3. Phase 2 focuses on `Project -> Team -> Backlog -> Timeboxes/Iterations -> Iteration Status`.
+> BA decision 2026-07-12: `Team Status` is moved out of Phase 2 and into Phase 3. `Team Board` is moved out of Phase 2/3/4 and into Backlog for the future. Phase 2 focuses on `Project -> Team -> Backlog -> Timeboxes/Iterations -> Iteration Status`.
 
 > BA decision 2026-06-28: Workspace selector Project/Team is the global Phase 2 context. Backlog, Timeboxes/Iterations, Iteration Status and related records must be filtered by the selected Project/Team. Create Work Item and Create Iteration auto-fill Project/Team from this context. Current mock account is Workspace Admin, so admin may change Project/Team in create/edit forms where enabled, but the selected Team must belong to the selected Project.
 
@@ -149,12 +149,12 @@ Business gap found and resolved in this update:
 
 | Item | Status | Target phase/reason |
 |---|---|---|
-| Team Board | `DEFERRED` | Phase 3 Track execution |
+| Team Board | `FUTURE BACKLOG` | Optional future board view; not part of current Agile management MVP |
 | Team Status | `DEFERRED` | Phase 3 Track reporting/status |
-| Board drag/drop status transition | `DEFERRED` | Phase 3; transition rules/WIP limits need confirmation |
+| Board drag/drop status transition | `FUTURE BACKLOG` | Optional future board behavior; transition rules/WIP limits not needed for current MVP |
 | Release CRUD/detail/readiness | `DEFERRED` | Phase 3 Release Management |
 | Milestones | `DEFERRED` | Phase 3 delivery checkpoint |
-| Start/Close/carry-over workflow | `DEFERRED` | Phase 3 or later; needs lifecycle and carry-over rules |
+| Dedicated Start/Close/carry-over workflow | `NOT REQUIRED` | Confirmed baseline uses manual Iteration status changes and manual Story/Defect movement between Iterations |
 | Saved views | `DEFERRED` | Can follow after filter/list contract is stable |
 
 ## 9. Suggested Execution Order
@@ -190,7 +190,7 @@ P2-IS-01 Contract
 -> P2-IS-13 Verification
 ```
 
-Team Board and Team Status are intentionally not included in Phase 2 execution order.
+Team Status and Team Board are intentionally not included in Phase 2 execution order. Team Status is Phase 3; Team Board is Backlog for the future.
 
 ## 10. Acceptance Checklist - P2.2
 
@@ -265,7 +265,7 @@ Team Board and Team Status are intentionally not included in Phase 2 execution o
 | P2-IS-R01 | Iteration Status Schedule State differs from Backlog sample statuses | Medium | Use P2.3 enum Idea/Defined/In-Progress/Completed/Accepted/Release and map legacy values explicitly | BA/Dev | Decided |
 | P2-IS-R02 | Defects metric can be misread as child defect count | Medium | SRS defines Defects as count of work items where type = Defect in selected Iteration | BA | Decided |
 | P2-IS-R03 | Permission matrix is not finalized | Medium | Mock assumes admin; backend must still enforce baseline project/work item permissions | BA/Tech | Open |
-| P2-PHASE-R01 | Dev agent may still pick up old Team Board mockup | High | Move Team Board/Team Status docs to Phase 3 and remove Phase 2 execution tasks | BA | Decided |
+| P2-PHASE-R01 | Dev agent may still pick up old Team Board mockup | High | Move Team Status docs to Phase 3, Team Board docs to Future Backlog, and remove Phase 2 execution tasks | BA | Decided |
 | P2-CONTEXT-R01 | Workspace selector context could be missed by individual feature teams | High | Document as global Phase 2 rule and include tests for Backlog, Timeboxes and Iteration Status | BA/Dev | Decided |
 
 ## 13. Daily Log
@@ -283,7 +283,7 @@ Team Board and Team Status are intentionally not included in Phase 2 execution o
 | 2026-06-26 | Added P2.2 Iteration Management tracking and tasks | Prepare Iterations for development |
 | 2026-06-26 | Marked Releases and Milestones as Phase 3 scope | BA decision |
 | 2026-06-27 | Added P2.3 Iteration Status SRS, task plan and acceptance checklist | Prepare Iteration Status for development |
-| 2026-06-28 | Moved Team Board and Team Status from Phase 2 to Phase 3 | Phase 2 focuses Iteration Status linked with Backlog |
+| 2026-07-12 | Moved Team Status to Phase 3 and Team Board to Future Backlog | Phase 2 focuses Iteration Status linked with Backlog |
 | 2026-06-28 | Added existing Backlog-to-Iteration assignment into P2.2 | Close business gap for Iteration Status source data |
 | 2026-06-28 | Added global workspace selector Project/Team context rules | Ensure Backlog, Iterations and Iteration Status filter and create records under the selected Project/Team |
 | 2026-07-12 | Reconciled Phase 2 tracking status with prod audit conclusion | BA/SRS is ready; Rally prod is in review/gap fixing, not not-started |
@@ -295,7 +295,8 @@ Team Board and Team Status are intentionally not included in Phase 2 execution o
 - [`02_Iterations/SRS.md`](02_Iterations/SRS.md)
 - [`03_Iteration_Status/SRS.md`](03_Iteration_Status/SRS.md)
 - [`PHASE2_MOCKUP_CHECKLIST.md`](PHASE2_MOCKUP_CHECKLIST.md)
-- [`../Phase 3/01_Team_Board_Team_Status/SRS.md`](../Phase%203/01_Team_Board_Team_Status/SRS.md)
+- [`../Phase 3/01_Team_Status/SRS.md`](../Phase%203/01_Team_Status/SRS.md)
+- [`../Future_Backlog/01_Team_Board.md`](../Future_Backlog/01_Team_Board.md)
 - [`../Project_developement_plan.md`](../Project_developement_plan.md)
 - [`../../01_DB design/mini_rally_database_design.md`](../../01_DB%20design/mini_rally_database_design.md)
 - [`../../05_Architecture/DATABASE_SCHEMA.md`](../../05_Architecture/DATABASE_SCHEMA.md)

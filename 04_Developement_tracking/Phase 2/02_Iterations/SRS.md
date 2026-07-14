@@ -401,9 +401,40 @@ Role guidance:
 - Iteration date overlap policy:
   - Default recommendation: warn but do not block overlapping iterations across different teams.
   - Block overlapping iterations for the same team only if BA later confirms.
-- Accepted/closed iteration should be read-only for date changes unless user has elevated permission or a reopen flow exists.
+- Accepted Iteration does not lock dates, Project/Team, assignment or status by lifecycle alone. Authorized users can still manually edit fields according to normal permissions.
 - Assigning an existing work item to an Iteration requires matching Project and Team.
 - Unassigning an item must preserve the work item's Backlog identity, rank and history.
+
+### 10.1 Iteration Lifecycle And Manual Status Baseline
+
+Phase 2.2 supports the Iteration record, assignment and status values needed by Backlog and Iteration Status. It does not implement Team Board execution. The rules below are the BA-confirmed baseline for later Team Board / Iteration Execution and must be reused there instead of creating a separate board-only lifecycle.
+
+Confirmed lifecycle states:
+
+| State | Meaning | How it changes |
+|---|---|---|
+| `Planning` | New/default planning state. | Default when user creates an Iteration. |
+| `Committed` | Sprint/Iteration is running and scope has been committed by the user. | User manually changes state to `Committed` when ready. |
+| `Accepted` | Iteration is accepted/closed from a planning perspective. | System may auto-set to `Accepted` when all assigned Story/Defect items are `Accepted`; user can still change manually if permitted. |
+
+Lifecycle control rules:
+
+- Iteration state remains user-editable according to permission.
+- Assigning Story/Defect items does not automatically commit the Iteration.
+- No Iteration state locks scope by itself.
+- `Committed` means active/running sprint, but user can still add, remove, or move Story/Defect items.
+- When all assigned Story/Defect items in the Iteration are `Accepted`, system auto-sets the Iteration to `Accepted`.
+- Auto-setting Iteration to `Accepted` is a convenience behavior; it does not remove manual status editing.
+- Auto-accept requires at least one assigned Story/Defect item; an empty Iteration must not auto-accept.
+- If an item later moves out of `Accepted`, system should not force a reverse status change; user manages Iteration status manually.
+
+Assignment and board rules:
+
+- User can manually move Story/Defect items between Iterations by editing the Work Item `Iteration` field.
+- There is no dedicated carry-over workflow/modal in the confirmed baseline.
+- Team Board must not create carry-over behavior of its own.
+- Board displays and updates Work Items for the selected Iteration; it respects the Work Item assignment chosen by users.
+- Moving an item to another Iteration preserves Work Item identity, history, rank and links; it must not clone the Work Item.
 
 ## 11. UI States
 
@@ -494,10 +525,11 @@ P2-IT-T12 Verification: unit, contract and e2e smoke tests
 |---|---|---|
 | Release CRUD/detail/readiness | Phase 3 | Release Management belongs to Quality/Delivery |
 | Milestones | Phase 3 | Delivery checkpoint concept, not required for Iteration Management |
-| Start/Close iteration workflow with carry-over | Phase 3 or later | Needs lifecycle and carry-over rules |
+| Dedicated Start/Close/carry-over workflow | Not required in confirmed baseline | User changes Iteration status manually; teams manually move Story/Defect items between Iterations |
 | Burndown/velocity reporting | Phase 5 Reports or Iteration Status slice | P2.2 only stores/plans iteration data |
-| Team Board / Team Status | Phase 3 | Moved out of Phase 2 by BA decision |
-| Board drag/drop | Phase 3 | Transition rules/WIP limits not confirmed |
+| Team Status | Phase 3 | Moved out of Phase 2 by BA decision |
+| Team Board | Future backlog | Optional board execution view; not required for current Agile management MVP |
+| Board drag/drop | Future backlog | Optional board behavior; transition rules/WIP limits are not needed for current MVP |
 
 ## 16. Definition Of Done
 

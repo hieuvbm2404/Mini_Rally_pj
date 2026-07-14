@@ -1,6 +1,6 @@
 # Phase 3 - Mockup Coverage Checklist
 
-Synced date: 2026-07-11
+Synced date: 2026-07-12
 
 ## 1. Phase Scope
 
@@ -14,13 +14,13 @@ Phase 3 is split into smaller slices so each mockup and SRS can be approved befo
 BA decisions already confirmed:
 
 - `Team Status` is a dashboard/table grouped by member, not a board.
-- `Team Board` moves to Phase 4.
-- Team Board menu can remain visible in the mockup for now, but it is not a Phase 3.1 deliverable.
+- `Team Board` moves to Backlog for the future.
+- Team Board menu can remain visible in the mockup for now, but it is not a Phase 3.1 deliverable and not part of the current MVP scope.
 - Board drag/drop, WIP enforcement and board transition rules are not Phase 3.1.
 - Release Management is Project-level and will be handled after Team Status.
 - Milestones are a type beside Iterations/Releases/Milestones under Timeboxes.
 - Quality/Defect is Phase 3 scope as a dedicated `Quality > Defect` dashboard entry with create/edit and shared Defect detail.
-- Timeline file should be updated only after Phase 3 mockup/docs are aligned across approved slices.
+- Timeline file is updated after Phase 3 mockup/docs alignment and Future Backlog scope closure.
 
 ## 2. P3.1 Team Status Approved Scope
 
@@ -41,14 +41,15 @@ Team Status approved behavior:
 - Task Name is inline editable.
 - Task State is a dropdown.
 - Task State options are exactly `Defined`, `In-Progress`, `Completed`.
-- Completing a task updates the referenced US/DE Work Product state to `Completed`.
+- Work Item Detail `Tasks` tab is the Task Dashboard and supports inline edit for Task Name, State, Owner, To Do, Actuals and Estimate.
+- Completing a task refreshes the referenced US/DE Work Product roll-up. If any child task under the same parent is still not `Completed`, the parent status stays unchanged; when all child tasks are `Completed`, the parent US/DE status becomes `Completed`. Auto-completion does not remove manual parent status editing from existing Work Item edit surfaces.
 - Viewer/read-only roles cannot mutate inline fields.
 
 ## 3. Mockup Coverage Summary
 
 | Area | Requirement | Mockup status | Mockup source | Notes |
 |---|---|---:|---|---|
-| Track nav | `Track > Team status` opens dedicated page | Done | `App.tsx`, `TeamStatusPage.tsx` | Team Board can remain visible but is Phase 4 |
+| Track nav | `Track > Team status` opens dedicated page | Done | `App.tsx`, `TeamStatusPage.tsx` | Team Board can remain visible but is future backlog |
 | Iteration selector | Same picker style as Iteration Status | Done | `TeamStatusPage.tsx` | Prev/next + combined name/date dropdown |
 | Search input | Removed | Done | `TeamStatusPage.tsx` | No local Team Status search in P3.1 |
 | KPI strip | Removed | Done | `TeamStatusPage.tsx` | Table totals row is used instead |
@@ -63,7 +64,7 @@ Team Status approved behavior:
 | Work Product | Show parent US/DE | Done | `TeamStatusPage.tsx` | Parent title truncated |
 | Task Name | Inline editable | Done | `TeamStatusPage.tsx` | Stops row navigation |
 | State dropdown | Defined/In-Progress/Completed only | Done | `TeamStatusPage.tsx` | Accepted/Release removed |
-| State propagation | Task Completed updates parent US/DE state | Documented | `01_Team_Status/SRS.md` | Backend implementation rule |
+| State propagation | Task Completed refreshes parent US/DE roll-up | Documented | `01_Team_Status/SRS.md` | Parent auto-completes when all child tasks are Completed |
 | Row click | Opens existing detail flow | Done in mockup | `TeamStatusPage.tsx`, `App.tsx` | Inline controls stop propagation |
 | Viewer read-only | No inline mutation for Viewer | Business rule | `01_Team_Status/SRS.md` | API must enforce |
 
@@ -85,6 +86,7 @@ Team Status approved behavior:
 - [x] Task Name is inline editable.
 - [x] Task State dropdown is inline editable.
 - [x] Task State dropdown contains only `Defined`, `In-Progress`, `Completed`.
+- [x] Task Dashboard inline edit is available from Work Item Detail `Tasks` tab.
 - [x] Collapse/expand button is arrow-only.
 
 ### Development Must Verify
@@ -97,7 +99,12 @@ Team Status approved behavior:
 - [ ] Task Name patch persists task title only.
 - [ ] State patch accepts only `Defined`, `In-Progress`, `Completed`.
 - [ ] Source states outside the Team Status enum are normalized for display.
-- [ ] Task `Completed` updates referenced US/DE Work Product state to `Completed`.
+- [ ] Task `Completed` refreshes referenced US/DE Work Product roll-up.
+- [ ] Parent US/DE remains unchanged while any child task is still not `Completed`.
+- [ ] Parent US/DE auto-completes when all child tasks are `Completed`.
+- [ ] Parent US/DE remains manually editable from existing Work Item edit surfaces after auto-completion.
+- [ ] Task Dashboard inline edit persists Task Name, State, Owner, To Do, Actuals and Estimate without opening Task Detail.
+- [ ] Clicking Task ID in Task Dashboard opens Task Detail.
 - [ ] Viewer cannot edit via UI.
 - [ ] Viewer cannot mutate via direct API call.
 - [ ] Row click opens detail; inline controls do not trigger row navigation.
@@ -110,7 +117,7 @@ Team Status approved behavior:
 |---|---|---|
 | P3-TS-DC-001 | Team Status is Phase 3.1 | Decided |
 | P3-TS-DC-002 | Team Status is dashboard/table, not Team Board | Decided |
-| P3-TS-DC-003 | Team Board moves to Phase 4 | Decided |
+| P3-TS-DC-003 | Team Board moves to Backlog for the future | Decided |
 | P3-TS-DC-004 | Team Board can remain visible in mockup for now | Decided |
 | P3-TS-DC-005 | Iteration selector reuses Iteration Status picker style | Decided |
 | P3-TS-DC-006 | Remove Team Status local search input | Decided |
@@ -121,7 +128,7 @@ Team Status approved behavior:
 | P3-TS-DC-011 | Task State is inline editable dropdown | Decided |
 | P3-TS-DC-012 | Team Status task states are only Defined, In-Progress and Completed | Decided |
 | P3-TS-DC-013 | Task ID is shown in ID column; US/DE belongs to Work Product column | Decided |
-| P3-TS-DC-014 | Completing a task updates the referenced US/DE Work Product status to Completed | Decided |
+| P3-TS-DC-014 | Completing a task refreshes the referenced US/DE roll-up; parent US/DE auto-completes when all child tasks are Completed; manual parent status editing remains available from Work Item edit surfaces | Decided |
 
 ## 6. Phase 3 Mockup Handoff Status
 
@@ -148,6 +155,7 @@ Team Status approved behavior:
 - Plan Estimate is manual input.
 - Accepted releases remain editable for authorized users.
 - Release readiness information is manually gathered by users from linked US/DE release notes.
+- Reassigning a Story/Defect from one Release to another removes it from the old Release artifact view, recalculates old/new Release counts and shows user feedback.
 
 ### P3.2 Development Must Verify
 
@@ -160,6 +168,7 @@ Team Status approved behavior:
 - [ ] Viewer cannot mutate via direct API call.
 - [ ] Release detail shows Theme, Notes and required right-panel fields.
 - [ ] Release readiness rule does not require system-calculated readiness in P3.2.
+- [ ] Reassigning a Story/Defect to another Release removes it from the previous Release artifact list and refreshes both Release counters.
 
 ## 6B. P3.3 Milestones Ready Mockup Scope
 
@@ -174,6 +183,8 @@ Team Status approved behavior:
 - Project, Team and Release count controls open searchable selection modals showing currently selected items.
 - Milestone can link to multiple Releases.
 - Milestone Artifacts are assigned US/DE Story/Defect work items and use the Backlog dashboard presentation.
+- Milestone artifact assignment is independent from Release assignment; adding/removing a Milestone artifact must not change Release assignment.
+- Story/Defect artifact assignment must be rejected if the item is outside the Milestone's selected Project/Team scope.
 - Milestone does not include a readiness checklist in P3.3.
 - Milestone dashboard shows only Name, Target Start Date, Target End Date and Status.
 - Target Start Date is read-only and derived from the earliest linked Release Start Date.
@@ -202,6 +213,8 @@ Team Status approved behavior:
 - [ ] Milestone Artifacts query returns assigned Story/Defect work items.
 - [ ] Milestone Artifacts dashboard reuses Backlog-style row presentation.
 - [ ] Milestone artifact assignment is independent from Release assignment.
+- [ ] Removing a Milestone artifact leaves Release assignment unchanged.
+- [ ] Assigning an artifact outside selected Project/Team scope is rejected.
 
 ## 6C. P3.4 Quality / Defect Ready Scope
 
@@ -214,13 +227,14 @@ Team Status approved behavior:
 - Defect Priority options: None, Urgent, High, Normal, Low.
 - Defect State options: Submitted, Open, Fixed, Closed, Closed Declined.
 - Defect Flow State options: Idea, Defined, In-Progress, Completed, Accepted, Released.
-- Current mockup supports search, filter placeholder, row selection, bulk-action placeholder, sortable/resizable columns, pagination and detail panel.
+- Current mockup supports search, filter placeholder, row selection, disabled/future bulk-action placeholder, sortable/resizable columns, pagination and detail panel.
 - Defect can be created from Backlog and `Quality > Defect`.
 - User Story is optional for Defect.
 - Defect dashboard supports inline edit across editable fields.
 - Backlog Defect and Quality Defect use the same detail page.
 - Defect cannot be deleted; use Closed or Closed Declined.
 - Defect State transitions follow Submitted -> Open -> Fixed -> Closed, with Submitted/Open -> Closed Declined.
+- Reopen from Closed/Closed Declined is deferred until BA confirms permission and audit rules.
 - Defect Flow State updates independently from State.
 - Fixed In Build is an optional manual text field for the build/version/release label where the fix is expected or delivered.
 
@@ -235,15 +249,16 @@ Team Status approved behavior:
 - [x] Confirm no delete behavior.
 - [x] Confirm Flow State is independent from State.
 - [x] Confirm Fixed In Build input rule: optional manual text field.
-- [ ] Confirm bulk actions in a later follow-up.
+- [x] Confirm bulk actions are not executable in Phase 3.4; placeholder must be disabled/future until BA confirms actions and permissions.
+- [x] Confirm reopen from Closed/Closed Declined is deferred until BA confirms permission and audit rules.
 
 ## 7. Deferred Scope
 
 | Item | Target | Note |
 |---|---|---|
-| Team Board | Phase 4 | Board view, drag/drop and WIP rules |
-| Board drag/drop transitions | Phase 4 | Not part of Team Status |
-| WIP limits | Phase 4 | Not part of Team Status |
+| Team Board | Future backlog | Optional board view, drag/drop and WIP rules |
+| Board drag/drop transitions | Future backlog | Not part of Team Status or current MVP |
+| WIP limits | Future backlog | Not part of Team Status or current MVP |
 | Saved Team Status views | Future | Not needed for P3.1 |
 | Advanced analytics/charts | Reports phase | Not needed for P3.1 |
 

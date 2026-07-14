@@ -6,7 +6,7 @@
 |---|---|
 | Module ID | `P3-TEAM-STATUS` |
 | Status | Ready for Development |
-| Updated date | 2026-07-08 |
+| Updated date | 2026-07-12 |
 | Scope | `Track > Team Status` |
 | Priority | P3.1 - required |
 | Depends on | Phase 1 Work Item base, Phase 2.1 Backlog Enhancement, Phase 2.2 Timeboxes > Iterations, Phase 2.3 Iteration Status |
@@ -17,7 +17,9 @@
 
 Team Status provides a Rally-like team execution dashboard for one selected Iteration. The page lets a PM/SM/lead view team workload by member, review the task rows owned by each member, update member capacity, update task name, and update task execution state.
 
-This screen is not a board. It is a dense status table grouped by member/owner. Team Board is moved to Phase 4.
+This screen is not a board. It is a dense status table grouped by member/owner. Team Board is moved to Backlog for the future and is not required for the current Agile management MVP.
+
+Documentation closure update 2026-07-12: Team Status must not auto-complete a parent Story/Defect just because one child Task is completed. Team Status recalculates parent progress/roll-up after each Task state change, and auto-completes the parent Story/Defect only when all child Tasks under that parent are `Completed`.
 
 ## 2. Reference Documents
 
@@ -70,7 +72,7 @@ User selects Workspace Project/Team context
 -> User expands/collapses each member group
 -> User can inline edit member Capacity
 -> User can inline edit Task Name and Task State
--> Task State updates are persisted and reflected in the parent Work Product status
+-> Task State updates are persisted and reflected in parent Work Product progress/roll-up
 ```
 
 Rules:
@@ -85,13 +87,38 @@ Rules:
 - Legacy or broader work item states such as `Idea`, `Accepted`, `Release`, `Code Review`, `Testing` must not be shown as Team Status task-state options.
 - If source data has `Idea`, display it as `Defined` in Team Status.
 - If source data has `Accepted`, `Release`, or equivalent terminal states, display it as `Completed` in Team Status.
-- When a task row is changed to `Completed`, the referenced Work Product (`US` or `DE`) must have execution status updated to `Completed`.
+- When a task row is changed to `Completed`, the system recalculates the referenced Work Product (`US` or `DE`) task roll-up/progress.
+- A single completed task must not automatically set the parent Work Product status to `Completed` if other child Tasks under the same parent are still not `Completed`.
+- When all child Tasks under the same parent Story/Defect are `Completed`, the system automatically updates that parent Story/Defect status to `Completed`.
 - Team Status must not create or duplicate Work Items.
 - Team Status must not move cards between board columns.
 - Member Capacity is scoped to the selected Iteration and member.
 - Task Name editing updates the task title only. It must not rename the parent Work Product.
 - Row click outside inline controls opens the existing Work Item Detail for the referenced task or parent work product, based on production routing.
 - Inline controls must stop row navigation.
+
+### 5.1 Parent Work Product Auto-Completion Rule
+
+Team Status is a task execution view. It updates the selected Task state and refreshes the parent roll-up after each Task state change.
+
+Parent Story/Defect auto-completion follows a simple rule:
+
+- If at least one child Task under the same parent Story/Defect is not `Completed`, the parent Story/Defect status remains unchanged and only roll-up/progress is refreshed.
+- If all child Tasks under the same parent Story/Defect are `Completed`, the system automatically sets the parent Story/Defect status to `Completed`.
+- The auto-completion is triggered by the Task state update. The user does not need a separate action on the parent Story/Defect.
+- Auto-completion is only a helper behavior. Authorized users can still manually change the parent Story/Defect status from the existing Work Item edit surfaces.
+
+This rule applies to parent User Stories (`US`) and Defects (`DE`) that have child Tasks.
+
+### 5.2 Task Dashboard Inline Edit Rule
+
+The Work Item Detail `Tasks` tab is treated as the Task Dashboard for the selected parent Story/Defect.
+
+- Authorized users can inline edit Task Name, Task State, Owner, To Do, Actuals and Estimate directly from the Task Dashboard table.
+- Task State options in the Task Dashboard are the same task-level values used by Team Status: `Defined`, `In-Progress`, `Completed`.
+- Inline Task Dashboard edits update the task row without forcing the user to open Task Detail.
+- Viewer/read-only users can open and read the Task Dashboard, but inline edit controls are disabled or read-only.
+- Clicking the Task ID still opens Task Detail; editing inline fields must not accidentally open Task Detail.
 
 ## 6. Functional Requirements
 
@@ -129,6 +156,14 @@ Rules:
 | P3-TS-FR-030 | Inline edit failure must show field-level or toast error and revert or keep the previous persisted value. |
 | P3-TS-FR-031 | Row click opens Work Item Detail without losing the selected Iteration context. |
 | P3-TS-FR-032 | Team Board menu item may remain visible in mockup, but Team Board is not a P3.1 deliverable. |
+| P3-TS-FR-033 | Updating a Task to `Completed` refreshes the parent Work Product task roll-up/progress. |
+| P3-TS-FR-034 | Updating one Task to `Completed` must not automatically set the parent Story/Defect status to `Completed` while another child Task under the same parent is still not `Completed`. |
+| P3-TS-FR-035 | When all child Tasks under the same parent Story/Defect are `Completed`, the system automatically sets the parent Story/Defect status to `Completed`. |
+| P3-TS-FR-036 | Parent Story/Defect auto-completion must not remove the user's ability to manually change the parent status from existing Work Item edit surfaces. |
+| P3-TS-FR-037 | Work Item Detail `Tasks` tab acts as the Task Dashboard for the selected parent Story/Defect. |
+| P3-TS-FR-038 | Authorized users can inline edit Task Name, State, Owner, To Do, Actuals and Estimate from the Task Dashboard table. |
+| P3-TS-FR-039 | Viewer/read-only users can read the Task Dashboard but cannot inline edit Task fields. |
+| P3-TS-FR-040 | Clicking Task ID opens Task Detail; inline editing fields must not trigger Task Detail navigation. |
 
 ## 7. Screen Mapping With Approved Mockup
 
@@ -145,7 +180,7 @@ Rules:
 | Task row ID | Type badge `Task` plus `TA-...` | Task-level identity |
 | Task Name | Inline editable input | Updates task title |
 | Work Product | Parent `US/DE` ID and title | Link/reference to parent Story/Defect |
-| State | Dropdown with `Defined`, `In-Progress`, `Completed` | Updates task state and parent work product status rule |
+| State | Dropdown with `Defined`, `In-Progress`, `Completed` | Updates task state and refreshes parent work product roll-up |
 | Capacity | Empty on task row, editable on member group row | Member/iteration capacity, not per-task capacity |
 | Estimate/ToDo/Actuals | Numeric hours | From task estimate/remaining/actual rollups |
 | Collapse | Arrow only | No boxed border around arrow |
@@ -355,7 +390,8 @@ Response:
   "workProduct": {
     "id": "story-4821",
     "key": "US4821",
-    "status": "Completed"
+    "status": "In-Progress",
+    "rollupStatus": "3/5 tasks completed"
   }
 }
 ```
@@ -365,7 +401,9 @@ Rules:
 - Accept partial patch for `title` and/or `state`.
 - `title` is required if included and must be non-empty after trim.
 - `state` must be one of `Defined`, `In-Progress`, `Completed`.
-- If `state = Completed`, update the referenced Work Product status to `Completed`.
+- If `state = Completed`, recalculate the referenced Work Product task roll-up/progress.
+- If the parent Story/Defect still has another child Task that is not `Completed`, keep the parent Story/Defect status unchanged.
+- If all child Tasks under the same parent Story/Defect are now `Completed`, automatically update the parent Story/Defect status to `Completed`.
 - Reject updates when the task does not belong to the selected Project/Team/Iteration context.
 - Reject Viewer or unauthorized role mutation even if the UI allows a direct API call.
 
@@ -436,12 +474,17 @@ If the production RBAC model does not yet support field-level permissions, enfor
 16. Task Name is inline editable for authorized users.
 17. State dropdown is inline editable for authorized users.
 18. State dropdown contains only `Defined`, `In-Progress`, `Completed`.
-19. Updating a task to `Completed` updates the referenced parent Work Product to `Completed`.
-20. Capacity is inline editable at member group level for authorized users.
-21. Viewer can read Team Status but cannot edit Capacity, Task Name or State.
-22. Inline edit validation errors are visible and do not silently corrupt table data.
-23. Row click opens the existing detail flow without triggering when clicking inline controls.
-24. Team Board, drag/drop, WIP limits and board transition rules are not required for P3.1.
+19. Updating a task to `Completed` recalculates the referenced parent Work Product roll-up.
+20. Updating a non-final child Task to `Completed` keeps the parent Story/Defect status unchanged when another child Task is still not `Completed`.
+21. Updating the final open child Task to `Completed` automatically sets the parent Story/Defect status to `Completed`.
+22. Auto-completion does not lock the parent Story/Defect status; authorized users can still change the parent status manually from existing Work Item edit surfaces.
+23. Task Dashboard supports inline edit for Task Name, State, Owner, To Do, Actuals and Estimate.
+24. Task Dashboard inline controls do not trigger Task Detail navigation; Task ID remains the explicit navigation control.
+25. Capacity is inline editable at member group level for authorized users.
+26. Viewer can read Team Status and Task Dashboard but cannot edit Capacity, Task Name, Task State or Task Dashboard fields.
+27. Inline edit validation errors are visible and do not silently corrupt table data.
+28. Row click opens the existing detail flow without triggering when clicking inline controls.
+29. Team Board, drag/drop, WIP limits and board transition rules are not required for P3.1.
 
 ## 13. Test Scenarios
 
@@ -458,15 +501,20 @@ If the production RBAC model does not yet support field-level permissions, enfor
 | P3-TS-TS-009 | Edit task name | Task title persists; parent Work Product title is unchanged |
 | P3-TS-TS-010 | Clear task name | Validation error; previous title remains |
 | P3-TS-TS-011 | Open State dropdown | Only Defined/In-Progress/Completed are available |
-| P3-TS-TS-012 | Change task state to Completed | Task state persists; parent US/DE status becomes Completed |
-| P3-TS-TS-013 | Source state Accepted is returned by backend | UI displays Completed |
-| P3-TS-TS-014 | Source state Idea is returned by backend | UI displays Defined |
-| P3-TS-TS-015 | Viewer opens Team Status | Values are readable but inline edit controls are disabled/read-only |
-| P3-TS-TS-016 | Viewer calls PATCH task API directly | API returns 403 |
-| P3-TS-TS-017 | Request Iteration from another Team | API rejects with validation/access error |
-| P3-TS-TS-018 | Click task row outside inline inputs | Existing detail route opens |
-| P3-TS-TS-019 | Click State dropdown | Row detail does not open |
-| P3-TS-TS-020 | Empty Iteration has no tasks | Page shows empty table state without crashing |
+| P3-TS-TS-012 | Change a non-final child task state to Completed | Task state persists; parent US/DE roll-up refreshes; parent status remains unchanged |
+| P3-TS-TS-013 | Change the final open child task state to Completed | Task state persists; parent US/DE roll-up refreshes; parent US/DE status becomes Completed |
+| P3-TS-TS-014 | Manually change parent Story/Defect status from Work Item edit surface after auto-completion | Manual status update remains available for authorized user |
+| P3-TS-TS-015 | Inline edit Task Dashboard Name, State, Owner, To Do, Actuals and Estimate | Edited values persist in the Task Dashboard row without opening Task Detail |
+| P3-TS-TS-016 | Click Task ID in Task Dashboard | Task Detail opens |
+| P3-TS-TS-017 | Edit inline field in Task Dashboard | Task Detail does not open |
+| P3-TS-TS-018 | Source state Accepted is returned by backend | UI displays Completed |
+| P3-TS-TS-019 | Source state Idea is returned by backend | UI displays Defined |
+| P3-TS-TS-020 | Viewer opens Team Status | Values are readable but inline edit controls are disabled/read-only |
+| P3-TS-TS-021 | Viewer calls PATCH task API directly | API returns 403 |
+| P3-TS-TS-022 | Request Iteration from another Team | API rejects with validation/access error |
+| P3-TS-TS-023 | Click task row outside inline inputs | Existing detail route opens |
+| P3-TS-TS-024 | Click State dropdown | Row detail does not open |
+| P3-TS-TS-025 | Empty Iteration has no tasks | Page shows empty table state without crashing |
 
 ## 14. Development Task Breakdown
 
@@ -476,23 +524,24 @@ If the production RBAC model does not yet support field-level permissions, enfor
 | P3-TS-02 | Implement Team Status query backend | Grouped owner/member task data for selected Project/Team/Iteration |
 | P3-TS-03 | Implement capacity storage | Upsert member capacity by Project/Team/Iteration/User |
 | P3-TS-04 | Implement task patch behavior | Update task title/state from Team Status |
-| P3-TS-05 | Implement parent Work Product completion propagation | Task Completed updates parent US/DE status to Completed |
+| P3-TS-05 | Implement parent Work Product roll-up and auto-completion | Task Completed recalculates parent progress; parent US/DE auto-completes when all child tasks are Completed |
 | P3-TS-06 | Implement permission guards | Read/edit permissions and Viewer read-only enforcement |
 | P3-TS-07 | Build Team Status route/page | `Track > Team Status` page with approved layout |
 | P3-TS-08 | Build Iteration selector reuse | Same selector pattern as Iteration Status |
 | P3-TS-09 | Build grouped dense table | Header, totals row, group rows, task rows |
 | P3-TS-10 | Build inline edit controls | Capacity, Task Name, State |
-| P3-TS-11 | Build column resizing | Persistent or local table resizing |
-| P3-TS-12 | Add tests | API, permissions, calculation, UI smoke and regression coverage |
+| P3-TS-11 | Build Task Dashboard inline edit | Work Item Detail Tasks tab supports inline Name, State, Owner, To Do, Actuals and Estimate |
+| P3-TS-12 | Build column resizing | Persistent or local table resizing |
+| P3-TS-13 | Add tests | API, permissions, calculation, UI smoke and regression coverage |
 
 ## 15. Out Of Scope
 
 | Item | Target |
 |---|---|
-| Team Board | Phase 4 |
-| Board drag/drop | Phase 4 |
-| WIP limits | Phase 4 |
-| Board transition validation | Phase 4 |
+| Team Board | Future backlog |
+| Board drag/drop | Future backlog |
+| WIP limits | Future backlog |
+| Board transition validation | Future backlog |
 | Release Management | P3.2 |
 | Milestones | P3.3 |
 | Quality/Defect workflow | Later Phase 3 slice after mockup approval |
@@ -504,13 +553,13 @@ If the production RBAC model does not yet support field-level permissions, enfor
 - [x] Scope confirmed by BA.
 - [x] Approved mockup exists.
 - [x] Team Status is dashboard/table, not board.
-- [x] Team Board moved to Phase 4.
+- [x] Team Board moved to Backlog for the future.
 - [x] Iteration selector behavior specified.
 - [x] Table columns specified.
 - [x] Grouping by member specified.
 - [x] Inline editable fields specified.
 - [x] Task State values specified.
-- [x] Work Product completion rule specified.
+- [x] Work Product roll-up and auto-completion rule specified.
 - [x] Data mapping specified.
 - [x] API contracts specified.
 - [x] Permissions specified.

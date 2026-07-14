@@ -10,13 +10,13 @@
 | Overall status | `P3.1 READY; P3.2 READY; P3.3 READY; P3.4 READY` |
 | P3.1 Mockup | Approved |
 | P3.1 SRS | Ready for Development |
-| Production implementation | Not started |
-| Last updated | 2026-07-11 |
+| Production implementation | Dev in progress per BA context; use this tracking file as documentation handoff baseline |
+| Last updated | 2026-07-12 |
 
 BA decisions:
 
 - P3.1 Team Status is approved as a dense dashboard/table grouped by member.
-- Team Board moves to Phase 4.
+- Team Board moves to Backlog for the future.
 - Team Board menu can remain visible in the mockup for now, but it is not part of P3.1.
 - P3.2 Release Management Timeboxes dashboard behavior is documented: inline edit, resizable columns and locked create modal type.
 - P3.2 Release readiness is user-managed from linked US/DE release notes; no system readiness calculation is required in P3.2.
@@ -26,7 +26,9 @@ BA decisions:
 - P3.3 Milestone Artifacts are assigned US/DE Story/Defect work items and are shown with the Backlog dashboard presentation.
 - P3.4 Quality/Defect has a dedicated `Quality > Defect` dashboard. Dashboard columns, field option sets, create/edit behavior and core state transitions are confirmed.
 - P3.4 Fixed In Build is an optional manual text field for the build/version/release label where the defect fix is expected or delivered.
-- Timeline file should be updated only after Phase 3 documentation and mockup are aligned across approved slices.
+- Documentation closure on 2026-07-12 tightened the Team Status parent roll-up rule: one completed Task must not auto-complete its parent Story/Defect while other child Tasks are still not Completed; when all child Tasks under that parent are Completed, the parent Story/Defect auto-completes. Authorized users can still manually change parent Story/Defect status from existing Work Item edit surfaces.
+- Work Item Detail `Tasks` tab is the Task Dashboard for a parent Story/Defect and must support inline edit for Task Name, State, Owner, To Do, Actuals and Estimate.
+- Timeline file is updated for Phase 3 documentation closure and Future Backlog scope alignment.
 
 ## 2. Status Legend
 
@@ -60,14 +62,15 @@ BA decisions:
 | P3-TS-02 | Backend | Implement Team Status query | Groups by owner/member for selected Project/Team/Iteration | P3-TS-01 | 2.0h | 0h | `NOT STARTED` |
 | P3-TS-03 | Backend | Implement member capacity persistence | Upsert capacity by Project/Team/Iteration/User | P3-TS-01 | 1.5h | 0h | `NOT STARTED` |
 | P3-TS-04 | Backend | Implement task inline patch | Patch task title/state from Team Status | P3-TS-01 | 1.5h | 0h | `NOT STARTED` |
-| P3-TS-05 | Backend | Propagate completed task to Work Product | Task Completed updates referenced US/DE status to Completed | P3-TS-04 | 1.0h | 0h | `NOT STARTED` |
+| P3-TS-05 | Backend | Refresh parent Work Product roll-up and auto-completion | Task Completed recalculates parent progress; parent US/DE auto-completes when all child tasks are Completed | P3-TS-04 | 1.0h | 0h | `NOT STARTED` |
 | P3-TS-06 | Backend | Permission guards | Viewer read-only and edit permission enforcement | P3-TS-01 | 1.0h | 0h | `NOT STARTED` |
 | P3-TS-07 | Frontend | Team Status route/page | `Track > Team Status` page shell | P3-TS-01 | 1.0h | 0h | `NOT STARTED` |
 | P3-TS-08 | Frontend | Iteration selector reuse | Same picker behavior as Iteration Status | P3-TS-07 | 0.75h | 0h | `NOT STARTED` |
 | P3-TS-09 | Frontend | Dense grouped table | Header, totals row, member rows, task rows | P3-TS-02 | 2.0h | 0h | `NOT STARTED` |
 | P3-TS-10 | Frontend | Inline edit controls | Capacity, Task Name, State dropdown | P3-TS-03, P3-TS-04 | 1.5h | 0h | `NOT STARTED` |
-| P3-TS-11 | Frontend | Column resize behavior | Resizable Team Status columns | P3-TS-09 | 0.75h | 0h | `NOT STARTED` |
-| P3-TS-12 | Verification | Team Status tests | API, permission, calculation, UI smoke tests | P3-TS-01..11 | 2.0h | 0h | `NOT STARTED` |
+| P3-TS-11 | Frontend | Task Dashboard inline edit | Work Item Detail Tasks tab supports inline Name, State, Owner, To Do, Actuals and Estimate | P3-TS-04 | 1.0h | 0h | `NOT STARTED` |
+| P3-TS-12 | Frontend | Column resize behavior | Resizable Team Status columns | P3-TS-09 | 0.75h | 0h | `NOT STARTED` |
+| P3-TS-13 | Verification | Team Status tests | API, permission, calculation, UI smoke tests | P3-TS-01..12 | 2.0h | 0h | `NOT STARTED` |
 
 ## 5. P3.1 Delivery Dependencies
 
@@ -90,7 +93,9 @@ BA decisions:
 - [ ] Capacity PATCH rejects invalid negative values.
 - [ ] Task PATCH persists title.
 - [ ] Task PATCH accepts only Defined/In-Progress/Completed.
-- [ ] Task Completed updates parent US/DE state to Completed.
+- [ ] Task Completed refreshes parent US/DE roll-up; parent stays unchanged if any child task is still not Completed.
+- [ ] Completing the final open child Task auto-completes the parent US/DE.
+- [ ] Parent US/DE status remains manually editable from existing Work Item edit surfaces after auto-completion.
 - [ ] Viewer direct PATCH returns 403.
 - [ ] Frontend page opens from Track menu.
 - [ ] Frontend Iteration picker matches Iteration Status picker.
@@ -99,6 +104,8 @@ BA decisions:
 - [ ] Frontend supports inline Capacity edit.
 - [ ] Frontend supports inline Task Name edit.
 - [ ] Frontend supports inline State edit.
+- [ ] Work Item Detail Tasks tab supports inline edit for Task Name, State, Owner, To Do, Actuals and Estimate.
+- [ ] Task Dashboard inline edit does not open Task Detail; clicking Task ID still opens Task Detail.
 - [ ] Frontend supports column resizing.
 - [ ] Row click opens detail; inline controls do not trigger detail.
 - [ ] Empty result state is handled.
@@ -129,6 +136,7 @@ P3.2 Timeboxes dashboard mockup is approved. Current confirmed direction:
 | P3-REL-10 | Verification | Release dashboard tests | Inline edit/resize/type lock/state enum | P3-REL-01..09 | TBD | 0h | `NOT STARTED` |
 | P3-REL-11 | Verification | Release detail tests | Detail fields and permissions | P3-REL-08 | TBD | 0h | `NOT STARTED` |
 | P3-REL-12 | BA | Document readiness rule | User gathers readiness from linked US/DE release notes | BA | TBD | 0h | `READY` |
+| P3-REL-13 | Frontend/Backend | Artifact reassignment UX | Moving a US/DE to another Release removes it from the previous Release artifact list, recalculates counts and shows a toast | P3-REL-01..08 | TBD | 0h | `READY` |
 
 ## 8. Development Task Plan - P3.3 Milestones
 
@@ -157,6 +165,7 @@ P3.3 core scope is ready for handoff. Current confirmed direction:
 | P3-MS-08 | Frontend | Relation selection modals | Searchable Projects/Teams/Releases selection from compact count controls | P3-MS-05 | TBD | 0h | `READY` |
 | P3-MS-09 | Security | Permission guards | Viewer read-only and mutation 403 | P3-MS-01 | TBD | 0h | `READY` |
 | P3-MS-10 | Frontend/Backend | Milestone Artifacts | Assigned Story/Defect work item dashboard using Backlog presentation | P3-MS-01..08 | TBD | 0h | `READY` |
+| P3-MS-11 | Frontend/Backend | Milestone assignment guardrails | Validate artifact project/team is in Milestone scope; removal leaves Release assignment unchanged | P3-MS-01..10 | TBD | 0h | `READY` |
 
 ## 9. Development Task Plan - P3.4 Quality/Defect
 
@@ -181,19 +190,20 @@ Create/edit behavior, core state transitions and Fixed In Build input behavior a
 | P3-QA-06 | Frontend | Inline field controls | Severity/Priority/State/Flow State dropdowns and Owner edit | P3-QA-03 | TBD | 0h | `READY` |
 | P3-QA-07 | Security/Verification | Defect permissions and tests | Viewer read-only, mutation 403, dashboard smoke tests | P3-QA-01..06 | TBD | 0h | `READY` |
 | P3-QA-08 | Frontend/Backend | Defect create/edit flow | Create from Backlog and Quality, optional User Story, inline edit, shared detail page | P3-QA-01..06 | TBD | 0h | `READY` |
-| P3-QA-09 | Backend | Defect state transitions | Submitted/Open/Fixed/Closed/Closed Declined transition validation | P3-QA-03 | TBD | 0h | `READY` |
+| P3-QA-09 | Backend | Defect state transitions | Submitted/Open/Fixed/Closed/Closed Declined transition validation; reopen is deferred unless permission is confirmed | P3-QA-03 | TBD | 0h | `READY` |
 | P3-QA-10 | Frontend/Backend | Fixed In Build field | Optional manual text field on dashboard/detail | P3-QA-01..06 | TBD | 0h | `READY` |
 
 ## 10. Deferred Items And Scope Boundaries
 
 | Item | Status | Target |
 |---|---|---|
-| Team Board | `DEFERRED` | Phase 4 |
-| Board drag/drop status transition | `DEFERRED` | Phase 4 |
-| WIP limits | `DEFERRED` | Phase 4 |
+| Team Board | `FUTURE BACKLOG` | Optional future board view; not part of current MVP |
+| Board drag/drop status transition | `FUTURE BACKLOG` | Optional future board behavior |
+| WIP limits | `FUTURE BACKLOG` | Optional future board configuration |
 | Saved Team Status views | `DEFERRED` | Future |
 | Advanced charts/reports | `DEFERRED` | Reports phase |
 | Permission model and bulk actions | `DEFERRED` | Future/after BA confirmation |
+| Defect reopen from Closed/Closed Declined | `DEFERRED` | Future/after permission rule confirmation |
 
 ## 11. Deferred Follow-Ups
 
@@ -202,3 +212,4 @@ No open BA confirmation blocks Phase 3 documentation handoff.
 Deferred follow-ups:
 
 - Permission model and bulk actions are intentionally not considered yet.
+- Defect reopen from `Closed` or `Closed Declined` is not required for Phase 3.4 implementation until BA confirms who can reopen and what audit/reason fields are required.
