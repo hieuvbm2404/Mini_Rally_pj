@@ -5,12 +5,13 @@ import {
   UserPlus, Users, X,
 } from "lucide-react";
 import { OWNERS, PROJECTS, SCOPE_PROJECTS, WORKSPACE_USERS, type Owner, type Role } from "../model";
-import { Avatar, RoleBadge } from "../components/shared";
+import { Avatar } from "../components/shared";
 
 type ManageTab = "projects" | "teams" | "users";
 type ProjectStatus = "Active" | "Archived";
 type TeamStatus = "Active" | "Deactive";
 type UserStatus = "Active" | "Invited" | "Deactive";
+type WorkspaceRoleCode = "workspace_admin" | "project_admin" | "project_member" | "project_viewer" | "guest";
 
 type ProjectRecord = {
   id: string;
@@ -43,7 +44,7 @@ type UserRecord = {
   name: string;
   email: string;
   owner: Owner;
-  workspaceRole: Role;
+  workspaceRole: WorkspaceRoleCode;
   status: UserStatus;
   projectAccess: string[];
   teams: string[];
@@ -72,7 +73,7 @@ type TeamDraft = {
 type UserDraft = {
   name: string;
   email: string;
-  workspaceRole: Role;
+  workspaceRole: WorkspaceRoleCode;
   status: UserStatus;
   teams: string[];
 };
@@ -99,7 +100,7 @@ const EMPTY_TEAM_DRAFT: TeamDraft = {
 const EMPTY_USER_DRAFT: UserDraft = {
   name: "",
   email: "",
-  workspaceRole: "Developer",
+  workspaceRole: "project_member",
   status: "Invited",
   teams: [SCOPE_PROJECTS[0].teams[0]],
 };
@@ -151,14 +152,27 @@ const INITIAL_USERS: UserRecord[] = WORKSPACE_USERS.map((user, index) => ({
   name: user.name,
   email: user.email,
   owner: user.owner,
-  workspaceRole: user.role,
+  workspaceRole: mapLegacyRoleToProd(user.role),
   status: user.status,
   projectAccess: index < 3 ? ["NXP", "REP"] : ["NXP"],
   teams: index === 0 ? ["Core Platform", "Identity & Access"] : [INITIAL_TEAMS[index % INITIAL_TEAMS.length].name],
   lastLogin: user.lastLogin,
 }));
 
-const ROLES: Role[] = ["Workspace Admin", "Project Manager", "Product Owner", "Developer", "Tester", "Viewer"];
+const ROLES: { code: WorkspaceRoleCode; label: string }[] = [
+  { code: "workspace_admin", label: "Workspace Admin" },
+  { code: "project_admin", label: "Project Admin" },
+  { code: "project_member", label: "Project Member" },
+  { code: "project_viewer", label: "Project Viewer" },
+  { code: "guest", label: "Guest" },
+];
+
+function mapLegacyRoleToProd(role: Role): WorkspaceRoleCode {
+  if (role === "Workspace Admin") return "workspace_admin";
+  if (role === "Project Manager" || role === "Product Owner") return "project_admin";
+  if (role === "Viewer") return "project_viewer";
+  return "project_member";
+}
 
 function toKey(value: string) {
   const initials = value
@@ -198,6 +212,25 @@ function StatusDot({ status }: { status: ProjectStatus | TeamStatus | UserStatus
     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-semibold" style={{ color: cfg.color, backgroundColor: cfg.bg, border: `1px solid ${cfg.border}` }}>
       <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cfg.dot }} />
       {status}
+    </span>
+  );
+}
+
+function WorkspaceRoleBadge({ role }: { role: WorkspaceRoleCode }) {
+  const meta = ROLES.find(item => item.code === role) ?? ROLES[2];
+  const style = role === "workspace_admin"
+    ? { bg: "#eef6f0", color: "#1e6930", border: "#c7e4ce" }
+    : role === "project_admin"
+      ? { bg: "#edf2fb", color: "#1d3f73", border: "#bdd0ea" }
+      : role === "project_member"
+        ? { bg: "#f1f5f9", color: "#475569", border: "#d9dee7" }
+        : role === "project_viewer"
+          ? { bg: "#f7f8fa", color: "#697285", border: "#dde2ea" }
+          : { bg: "#fef2f2", color: "#b91c1c", border: "#f0c7c1" };
+  return (
+    <span className="inline-flex flex-col gap-0.5 px-2 py-1 rounded-sm text-[10px] font-semibold" style={{ backgroundColor: style.bg, color: style.color, border: `1px solid ${style.border}` }}>
+      <span>{meta.label}</span>
+      <span className="font-mono font-medium opacity-80">{role}</span>
     </span>
   );
 }
@@ -311,7 +344,7 @@ function TeamModal({ team, projects, existingKeys, onClose, onSave }: { team: Te
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15,23,42,0.34)" }} onClick={onClose} />
       <form onSubmit={submit} className="relative w-full max-w-[680px] h-[600px] bg-white rounded-md shadow-2xl overflow-hidden flex flex-col" style={{ border: "1px solid #d4d8de" }}>
-        <ModalHeader title={editing ? "Edit Team" : "Create Team"} subtitle="Manage / Teams" onClose={onClose} />
+        <ModalHeader title={editing ? "Edit Team" : "Create Team"} subtitle="Manage Projects / Teams" onClose={onClose} />
         <div className="p-5 space-y-4 flex-1 overflow-y-auto">
           {error && <ErrorMessage text={error} />}
           <div className="flex items-center gap-1 p-1 rounded" style={{ backgroundColor: "#edf0f4" }}>
@@ -373,7 +406,7 @@ function UserModal({ user, teams, existingEmails, onClose, onSave }: { user: Use
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(15,23,42,0.34)" }} onClick={onClose} />
       <form onSubmit={submit} className="relative w-full max-w-[680px] h-[600px] bg-white rounded-md shadow-2xl overflow-hidden flex flex-col" style={{ border: "1px solid #d4d8de" }}>
-        <ModalHeader title={editing ? "Edit User" : "Invite User"} subtitle="Manage / Users" onClose={onClose} />
+        <ModalHeader title={editing ? "Edit User" : "Invite User"} subtitle="Manage Projects / Users" onClose={onClose} />
         <div className="p-5 space-y-4 flex-1 overflow-y-auto">
           {error && <ErrorMessage text={error} />}
           <div className="flex items-center gap-1 p-1 rounded" style={{ backgroundColor: "#edf0f4" }}>
@@ -388,7 +421,7 @@ function UserModal({ user, teams, existingEmails, onClose, onSave }: { user: Use
                 <Field label="Email *"><input value={draft.email} disabled={editing} onChange={event => setDraft({ ...draft, email: event.target.value })} placeholder="name@company.com" className="form-input disabled:bg-[#f1f3f6]" /></Field>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Workspace role"><select value={draft.workspaceRole} onChange={event => setDraft({ ...draft, workspaceRole: event.target.value as Role })} className="form-input bg-white">{ROLES.map(role => <option key={role}>{role}</option>)}</select></Field>
+                <Field label="Workspace role"><select value={draft.workspaceRole} onChange={event => setDraft({ ...draft, workspaceRole: event.target.value as WorkspaceRoleCode })} className="form-input bg-white">{ROLES.map(role => <option key={role.code} value={role.code}>{role.label} / {role.code}</option>)}</select></Field>
                 <Field label="Status"><select value={draft.status} onChange={event => setDraft({ ...draft, status: event.target.value as UserStatus })} className="form-input bg-white"><option>Active</option><option>Invited</option><option>Deactive</option></select></Field>
               </div>
             </div>
@@ -604,8 +637,8 @@ export function ProjectsPage({ role, createRequest = 0, onCreateRequestHandled }
       <style>{`.form-input{width:100%;padding:0.5rem 0.75rem;border:1px solid #d9dee7;border-radius:4px;font-size:12px;color:#1a2234;outline:none}.form-input:focus{border-color:rgba(29,63,115,.45);box-shadow:0 0 0 2px rgba(29,63,115,.08)}`}</style>
       <div className="px-4 py-3 flex items-center gap-4 shrink-0" style={{ borderBottom: "1px solid #e2e6eb" }}>
         <div>
-          <h2 className="text-[14px] font-semibold" style={{ color: "#1a2234" }}>Manage</h2>
-          <p className="text-[10px] mt-0.5" style={{ color: "#8c94a6" }}>Projects, teams and users for ACME Space Inc.</p>
+          <h2 className="text-[14px] font-semibold" style={{ color: "#1a2234" }}>Manage Projects</h2>
+          <p className="text-[10px] mt-0.5" style={{ color: "#8c94a6" }}>Projects, teams and users under ACME Space Inc.</p>
         </div>
         <Tabs activeTab={activeTab} onChange={setActiveTab} />
         <div className="flex-1" />
@@ -704,7 +737,7 @@ function TeamsTab({ teams, projects, onEdit }: { teams: TeamRecord[]; projects: 
 
 function UsersTab({ users, onEdit }: { users: UserRecord[]; onEdit: (user: UserRecord) => void }) {
   const [search, setSearch] = useState("");
-  const [role, setRole] = useState<"All" | Role>("All");
+  const [role, setRole] = useState<"All" | WorkspaceRoleCode>("All");
   const [status, setStatus] = useState<"All" | UserStatus>("All");
   const filtered = useMemo(() => users.filter(user => (role === "All" || user.workspaceRole === role) && (status === "All" || user.status === status) && `${user.name} ${user.email} ${user.workspaceRole}`.toLowerCase().includes(search.toLowerCase())), [users, role, search, status]);
 
@@ -713,11 +746,11 @@ function UsersTab({ users, onEdit }: { users: UserRecord[]; onEdit: (user: UserR
       <div className="grid grid-cols-3 gap-3 px-4 py-3 shrink-0" style={{ backgroundColor: "#f7f8fa", borderBottom: "1px solid #e2e6eb" }}>
         <MetricCard label="Total Users" value={users.length} icon={Users} />
         <MetricCard label="Active" value={users.filter(user => user.status === "Active").length} icon={UserCheck} />
-        <MetricCard label="Admins" value={users.filter(user => user.workspaceRole === "Workspace Admin").length} icon={Shield} />
+        <MetricCard label="Admins" value={users.filter(user => user.workspaceRole === "workspace_admin").length} icon={Shield} />
       </div>
       <Toolbar count={`${filtered.length} users`}>
         <SearchBox value={search} onChange={setSearch} placeholder="Search users..." />
-        <select value={role} onChange={event => setRole(event.target.value as "All" | Role)} className="px-2.5 py-1.5 rounded text-[11px] bg-white" style={{ border: "1px solid #d9dee7", color: "#1a2234" }}><option value="All">All roles</option>{ROLES.map(item => <option key={item}>{item}</option>)}</select>
+        <select value={role} onChange={event => setRole(event.target.value as "All" | WorkspaceRoleCode)} className="px-2.5 py-1.5 rounded text-[11px] bg-white" style={{ border: "1px solid #d9dee7", color: "#1a2234" }}><option value="All">All roles</option>{ROLES.map(item => <option key={item.code} value={item.code}>{item.label} / {item.code}</option>)}</select>
         <Segmented value={status} values={["All", "Active", "Deactive"] as const} onChange={setStatus} />
       </Toolbar>
       <div className="flex-1 overflow-auto"><div className="min-w-[1080px]">
@@ -726,7 +759,7 @@ function UsersTab({ users, onEdit }: { users: UserRecord[]; onEdit: (user: UserR
           <div key={user.id} className="row cursor-pointer hover:bg-[#f7f8fa]" onClick={() => onEdit(user)}>
             <div className="w-52 shrink-0 flex items-center gap-2 min-w-0"><Avatar owner={user.owner} size="sm" /><span className="text-[11px] font-semibold truncate" style={{ color: "#1a2234" }}>{user.name}</span></div>
             <div className="w-56 shrink-0 text-[10px] truncate" style={{ color: "#5c6478" }}>{user.email}</div>
-            <div className="w-36 shrink-0"><RoleBadge role={user.workspaceRole} /></div>
+            <div className="w-36 shrink-0"><WorkspaceRoleBadge role={user.workspaceRole} /></div>
             <div className="w-24 shrink-0"><StatusDot status={user.status} /></div>
             <div className="flex-1 min-w-0 text-[10px] truncate" style={{ color: "#5c6478" }}>{user.teams.join(", ")}</div>
             <div className="w-36 shrink-0 text-[10px]" style={{ color: "#8c94a6" }}>{user.lastLogin}</div>

@@ -102,7 +102,7 @@ export function TopNav({
                 })}
               </div>
               <div className="border-t border-[#e2e6eb] mt-1 pt-1 px-1.5 flex items-center justify-end">
-                <button onClick={() => { onNavigate("projects"); setWsOpen(false); }} className="flex items-center gap-1 px-2 py-1.5 text-[10px] rounded hover:bg-[#f4f6f9]" style={{ color: "#5c6478" }}><Settings size={11} /> Manage</button>
+                <button aria-label="Manage workspace projects, teams and users" title="Manage workspace projects, teams and users" onClick={() => { onNavigate("projects"); setWsOpen(false); }} className="flex items-center gap-1 px-2 py-1.5 text-[10px] rounded hover:bg-[#f4f6f9]" style={{ color: "#5c6478" }}><Settings size={11} /> Manage Projects</button>
               </div>
             </div>
           )}
@@ -147,7 +147,7 @@ export function TopNav({
         </button>
         <button className="p-1.5 rounded" style={{ color: "rgba(255,255,255,0.65)" }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#fff"; }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.65)"; }}><HelpCircle size={14} /></button>
         {can.manageSettings(currentRole) && (
-          <button onClick={() => onNavigate("settings")} className="p-1.5 rounded" style={{ color: currentPage === "settings" ? "#fff" : "rgba(255,255,255,0.65)", backgroundColor: currentPage === "settings" ? "rgba(255,255,255,0.15)" : "transparent" }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#fff"; }} onMouseLeave={e => { if (currentPage !== "settings") { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.65)"; } }}>
+          <button aria-label="Workspace Settings" title="Workspace Settings" onClick={() => onNavigate("settings")} className="p-1.5 rounded" style={{ color: currentPage === "settings" ? "#fff" : "rgba(255,255,255,0.65)", backgroundColor: currentPage === "settings" ? "rgba(255,255,255,0.15)" : "transparent" }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#fff"; }} onMouseLeave={e => { if (currentPage !== "settings") { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.65)"; } }}>
             <Settings size={14} />
           </button>
         )}
@@ -233,7 +233,7 @@ export function ContextBar({ currentPage, currentProject, currentTeam }: { curre
   if (currentPage === "settings" || currentPage === "notifications") return null;
   const crumbs: Record<Page, string[]> = {
     home: ["ACME Space Inc.", "Home"],
-    projects: ["ACME Space Inc.", "Manage"],
+    projects: ["ACME Space Inc.", "Manage Projects"],
     backlog: [currentProject.name, "Plan", "Backlog"],
     iterations: [currentProject.name, "Plan", "Timeboxes"],
     track: [currentProject.name, "Track", "Iteration Status"],

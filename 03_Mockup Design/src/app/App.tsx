@@ -1,6 +1,6 @@
 ﻿import { useState } from "react";
 import { TopNav, ContextBar } from "./components/layout";
-import { type Page, type Role, type ScopeProject, type WorkItem, NOTIFICATIONS, SCOPE_PROJECTS } from "./model";
+import { type Page, type Role, type ScopeProject, type WorkItem, NOTIFICATIONS, SCOPE_PROJECTS, WORK_ITEMS } from "./model";
 import { HomePage } from "./pages/HomePage";
 import { TrackPage } from "./pages/IterationStatusPage";
 import { TeamBoardPage } from "./pages/TeamBoardPage";
@@ -33,6 +33,10 @@ export default function App() {
   function navigateTo(page: Page) { setCurrentPage(page); setActiveItem(null); closeFullDetail(); }
   function changeScope(project: ScopeProject, team: string) { setCurrentProject(project); setCurrentTeam(team); setActiveItem(null); closeFullDetail(); }
   function openFullDetail(item: WorkItem) { setActiveItem(null); setFullDetailItem(item); setShowFullDetail(true); }
+  function openNotificationWorkItem(workItemId: string) {
+    const item = WORK_ITEMS.find(workItem => workItem.id === workItemId);
+    if (item) openFullDetail(item);
+  }
   function minimizeFullDetail(item: WorkItem) { setActiveItem(item); setShowFullDetail(false); setFullDetailItem(null); }
   function closeFullDetail() { setShowFullDetail(false); setFullDetailItem(null); }
   function signOut() {
@@ -55,7 +59,7 @@ export default function App() {
       case "portfolio": return <PortfolioPage role={currentRole} />;
       case "releases": return <ReleasesPage role={currentRole} />;
       case "reports": return <ReportsPage role={currentRole} />;
-      case "notifications": return <NotificationsPage />;
+      case "notifications": return <NotificationsPage onOpenWorkItem={openNotificationWorkItem} />;
       case "settings": return <SettingsPage role={currentRole} />;
     }
   }

@@ -16,8 +16,8 @@ export interface WorkItem {
   attachmentCount?: number; project?: string; rank?: number;
 }
 export interface Notification {
-  id: number; type: "assigned" | "comment" | "status" | "mention" | "review" | "attachment" | "sprint" | "release" | "due";
-  title: string; body: string; time: string; read: boolean; user: Owner; project?: string;
+  id: number; type: "assigned" | "mention";
+  title: string; body: string; time: string; read: boolean; user: Owner; project?: string; workItemId: string;
 }
 export interface Feature {
   id: string; title: string; status: StatusType; priority: PriorityType;
@@ -309,15 +309,9 @@ export const FEATURES: Feature[] = [
 ];
 
 export const NOTIFICATIONS: Notification[] = [
-  { id: 1, type: "assigned", title: "Assigned to you", body: "US-4821 · Implement SSO authentication via SAML 2.0", time: "2h ago", read: false, user: OWNERS[3] },
-  { id: 2, type: "comment", title: "New comment", body: "Sarah Chen commented on DE-1142 — added heap profiler results", time: "4h ago", read: false, user: OWNERS[1] },
-  { id: 3, type: "status", title: "Status changed", body: "US-4819 moved from In-Progress → Completed by James Okafor", time: "5h ago", read: false, user: OWNERS[2] },
-  { id: 4, type: "mention", title: "You were mentioned", body: "@Marcus Webb can you review the migration script in TA-2293?", time: "Yesterday", read: true, user: OWNERS[1] },
-  { id: 5, type: "review", title: "Review requested", body: "Priya Nair requested your review on FE-318 Dashboard widget spec", time: "Yesterday", read: true, user: OWNERS[3] },
-  { id: 6, type: "sprint", title: "Sprint started", body: "Sprint 24.3 started — 9 items committed, 47 planned points", time: "Oct 14", read: true, user: OWNERS[0] },
-  { id: 7, type: "comment", title: "New comment", body: "Tom Brennan commented on US-4803 — added notification channel mockups", time: "Oct 19", read: true, user: OWNERS[4] },
-  { id: 8, type: "attachment", title: "Attachment uploaded", body: "Priya Nair attached wireframes-v3.pdf to FE-318", time: "Oct 20", read: true, user: OWNERS[3] },
-  { id: 9, type: "release", title: "Release updated", body: "Q4 2024 release target adjusted to Nov 1 by Marcus Webb", time: "Oct 21", read: true, user: OWNERS[0] },
+  { id: 1, type: "assigned", title: "US assigned to you", body: "US-4821 · Implement SSO authentication via SAML 2.0", time: "2h ago", read: false, user: OWNERS[3], workItemId: "US-4821" },
+  { id: 2, type: "mention", title: "Mentioned in note", body: "DE-1142 · Sarah Chen mentioned @Marcus Webb in Notes", time: "4h ago", read: false, user: OWNERS[1], workItemId: "DE-1142" },
+  { id: 3, type: "assigned", title: "DE assigned to you", body: "DE-1142 · Dashboard widget refresh loop causes memory leak in Firefox 118+", time: "Yesterday", read: true, user: OWNERS[1], workItemId: "DE-1142" },
 ];
 
 export const VELOCITY_DATA = [
