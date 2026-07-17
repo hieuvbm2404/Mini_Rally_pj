@@ -5,13 +5,13 @@
 | Attribute | Value |
 |---|---|
 | Module ID | `P4-NOTIFICATIONS` |
-| Status | Ready for Development |
-| Updated date | 2026-07-13 |
+| Status | BA/Mockup Ready |
+| Updated date | 2026-07-17 |
 | Scope | Notification bell, in-app popup, Notification Center, read/unread state, assignment/mention filters and routing to the related US/DE |
 | Priority | P4.1 - required for Collaboration & Governance |
 | Depends on | Phase 1 Work Items, Work Item Notes, Phase 4 RBAC baseline |
 | Mockup source | `03_Mockup Design/src/app/pages/NotificationsPage.tsx`, `03_Mockup Design/src/app/components/layout.tsx`, `03_Mockup Design/src/app/model.ts` |
-| Not included | Generic comments, status changes, attachments, sprint/release/due-date reminders, preferences, email delivery, mobile push notifications, chat/messaging inbox, external integrations |
+| Not included | API payload/contracts; generic comments, status changes, attachments, sprint/release/due-date reminders, preferences, email delivery, mobile push notifications, chat/messaging inbox and external integrations |
 
 ## 1. Goal
 
@@ -103,118 +103,13 @@ System records a relevant event
 | P4-NOTIF-FR-021 | Notification creation should be idempotent for the same event-recipient pair to avoid duplicates. |
 | P4-NOTIF-FR-022 | Notification text must not expose sensitive target details to users without permission. |
 
-## 7. Data Model And Field Mapping
+## 7. Development Handoff Constraints
 
-| UI field | API DTO | DB/source | Editable | Rule/null handling |
-|---|---|---|---|---|
-| Notification ID | `id` | `notifications.id` | No | Generated |
-| Recipient | `recipientUserId` | `notifications.recipient_user_id` | No | Required |
-| Event type | `type` | `notifications.type` | No | Enum from taxonomy |
-| Title | `title` | `notifications.title` | No | Required, short |
-| Body | `body` | `notifications.body` | No | Required, sanitized text |
-| Actor | `actorUserId`, `actor` | Event source user | No | Nullable for system events |
-| Workspace | `workspaceId` | Event source | No | Required |
-| Project | `projectId`, `projectName` | Event source | No | Nullable only for workspace-level events |
-| Team | `teamId`, `teamName` | Event source | No | Nullable for project/workspace events |
-| Source type | `sourceType` | Event source | No | Work Item only for Phase 4.1 |
-| Source ID | `sourceId` | Event source | No | US/DE Work Item ID |
-| Route target | `routeTarget` | Event source | No | US/DE Work Item detail route; optional relation anchor later |
-| Read state | `readAt` or `read` | `notifications.read_at` | Yes | Null means unread |
-| Created time | `createdAt` | `notifications.created_at` | No | Used for sort |
+- Development owns DTO, API, persistence and event-delivery contracts.
+- The implementation must preserve the confirmed event taxonomy, recipient ownership, unread behavior and US/DE route target.
+- API or storage choices must not expand the approved Phase 4 notification event scope.
 
-Suggested type:
-
-```ts
-type NotificationType =
-  | "assigned"
-  | "mention";
-
-type NotificationTargetType =
-  | "work_item";
-```
-
-## 8. API Contracts
-
-### 8.1 List Notifications
-
-```http
-GET /api/notifications?filter={filter}&page={page}&pageSize={pageSize}
-```
-
-Response:
-
-```ts
-type NotificationListResponse = {
-  items: NotificationDto[];
-  unreadCount: number;
-  page: number;
-  pageSize: number;
-  total: number;
-};
-
-type NotificationDto = {
-  id: string;
-  type: NotificationType;
-  title: string;
-  body: string;
-  readAt?: string | null;
-  createdAt: string;
-  actor?: {
-    id: string;
-    name: string;
-    initials: string;
-  } | null;
-  project?: {
-    id: string;
-    key: string;
-    name: string;
-  } | null;
-  source: {
-    type: NotificationTargetType;
-    id: string;
-    displayId: string;
-    title: string;
-  };
-  routeTarget: {
-    type: "work_item";
-    id: string;
-  };
-};
-```
-
-### 8.2 Mark One Notification As Read
-
-```http
-PATCH /api/notifications/{notificationId}/read
-Content-Type: application/json
-
-{
-  "read": true
-}
-```
-
-Rules:
-
-- Only the notification recipient can mark it read/unread.
-- Backend returns 403 or 404 for another user's notification.
-
-### 8.3 Mark All As Read
-
-```http
-POST /api/notifications/mark-all-read
-Content-Type: application/json
-
-{
-  "filter": "all"
-}
-```
-
-Rules:
-
-- Applies only to the current signed-in user.
-- Does not mutate notifications belonging to other users.
-
-## 9. Permissions And Security
+## 8. Permissions And Security
 
 | Case | Required behavior |
 |---|---|
@@ -224,7 +119,7 @@ Rules:
 | Sensitive target data changes after notification is created | List may show generic title/body or safe fallback if the target is no longer accessible. |
 | Workspace/project context changes | Notification Center still shows current user's notifications, but source details must still respect current access. |
 
-## 10. Acceptance Checklist
+## 9. Acceptance Checklist
 
 - [ ] Bell opens Notification Center.
 - [ ] Bell unread indicator/count matches unread API count.
@@ -247,12 +142,10 @@ Rules:
 - [ ] Notification creation respects project/team access.
 - [ ] Duplicate event-recipient notifications are prevented.
 
-## 11. Open Questions Gate
+## 10. Open Questions Gate
 
-No blocking question remains for the current BA baseline. Before development starts on later tasks, BA must confirm any implementation-specific detail that is not visible in the mockup, especially:
+No open business question remains for the Phase 4 BA/mockup baseline.
 
-| ID | Question | Current handling |
-|---|---|---|
-| P4-NOTIF-Q01 | Should the popup auto-dismiss, and after how many seconds? | Ask BA before final UI implementation |
-| P4-NOTIF-Q02 | Should mention routing scroll/focus directly to the Notes section later? | Phase 4.1 only requires opening the US/DE item |
-| P4-NOTIF-Q03 | Should users be able to mark a notification unread after reading it? | Ask BA before API/UI implementation |
+- Popup auto-dismiss timing is not required in Phase 4.
+- Mention routing only needs to open the US/DE containing the Note; auto-focus on Notes is not required.
+- Marking a notification unread is not included in Phase 4.

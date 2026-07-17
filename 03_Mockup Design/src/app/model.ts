@@ -1,4 +1,4 @@
-﻿export type Role = "Workspace Admin" | "Project Manager" | "Product Owner" | "Developer" | "Tester" | "Viewer";
+﻿export type Role = "Workspace Admin" | "Project Admin" | "Project Member";
 export type Page = "home" | "projects" | "backlog" | "iterations" | "track" | "teamBoard" | "teamStatus" | "quality" | "portfolio" | "releases" | "reports" | "notifications" | "settings";
 export type WorkItemType = "Story" | "Defect" | "Task" | "Feature";
 export type StatusType = "Idea" | "Defined" | "In-Progress" | "Code Review" | "Testing" | "Completed" | "Accepted" | "Release";
@@ -64,17 +64,17 @@ export interface LabelItem { id: string; name: string; color: string; usage: num
 // ─── Permissions ──────────────────────────────────────────────────────────────
 
 export const can = {
-  create: (r: Role) => r !== "Viewer",
-  edit: (r: Role) => r !== "Viewer",
-  delete: (r: Role) => ["Workspace Admin", "Project Manager"].includes(r),
+  create: (_r: Role) => true,
+  edit: (_r: Role) => true,
+  delete: (_r: Role) => true,
   manageUsers: (r: Role) => r === "Workspace Admin",
-  manageSprints: (r: Role) => ["Workspace Admin", "Project Manager"].includes(r),
-  manageBacklog: (r: Role) => ["Workspace Admin", "Project Manager", "Product Owner"].includes(r),
-  manageSettings: (r: Role) => ["Workspace Admin", "Project Manager"].includes(r),
+  manageSprints: (r: Role) => r !== "Project Member",
+  manageBacklog: (_r: Role) => true,
+  manageSettings: (r: Role) => r !== "Project Member",
   manageRoles: (r: Role) => r === "Workspace Admin",
-  createDefects: (r: Role) => ["Workspace Admin", "Project Manager", "Product Owner", "Developer", "Tester"].includes(r),
+  createDefects: (r: Role) => r !== "Project Member",
   viewAdmin: (r: Role) => r === "Workspace Admin",
-  dragBoard: (r: Role) => !["Viewer"].includes(r),
+  dragBoard: (r: Role) => r !== "Project Member",
 };
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -100,6 +100,12 @@ export const SCOPE_PROJECTS: ScopeProject[] = [
   { key: "INF", name: "Infrastructure Refresh", teams: ["Platform Operations", "Cloud Enablement"] },
   { key: "REP", name: "Analytics & Reporting Suite", teams: ["Analytics", "Data Visualization"] },
 ];
+
+export const ROLE_SCOPE = {
+  projectAdminProjectKeys: ["NXP"],
+  projectMemberProjectKey: "NXP",
+  projectMemberTeams: ["Core Platform"],
+} as const;
 
 export const WORK_ITEMS: WorkItem[] = [
   {
@@ -402,11 +408,11 @@ export const ITERATIONS_DATA: IterationItem[] = [
 
 export const WORKSPACE_USERS: WorkspaceUser[] = [
   { name: "Marcus Webb", email: "marcus.webb@acme.com", role: "Workspace Admin", status: "Active", lastLogin: "Oct 22, 2024 9:14 AM", owner: OWNERS[0] },
-  { name: "Sarah Chen", email: "sarah.chen@acme.com", role: "Developer", status: "Active", lastLogin: "Oct 22, 2024 8:45 AM", owner: OWNERS[1] },
-  { name: "James Okafor", email: "james.okafor@acme.com", role: "Tester", status: "Active", lastLogin: "Oct 21, 2024 4:30 PM", owner: OWNERS[2] },
-  { name: "Priya Nair", email: "priya.nair@acme.com", role: "Product Owner", status: "Active", lastLogin: "Oct 22, 2024 10:05 AM", owner: OWNERS[3] },
-  { name: "Tom Brennan", email: "tom.brennan@acme.com", role: "Project Manager", status: "Active", lastLogin: "Oct 20, 2024 3:15 PM", owner: OWNERS[4] },
-  { name: "Elena Kowalski", email: "elena.kowalski@acme.com", role: "Developer", status: "Invited", lastLogin: "—", owner: { name: "Elena Kowalski", initials: "EK", color: "#4a7c6e" } },
+  { name: "Sarah Chen", email: "sarah.chen@acme.com", role: "Project Member", status: "Active", lastLogin: "Oct 22, 2024 8:45 AM", owner: OWNERS[1] },
+  { name: "James Okafor", email: "james.okafor@acme.com", role: "Project Member", status: "Active", lastLogin: "Oct 21, 2024 4:30 PM", owner: OWNERS[2] },
+  { name: "Priya Nair", email: "priya.nair@acme.com", role: "Project Admin", status: "Active", lastLogin: "Oct 22, 2024 10:05 AM", owner: OWNERS[3] },
+  { name: "Tom Brennan", email: "tom.brennan@acme.com", role: "Project Admin", status: "Active", lastLogin: "Oct 20, 2024 3:15 PM", owner: OWNERS[4] },
+  { name: "Elena Kowalski", email: "elena.kowalski@acme.com", role: "Project Member", status: "Invited", lastLogin: "—", owner: { name: "Elena Kowalski", initials: "EK", color: "#4a7c6e" } },
 ];
 
 export const WORKFLOW_STATUSES: WorkflowStatusItem[] = [
@@ -447,20 +453,20 @@ export const PLANNED_VS_COMPLETED = [
 ];
 
 export const PERMISSIONS_MATRIX = [
-  { action: "Create Work Items", roles: ["Workspace Admin", "Project Manager", "Product Owner", "Tester"] },
-  { action: "Edit Work Items", roles: ["Workspace Admin", "Project Manager", "Product Owner", "Developer", "Tester"] },
-  { action: "Delete Work Items", roles: ["Workspace Admin", "Project Manager"] },
+  { action: "Create Work Items", roles: ["Workspace Admin", "Project Admin", "Project Member"] },
+  { action: "Edit Work Items", roles: ["Workspace Admin", "Project Admin", "Project Member"] },
+  { action: "Delete Work Items", roles: ["Workspace Admin", "Project Admin", "Project Member"] },
   { action: "Manage Users & Roles", roles: ["Workspace Admin"] },
   { action: "Manage Workspace Settings", roles: ["Workspace Admin"] },
-  { action: "Manage Project Settings", roles: ["Workspace Admin", "Project Manager"] },
-  { action: "Manage Iterations", roles: ["Workspace Admin", "Project Manager"] },
-  { action: "Manage Releases", roles: ["Workspace Admin", "Project Manager", "Product Owner"] },
-  { action: "Prioritize Backlog", roles: ["Workspace Admin", "Project Manager", "Product Owner"] },
-  { action: "Create Defects", roles: ["Workspace Admin", "Project Manager", "Product Owner", "Developer", "Tester"] },
-  { action: "View Reports", roles: ["Workspace Admin", "Project Manager", "Product Owner", "Developer", "Tester", "Viewer"] },
-  { action: "Export Reports", roles: ["Workspace Admin", "Project Manager", "Product Owner"] },
-  { action: "Comment", roles: ["Workspace Admin", "Project Manager", "Product Owner", "Developer", "Tester"] },
-  { action: "Upload Attachments", roles: ["Workspace Admin", "Project Manager", "Product Owner", "Developer", "Tester"] },
+  { action: "Manage Project Settings", roles: ["Workspace Admin", "Project Admin"] },
+  { action: "Manage Iterations", roles: ["Workspace Admin", "Project Admin"] },
+  { action: "Manage Releases", roles: ["Workspace Admin", "Project Admin"] },
+  { action: "Prioritize Backlog", roles: ["Workspace Admin", "Project Admin", "Project Member"] },
+  { action: "Create Defects", roles: ["Workspace Admin", "Project Admin", "Project Member"] },
+  { action: "View Reports", roles: ["Workspace Admin", "Project Admin"] },
+  { action: "Export Reports", roles: ["Workspace Admin", "Project Admin"] },
+  { action: "Comment", roles: ["Workspace Admin", "Project Admin", "Project Member"] },
+  { action: "Upload Attachments", roles: ["Workspace Admin", "Project Admin", "Project Member"] },
 ];
 
 export const DEFECT_ENVIRONMENTS = ["Firefox 118+", "Chrome 118", "All Browsers", "Safari 17", "Mobile iOS"];
