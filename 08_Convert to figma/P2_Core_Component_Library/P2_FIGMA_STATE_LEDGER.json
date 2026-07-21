@@ -1,0 +1,62 @@
+{
+  "runId": "mini-rally-figma-components-2026-07-21",
+  "phase": "P2",
+  "step": "P2.b2.form-field-base-created",
+  "fileKey": "ttpggMpbPwggOZl6umowzC",
+  "entities": {
+    "pages": {
+      "Icons": "11:2",
+      "Button": "11:3",
+      "Icon Button": "17:2",
+      "Link Action": "21:2",
+      "Form Field": "24:2",
+      "Text Input": "24:3"
+    },
+    "icons": {
+      "ChevronRight": "11:6",
+      "Plus": "11:9",
+      "X": "11:12",
+      "MoreHorizontal": "23:6"
+    },
+    "components": {
+      "Button": "15:20",
+      "Icon Button": "20:101",
+      "Link Action": "21:76",
+      "Text Input": "24:79",
+      "Form Field base": "28:2"
+    },
+    "documentation": {
+      "Button": "12:2",
+      "Icon Button": "17:3",
+      "Link Action": "21:3",
+      "Text Input": "24:4",
+      "Form Field": "27:2"
+    }
+  },
+  "validation": {
+    "buttonVariantCount": 18,
+    "buttonProperties": [
+      "Label#15:0",
+      "Show Icon#15:19",
+      "Icon#15:38"
+    ],
+    "visualQA": "Button and Icon Button passed after label spacing and icon contrast checks",
+    "iconButtonVariantCount": 27,
+    "iconButtonProperties": [
+      "Icon#20:0"
+    ],
+    "textInputVariantCount": 10,
+    "textInputProperties": [
+      "Value#24:0"
+    ],
+    "formFieldStatus": "base created; variants, properties and QA pending",
+    "formFieldBaseChildren": {
+      "header": "28:3",
+      "label": "28:4",
+      "required": "28:5",
+      "control": "28:6",
+      "supportingText": "28:8"
+    }
+  },
+  "nextStep": "P2.b2.form-field-variants-properties-qa"
+}
