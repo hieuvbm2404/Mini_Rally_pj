@@ -39,12 +39,12 @@ The requested conversion should cover **every UI surface currently coded in `03_
 
 | ID | Decision | Recommendation | Your choice |
 |---|---|---|---|
-| D-001 | Figma destination | Create/select one dedicated Mini Rally Design System + Product UI file; do not reuse an unrelated file. | Pending |
-| D-002 | Future-coded screens | Include Tier B in Figma, clearly marked `Future / reference only`; do not call them dev-ready. | Pending |
-| D-003 | Pilot flow | Backlog → Work Item Detail → Create/Edit/error/permission. | Pending |
-| D-004 | Font | Use Inter as current mockup source font for v1. | Pending |
-| D-005 | Status mapping | Treat work item, defect, iteration, release and milestone statuses as separate domain mappings over shared visual primitives. | Pending |
-| D-006 | Responsive scope | Desktop-first data application; document minimum widths, overflow and narrow-layout rules rather than redesigning mobile screens in v1. | Pending |
+| D-001 | Figma destination | Create/select one dedicated Mini Rally Design System + Product UI file; do not reuse an unrelated file. | **Accepted** — `Mini Rally Figma` (`ttpggMpbPwggOZl6umowzC`) |
+| D-002 | Future-coded screens | Include Tier B in Figma, clearly marked `Future / reference only`; do not call them dev-ready. | **Accepted** |
+| D-003 | Pilot flow | Backlog → Work Item Detail → Create/Edit/error/permission. | **Accepted** — drives P3.h |
+| D-004 | Font | Use Inter as current mockup source font for v1. | **Accepted** |
+| D-005 | Status mapping | Treat work item, defect, iteration, release and milestone statuses as separate domain mappings over shared visual primitives. | **Accepted** — implemented in P2.c |
+| D-006 | Responsive scope | Desktop-first data application; document minimum widths, overflow and narrow-layout rules rather than redesigning mobile screens in v1. | **Accepted** — drives P3 responsive rules |
 
 ## Plan 0 completion checklist
 
@@ -55,12 +55,9 @@ The requested conversion should cover **every UI surface currently coded in `03_
 - [x] P0.e UI/BE state audit.
 - [x] P0.f BA/mockup conflict and risk log.
 - [x] P0.g Proposed scope, tiers and pilot order.
-- [ ] User confirms D-001 through D-006 and Plan 0 gate.
+- [x] User confirms D-001 through D-006 and Plan 0 gate.
 
-## Review request
+## Gate outcome
 
-Plan 0 is ready for your review. Please either:
-
-- reply `CONFIRM PLAN 0` to accept the six recommendations; or
-- provide only the decisions you want changed, for example: `D-002: exclude Tier B`, `D-003: pilot Settings/RBAC`, or a Figma file URL for `D-001`.
+`CONFIRM PLAN 0` received 2026-07-21, which per the review request below accepted all six recommendations as written. No decision was changed.
 
