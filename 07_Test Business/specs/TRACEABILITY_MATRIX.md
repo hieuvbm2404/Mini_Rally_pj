@@ -6,9 +6,9 @@ This matrix links business scope to test coverage and source documents.
 
 | Module | Source | Key business requirement | Test coverage | Out-of-scope / note |
 |---|---|---|---|---|
-| Authentication | `Phase 0/02_Authentication/SRS.md` | Login, session, logout, return URL, neutral auth errors | `P0-AUTH-*`, `E2E-001` | Forgot/reset may be deferred in short Phase 0 delivery but remains documented. |
+| Authentication | `Phase 0/02_Authentication/SRS.md` | Microsoft SSO entry/callback, app session, logout, return URL, protected-route session guard | `P0-AUTH-*`, `E2E-001` | Local email/password, forgot/reset password and change-password are Future Backlog unless BA reopens local-auth scope. |
 | App Shell | `Phase 0/01_App_Shell/SRS.md` | Protected layout, route metadata, deep link, 403/404/error states | `P0-SHELL-*`, `E2E-008` | Permission-specific nav depends on role data. |
-| Company Context | `Phase 0/03_Workspace/SRS.md` | Fixed Company, no Workspace create/switch, Project/Team tree | `P0-COMPANY-*`, `P0-SHELL-004`, `E2E-001` | Workspace CRUD/switch is `N/A` for single-company MVP. |
+| Workspace Context | `Phase 0/03_Workspace/SRS.md` | Fixed Workspace, no Workspace create/switch, Workspace/Project/Team tree, Workspace name edit/audit | `P0-WS-*`, `P0-SHELL-004`, `E2E-001` | Workspace CRUD/switch is `N/A` for single-workspace MVP. |
 | Project Management | `Phase 0/04_Project/SRS.md` | Project list/create/edit/archive/restore, key validation, owner/member rules | `P0-PRJ-*`, `E2E-001` | Project overview and project member screen are deferred unless separately scoped. |
 
 ## Phase 1 traceability

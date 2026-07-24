@@ -58,7 +58,7 @@ When an older SRS conflicts with a later BA confirmation, the E2E test follows t
 - BA confirmed the Milestone integration gap and the Release multi-select / derived-date fix direction.
 - `E2E-04`: Backlog Story creation is blocked. `No team` returns a generic unexpected error; `Team Alpha` is not linked to `NXP`; exact-title search confirms no record was created.
 - The quick-create contract is also mismatched: Project is missing and the Team options are not constrained to valid Project membership.
-- The Backlog currently labels the six-button state control as Schedule State and exposes no Flow State; the confirmed target is Flow State as six buttons plus Schedule State as a dropdown, mirrored both ways.
+- The confirmed A3 target is Schedule State as six boxes plus Flow State as a dropdown, mirrored both ways.
 - BA directed the create and quick-create gaps to Dev, reconfirmed the state-control baseline, and approved using existing Work Items for the remaining checkpoints.
 - `E2E-05`: existing `US-12` was assigned inline to `IT-5 / BA-E2E-20260720 Iteration`; the assignment persisted after reload and IT-5 remained Planning.
 - BA confirmed Iteration Status does not need All Teams support. The cross-screen portion is `Not Testable` until a valid Team-linked Iteration and Work Item are available; Dev must not implement All Teams for this screen.

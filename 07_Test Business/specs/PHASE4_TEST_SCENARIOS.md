@@ -37,8 +37,8 @@ Phase 4 validates the BA/FE behavior for Notifications, Roles & Permissions, Wor
 | ID | Priority | Scenario | Steps | Expected result | Status |
 |---|---|---|---|---|---|
 | P4-SET-001 | P0 | Workspace Settings entry | Click top-right Settings gear as Workspace Admin | Workspace-wide settings open; Project Settings is not duplicated there | Not Run |
-| P4-SET-002 | P0 | Workspace fields | Inspect Workspace Settings | Company Name is editable; Slug, Company Scope and Workspace Admin are read-only | Not Run |
-| P4-SET-003 | P0 | Save creates audit row | Change Company Name and save | UI confirms save and Audit Log records actor, time and detail | Not Run |
+| P4-SET-002 | P0 | Workspace fields | Inspect Workspace Settings | Workspace Name is editable; Slug, Workspace Scope and Workspace Admin are read-only | Not Run |
+| P4-SET-003 | P0 | Save creates audit row | Change Workspace Name and save | UI confirms save and Audit Log records actor, time and detail | Not Run |
 | P4-SET-004 | P0 | Project Settings single entry | Open Manage Projects and top-right Settings | Project configuration exists only under Manage Projects > Projects | Not Run |
 | P4-SET-005 | P0 | User list and search | Open User Management; search name/email/phone and filter role | Columns and search/filter results match the confirmed baseline | Not Run |
 | P4-SET-006 | P0 | User detail | Click a non-WA user | Name, Role, Status and Phone are editable; Email is read-only | Not Run |
@@ -56,6 +56,6 @@ Phase 4 validates the BA/FE behavior for Notifications, Roles & Permissions, Wor
 2. As Workspace Admin, review and edit a non-WA permission cell, save and verify locked state.
 3. Simulate Project Admin in managed and non-managed Projects, then simulate Project Member scope.
 4. Open Settings > Teams, verify Team list/Create Team, and confirm Manage Projects has no Teams tab.
-5. Update Company Name and verify the administrative audit entry.
+5. Update Workspace Name and verify the administrative audit entry.
 6. Search/open a user, verify WA account protection and exercise a destructive confirmation.
 7. Confirm Portfolio Release Planning, Release Progress, Reports, Workflow Status, Labels and Team/Iteration Boards remain deferred.

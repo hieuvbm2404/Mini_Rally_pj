@@ -80,7 +80,7 @@ export function TopNav({
             <div className="absolute left-0 top-full mt-1 w-80 bg-white rounded shadow-xl z-50 py-1.5 overflow-hidden" style={{ border: "1px solid #d9dee7" }}>
               <div className="px-3 py-2.5 flex items-center gap-2.5" style={{ borderBottom: "1px solid #e2e6eb", backgroundColor: "#f7f8fa" }}>
                 <div className="w-7 h-7 rounded flex items-center justify-center" style={{ backgroundColor: "#e5ebf4", color: "#1d3f73" }}><Layers size={14} /></div>
-                <div className="flex-1 min-w-0"><div className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: "#8c94a6" }}>Company / Workspace</div><div className="text-[12px] font-semibold truncate" style={{ color: "#1a2234" }}>ACME Space Inc.</div></div>
+                <div className="flex-1 min-w-0"><div className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: "#8c94a6" }}>Workspace</div><div className="text-[12px] font-semibold truncate" style={{ color: "#1a2234" }}>ACME Space Inc.</div></div>
                 <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-sm" style={{ color: "#1e6930", backgroundColor: "#eaf5ed" }}>Active</span>
               </div>
               <div className="px-3 pt-2 pb-1 text-[9px] font-semibold uppercase tracking-widest" style={{ color: "#8c94a6" }}>Projects & Teams</div>
@@ -252,7 +252,7 @@ export function ContextBar({ currentPage, currentProject, currentTeam }: { curre
     quality: [currentProject.name, "Quality", "Defects"],
     portfolio: [currentProject.name, "Portfolio", "Initiatives"],
     releasePlanning: [currentProject.name, "Portfolio", "Release Planning (Phase 5)"],
-    releases: [currentProject.name, "Releases"],
+    releases: [currentProject.name, "Plan", "Timeboxes", "Releases"],
     reports: [currentProject.name, "Reports"],
     notifications: [],
     settings: [],
@@ -272,7 +272,7 @@ export function ContextBar({ currentPage, currentProject, currentTeam }: { curre
       <div className="flex-1" />
       {!["projects", "backlog", "iterations", "track", "teamBoard", "teamStatus"].includes(currentPage) && (
         <div className="flex items-center gap-4" style={{ borderLeft: "1px solid #e2e6eb", paddingLeft: "1rem" }}>
-          {["home", "projects"].includes(currentPage) && <CtxSelect label="Company" value="ACME Space Inc." />}
+          {["home", "projects"].includes(currentPage) && <CtxSelect label="Workspace" value="ACME Space Inc." />}
           {!["home", "projects"].includes(currentPage) && <CtxSelect label="Project" value={currentProject.name} />}
           {["track", "teamBoard", "teamStatus"].includes(currentPage) && <CtxSelect label="Release" value="Q4 2024" />}
           {["track", "teamBoard", "teamStatus"].includes(currentPage) && <CtxSelect label="Iteration" value="Sprint 24.3" />}

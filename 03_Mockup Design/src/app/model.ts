@@ -31,7 +31,7 @@ export interface NewWorkItemInput {
   type: "Story" | "Defect";
   title: string;
   project: string;
-  team: string;
+  team?: string;
   owner: Owner;
   planEstimate: number;
   iteration?: string;
@@ -41,6 +41,8 @@ export interface NewWorkItemInput {
 export interface NewTaskInput {
   name: string;
   owner: Owner;
+  todo: number;
+  actuals: number;
   estimate: number;
 }
 export interface NewIterationInput {

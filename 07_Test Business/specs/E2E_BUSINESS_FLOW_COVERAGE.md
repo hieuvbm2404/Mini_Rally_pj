@@ -117,7 +117,7 @@ This file captures cross-phase flows. These are the tests that best prove the pr
 
 1. Open Story detail.
 2. Open Tasks tab.
-3. Add Task with owner and estimate.
+3. Add Task with owner, To Do and Actual.
 4. Update To Do and Actual.
 5. Open Task Detail.
 6. Review Revision History.
@@ -126,7 +126,8 @@ This file captures cross-phase flows. These are the tests that best prove the pr
 
 - Task is child of Story, not an independent Backlog item.
 - Task time values persist and totals update.
-- Actual can exceed Estimate in Phase 1.
+- Estimate is derived/read-only and equals To Do + Actual.
+- Completing a Task does not automatically zero To Do.
 - Task Detail has Details and Revision History, not Tasks tab.
 
 ## E2E-006 - Backlog item enters Iteration and appears in Iteration Status

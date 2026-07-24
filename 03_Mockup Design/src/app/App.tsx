@@ -79,12 +79,27 @@ export default function App() {
       setShowFullDetail(true);
     }
   }
+  function syncTaskRollup(parentId: string, nextTasks: TaskItem[]) {
+    const siblings = nextTasks.filter(task => task.parentWorkItemId === parentId);
+    if (siblings.length === 0) return;
+    const completedTasks = siblings.filter(task => task.state === "Completed").length;
+    const nextStatus: WorkItem["status"] = completedTasks === siblings.length ? "Completed" : "In-Progress";
+    const taskEstimate = siblings.reduce((total, task) => total + task.todo + task.actuals, 0);
+    const todoEstimate = siblings.reduce((total, task) => total + task.todo, 0);
+    const patch: Partial<WorkItem> = { status: nextStatus, taskCount: siblings.length, completedTasks, taskEstimate, todoEstimate };
+    setWorkItems(previous => previous.map(item => item.id === parentId ? { ...item, ...patch } : item));
+    setActiveItem(previous => previous?.id === parentId ? { ...previous, ...patch } : previous);
+    setFullDetailItem(previous => previous?.id === parentId ? { ...previous, ...patch } : previous);
+  }
   function updateTask(id: string, patch: Partial<TaskItem>) {
-    setTasks(previous => previous.map(task => {
+    const nextTasks = tasks.map(task => {
       if (task.id !== id) return task;
       const updated = { ...task, ...patch };
-      return patch.state === "Completed" ? { ...updated, todo: 0, actuals: Math.max(updated.actuals, updated.estimate) } : updated;
-    }));
+      return { ...updated, estimate: Math.max(0, (Number(updated.todo) || 0) + (Number(updated.actuals) || 0)) };
+    });
+    setTasks(nextTasks);
+    const changedTask = nextTasks.find(task => task.id === id);
+    if (changedTask) syncTaskRollup(changedTask.parentWorkItemId, nextTasks);
   }
   function createTask(parent: WorkItem, input: NewTaskInput): TaskItem {
     const siblings = tasks.filter(task => task.parentWorkItemId === parent.id);
@@ -98,15 +113,17 @@ export default function App() {
       state: "Defined",
       owner: input.owner,
       project: parent.project || currentProject.key,
-      team: parent.team || currentTeam,
-      estimate: input.estimate,
-      todo: input.estimate,
-      actuals: 0,
+      team: parent.team || "",
+      estimate: input.todo + input.actuals,
+      todo: input.todo,
+      actuals: input.actuals,
       description: input.name,
       notes: "",
       attachments: [],
     };
-    setTasks(previous => [...previous, task]);
+    const nextTasks = [...tasks, task];
+    setTasks(nextTasks);
+    syncTaskRollup(parent.id, nextTasks);
     return task;
   }
   function updateIteration(id: string, patch: Partial<IterationItem>) {
@@ -202,7 +219,7 @@ export default function App() {
         ...item,
         taskCount: children.length,
         completedTasks,
-        taskEstimate: children.reduce((sum, task) => sum + task.estimate, 0),
+        taskEstimate: children.reduce((sum, task) => sum + task.todo + task.actuals, 0),
         todoEstimate: children.reduce((sum, task) => sum + task.todo, 0),
         status: rolledUpStatus,
       };

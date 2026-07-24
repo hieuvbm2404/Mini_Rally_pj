@@ -38,8 +38,8 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 const STATE_ABBREV: Record<string, string> = { Idea: "I", Defined: "D", "In-Progress": "P", Completed: "C", Accepted: "A", Release: "R" };
 
-// Flow State renders as a six-box segmented control (one box per state) to match DevInt and GAP-P1-BL-005 / GAP-P1-WID-005.
-// Schedule State stays a dropdown; both fields share the same synchronized value.
+// Schedule State renders as a six-box segmented control; Flow State stays a dropdown.
+// Both fields share the same synchronized value for the MVP mirror rule.
 function StateBoxes({ label, value, disabled, onChange }: { label: string; value: string; disabled?: boolean; onChange: (next: StatusType) => void }) {
   return (
     <div role="group" aria-label={label} className="inline-flex overflow-hidden rounded" style={{ border: "1px solid #bdd0ef" }}>
@@ -193,14 +193,16 @@ const fieldStyle = { border: "1px solid #d7dde7", color: "#1a2234" };
 
 function AddTaskModal({ defaultOwner, onClose, onCreate }: { defaultOwner: string; onClose: () => void; onCreate: (input: NewTaskInput, openDetails: boolean) => void }) {
   const [name, setName] = useState("");
-  const [estimate, setEstimate] = useState("");
+  const [todo, setTodo] = useState("");
+  const [actuals, setActuals] = useState("");
   const [owner, setOwner] = useState(defaultOwner);
   const canCreate = name.trim().length > 0;
+  const derivedEstimate = Math.max(0, Number(todo) || 0) + Math.max(0, Number(actuals) || 0);
 
   function submit(openDetails: boolean) {
     if (!canCreate) return;
     const selectedOwner = OWNERS.find(candidate => candidate.name === owner) || OWNERS[0];
-    onCreate({ name: name.trim(), owner: selectedOwner, estimate: Math.max(0, Number(estimate) || 0) }, openDetails);
+    onCreate({ name: name.trim(), owner: selectedOwner, todo: Math.max(0, Number(todo) || 0), actuals: Math.max(0, Number(actuals) || 0), estimate: derivedEstimate }, openDetails);
     onClose();
   }
 
@@ -222,13 +224,20 @@ function AddTaskModal({ defaultOwner, onClose, onCreate }: { defaultOwner: strin
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Estimate">
-              <input value={estimate} onChange={event => setEstimate(event.target.value)} type="number" min={0} placeholder="0" className={fieldClass} style={fieldStyle} />
+            <Field label="To Do">
+              <input value={todo} onChange={event => setTodo(event.target.value)} type="number" min={0} placeholder="0" className={fieldClass} style={fieldStyle} />
+            </Field>
+            <Field label="Actual">
+              <input value={actuals} onChange={event => setActuals(event.target.value)} type="number" min={0} placeholder="0" className={fieldClass} style={fieldStyle} />
             </Field>
             <Field label="Owner">
               <select value={owner} onChange={event => setOwner(event.target.value)} className={fieldClass} style={fieldStyle}>
                 {OWNERS.map(candidate => <option key={candidate.name}>{candidate.name}</option>)}
               </select>
+            </Field>
+            <Field label="Estimate">
+              <input readOnly value={derivedEstimate} type="number" className={fieldClass} style={{ ...fieldStyle, backgroundColor: "#f8fafc", color: "#64748b" }} />
+              <p className="mt-1 text-[10px]" style={{ color: "#64748b" }}>Estimate = To Do + Actual</p>
             </Field>
           </div>
         </div>
@@ -243,16 +252,27 @@ function AddTaskModal({ defaultOwner, onClose, onCreate }: { defaultOwner: strin
   );
 }
 
-function TaskDetailView({ task, parentItem, readOnly, onBack }: { task: TaskItem; parentItem: WorkItem; readOnly: boolean; onBack: () => void }) {
+function TaskDetailView({ task, parentItem, readOnly, onBack, onUpdateTask }: { task: TaskItem; parentItem: WorkItem; readOnly: boolean; onBack: () => void; onUpdateTask: (id: string, patch: Partial<TaskItem>) => void }) {
   const [activeTaskTab, setActiveTaskTab] = useState<TaskDetailTab>("details");
   const [taskProject, setTaskProject] = useState(task.project);
   const selectedTaskProject = SCOPE_PROJECTS.find(candidate => candidate.key === taskProject) || SCOPE_PROJECTS[0];
-  const [taskTeam, setTaskTeam] = useState(selectedTaskProject.teams.includes(task.team) ? task.team : selectedTaskProject.teams[0]);
+  const [taskTeam, setTaskTeam] = useState(task.team && selectedTaskProject.teams.includes(task.team) ? task.team : "");
+  const [taskTodo, setTaskTodo] = useState(task.todo);
+  const [taskActuals, setTaskActuals] = useState(task.actuals);
+  const taskEstimate = Math.max(0, taskTodo + taskActuals);
 
   function changeTaskProject(projectKey: string) {
     const nextProject = SCOPE_PROJECTS.find(candidate => candidate.key === projectKey) || SCOPE_PROJECTS[0];
     setTaskProject(nextProject.key);
-    setTaskTeam(nextProject.teams[0]);
+    setTaskTeam("");
+  }
+
+  function updateTaskTime(nextTodo: number, nextActuals: number) {
+    const todo = Math.max(0, nextTodo);
+    const actuals = Math.max(0, nextActuals);
+    setTaskTodo(todo);
+    setTaskActuals(actuals);
+    onUpdateTask(task.id, { todo, actuals, estimate: todo + actuals });
   }
 
   return (
@@ -298,14 +318,14 @@ function TaskDetailView({ task, parentItem, readOnly, onBack }: { task: TaskItem
       </main>
 
       <aside className="w-[340px] shrink-0 overflow-y-scroll p-5 space-y-4 bg-white" style={{ borderLeft: "1px solid #d7dde7", scrollbarGutter: "stable" }}>
-        <Field label="State"><select disabled={readOnly} className={fieldClass} style={fieldStyle} defaultValue={task.state}>{["Defined", "In-Progress", "Completed"].map(state => <option key={state}>{state}</option>)}</select></Field>
+        <Field label="State"><select disabled={readOnly} className={fieldClass} style={fieldStyle} defaultValue={task.state} onChange={event => onUpdateTask(task.id, { state: event.target.value as TaskState })}>{["Defined", "In-Progress", "Completed"].map(state => <option key={state}>{state}</option>)}</select></Field>
         <Field label="Owner"><select disabled={readOnly} className={fieldClass} style={fieldStyle} defaultValue={task.owner.name}>{OWNERS.map(owner => <option key={owner.name}>{owner.name}</option>)}</select></Field>
         <Field label="Project"><select disabled={readOnly} aria-label="Task project" value={taskProject} onChange={event => changeTaskProject(event.target.value)} className={fieldClass} style={fieldStyle}>{SCOPE_PROJECTS.map(scopeProject => <option key={scopeProject.key} value={scopeProject.key}>{scopeProject.key} · {scopeProject.name}</option>)}</select></Field>
-        <Field label="Team"><select disabled={readOnly} aria-label="Task team" value={taskTeam} onChange={event => setTaskTeam(event.target.value)} className={fieldClass} style={fieldStyle}>{selectedTaskProject.teams.map(scopeTeam => <option key={scopeTeam}>{scopeTeam}</option>)}</select></Field>
+        <Field label="Team"><select disabled={readOnly} aria-label="Task team" value={taskTeam} onChange={event => setTaskTeam(event.target.value)} className={fieldClass} style={fieldStyle}><option value="">Project backlog</option>{selectedTaskProject.teams.map(scopeTeam => <option key={scopeTeam}>{scopeTeam}</option>)}</select></Field>
         <Field label="Work Product"><select disabled={readOnly} className={fieldClass} style={fieldStyle} defaultValue={parentItem.id}><option value={parentItem.id}>{parentItem.id} · {parentItem.title}</option><option value="unscheduled">Unassigned</option></select></Field>
-        <Field label="Estimate"><input disabled={readOnly} className={fieldClass} style={fieldStyle} type="number" min={0} defaultValue={task.estimate} /></Field>
-        <Field label="To Do"><input disabled={readOnly} className={fieldClass} style={fieldStyle} type="number" min={0} defaultValue={task.todo} /></Field>
-        <Field label="Actual"><input disabled={readOnly} className={fieldClass} style={fieldStyle} type="number" min={0} defaultValue={task.actuals} /></Field>
+        <Field label="Estimate"><input readOnly className={fieldClass} style={{ ...fieldStyle, backgroundColor: "#f8fafc", color: "#64748b" }} type="number" min={0} value={taskEstimate} /></Field>
+        <Field label="To Do"><input disabled={readOnly} className={fieldClass} style={fieldStyle} type="number" min={0} value={taskTodo} onChange={event => updateTaskTime(Number(event.target.value) || 0, taskActuals)} /></Field>
+        <Field label="Actual"><input disabled={readOnly} className={fieldClass} style={fieldStyle} type="number" min={0} value={taskActuals} onChange={event => updateTaskTime(taskTodo, Number(event.target.value) || 0)} /></Field>
       </aside>
     </div>
       )}
@@ -320,7 +340,7 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
   const [selectedProjectKey, setSelectedProjectKey] = useState(item.project || project.key);
   const selectedProject = SCOPE_PROJECTS.find(candidate => candidate.key === selectedProjectKey) || project;
-  const [team, setTeam] = useState(selectedProject.teams.includes(initialTeam) ? initialTeam : selectedProject.teams[0]);
+  const [team, setTeam] = useState(item.team && selectedProject.teams.includes(item.team) ? item.team : "");
   const taskTotals = calculateTaskTotals(taskRows);
   const taskDashboardEditable = !readOnly;
   const workItemIterationOptions = Array.from(new Set([item.iteration, ...iterations.map(iteration => iteration.name), "Unscheduled"]));
@@ -335,13 +355,13 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
   function changeProject(projectKey: string) {
     const nextProject = SCOPE_PROJECTS.find(candidate => candidate.key === projectKey) || project;
     setSelectedProjectKey(nextProject.key);
-    setTeam(nextProject.teams[0]);
-    onUpdateItem(item.id, { project: nextProject.key, team: nextProject.teams[0] });
+    setTeam("");
+    onUpdateItem(item.id, { project: nextProject.key, team: undefined });
   }
 
   function changeTeam(nextTeam: string) {
     setTeam(nextTeam);
-    onUpdateItem(item.id, { team: nextTeam });
+    onUpdateItem(item.id, { team: nextTeam || undefined });
   }
 
   function changeWorkItemState(nextState: StatusType) {
@@ -356,8 +376,12 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
   }
 
   function updateTaskRow(id: string, patch: Partial<TaskItem>) {
-    onUpdateTask(id, patch);
-    setSelectedTask(previous => previous?.id === id ? { ...previous, ...patch } : previous);
+    const currentTask = taskRows.find(task => task.id === id) || selectedTask;
+    const derivedPatch = currentTask
+      ? { ...patch, estimate: Math.max(0, Number(patch.todo ?? currentTask.todo) + Number(patch.actuals ?? currentTask.actuals)) }
+      : patch;
+    onUpdateTask(id, derivedPatch);
+    setSelectedTask(previous => previous?.id === id ? { ...previous, ...derivedPatch } : previous);
   }
   function createTask(input: NewTaskInput, openDetails: boolean) {
     const task = onCreateTask(item, input);
@@ -365,7 +389,7 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
   }
 
   if (selectedTask) {
-    return <TaskDetailView task={selectedTask} parentItem={item} readOnly={readOnly} onBack={() => setSelectedTask(null)} />;
+    return <TaskDetailView task={selectedTask} parentItem={item} readOnly={readOnly} onBack={() => setSelectedTask(null)} onUpdateTask={updateTaskRow} />;
   }
 
   return (
@@ -464,10 +488,10 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
                         )}
                       </span>
                       <span className="px-3 truncate">{task.project}</span>
-                      <span className="px-3 truncate">{task.team}</span>
+                      <span className="px-3 truncate">{task.team || "Project backlog"}</span>
                       <span className="px-3"><input aria-label={`${task.id} task dashboard todo`} readOnly={!taskDashboardEditable} type="number" min={0} value={task.todo} onChange={event => updateTaskRow(task.id, { todo: Number(event.target.value) })} className="w-full rounded-sm bg-transparent px-1 py-1 text-right font-mono focus:outline-none focus:bg-white" style={{ border: taskDashboardEditable ? "1px solid transparent" : "0", color: "#334155" }} /></span>
                       <span className="px-3"><input aria-label={`${task.id} task dashboard actuals`} readOnly={!taskDashboardEditable} type="number" min={0} value={task.actuals} onChange={event => updateTaskRow(task.id, { actuals: Number(event.target.value) })} className="w-full rounded-sm bg-transparent px-1 py-1 text-right font-mono focus:outline-none focus:bg-white" style={{ border: taskDashboardEditable ? "1px solid transparent" : "0", color: "#334155" }} /></span>
-                      <span className="px-3"><input aria-label={`${task.id} task dashboard estimate`} readOnly={!taskDashboardEditable} type="number" min={0} value={task.estimate} onChange={event => updateTaskRow(task.id, { estimate: Number(event.target.value) })} className="w-full rounded-sm bg-transparent px-1 py-1 text-right font-mono focus:outline-none focus:bg-white" style={{ border: taskDashboardEditable ? "1px solid transparent" : "0", color: "#334155" }} /></span>
+                      <span className="px-3"><input aria-label={`${task.id} task dashboard estimate`} readOnly type="number" min={0} value={task.estimate} className="w-full rounded-sm bg-transparent px-1 py-1 text-right font-mono focus:outline-none" style={{ border: "0", color: "#64748b" }} /></span>
                     </div>
                   ))}
                 </div>
@@ -480,9 +504,9 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
         <aside className="w-[340px] shrink-0 overflow-y-scroll p-5 space-y-4 bg-white" style={{ borderLeft: "1px solid #d7dde7", scrollbarGutter: "stable" }}>
           <Field label="Owner"><select disabled={readOnly} aria-label="Detail owner" className={fieldClass} style={fieldStyle} value={item.owner.name} onChange={event => onUpdateItem(item.id, { owner: OWNERS.find(owner => owner.name === event.target.value) ?? item.owner })}>{OWNERS.map(owner => <option key={owner.name}>{owner.name}</option>)}</select></Field>
           <Field label="Project"><select disabled={readOnly} aria-label="Detail project" value={selectedProjectKey} onChange={event => changeProject(event.target.value)} className={fieldClass} style={fieldStyle}>{SCOPE_PROJECTS.map(scopeProject => <option key={scopeProject.key} value={scopeProject.key}>{scopeProject.key} · {scopeProject.name}</option>)}</select></Field>
-          <Field label="Team"><select disabled={readOnly} aria-label="Detail team" value={team} onChange={event => changeTeam(event.target.value)} className={fieldClass} style={fieldStyle}>{selectedProject.teams.map(scopeTeam => <option key={scopeTeam}>{scopeTeam}</option>)}</select></Field>
-          <Field label="Schedule State"><select aria-label="Schedule State" disabled={readOnly} className={fieldClass} style={fieldStyle} value={item.status} onChange={event => changeWorkItemState(event.target.value as StatusType)}>{WORK_ITEM_STATE_OPTIONS.map(status => <option key={status}>{status}</option>)}</select></Field>
-          <Field label="Flow State"><StateBoxes label="Flow State" value={item.status} disabled={readOnly} onChange={next => changeWorkItemState(next)} /></Field>
+          <Field label="Team"><select disabled={readOnly} aria-label="Detail team" value={team} onChange={event => changeTeam(event.target.value)} className={fieldClass} style={fieldStyle}><option value="">Project backlog</option>{selectedProject.teams.map(scopeTeam => <option key={scopeTeam}>{scopeTeam}</option>)}</select></Field>
+          <Field label="Schedule State"><StateBoxes label="Schedule State" value={item.status} disabled={readOnly} onChange={next => changeWorkItemState(next)} /></Field>
+          <Field label="Flow State"><select aria-label="Flow State" disabled={readOnly} className={fieldClass} style={fieldStyle} value={item.status} onChange={event => changeWorkItemState(event.target.value as StatusType)}>{WORK_ITEM_STATE_OPTIONS.map(status => <option key={status}>{status}</option>)}</select></Field>
           {item.type === "Defect" && <Field label="Priority"><select disabled={readOnly} className={fieldClass} style={fieldStyle} defaultValue={DEFECT_PRIORITY_DEFAULTS[item.priority] ?? "None"}>{DEFECT_PRIORITY_OPTIONS.map(priority => <option key={priority}>{priority}</option>)}</select></Field>}
           <Field label="Plan Estimate"><input aria-label="Detail plan estimate" disabled={readOnly} className={fieldClass} style={fieldStyle} type="number" min={0} value={item.planEstimate} onChange={event => onUpdateItem(item.id, { planEstimate: Number(event.target.value) })} /></Field>
           <Field label="Release"><select aria-label="Detail release" disabled={readOnly || role === "Project Member"} className={fieldClass} style={fieldStyle} value={item.release} onChange={event => onUpdateItem(item.id, { release: event.target.value, releaseId: releases.find(release => release.name === event.target.value)?.id })}>{workItemReleaseOptions.map(release => <option key={release}>{release}</option>)}</select></Field>

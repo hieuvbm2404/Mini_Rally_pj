@@ -57,9 +57,9 @@ Rules:
 
 | Field | Behavior | Notes |
 |---|---|---|
-| Company Name | Editable by Workspace Admin | Display name for the company/workspace |
+| Workspace Name | Editable by Workspace Admin | Display name for the fixed Workspace |
 | Workspace Slug | Read-only | System identifier; shown for reference, not edited from the mockup |
-| Company Scope | Read-only | Shows that this MVP has one company workspace |
+| Workspace Scope | Read-only | Shows that this MVP has one fixed Workspace |
 | Workspace Admin | Read-only | Internal/dev setup assigns the primary admin account; Workspace Settings only displays it |
 
 ### 3.4 Save Behavior

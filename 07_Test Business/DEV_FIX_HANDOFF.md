@@ -22,12 +22,12 @@ Gợi ý gom theo module để sửa 1 lần: **(A) Work Item State**, **(B) Tas
 
 ### DEV-020 · P0 · Catalog State + mirror 2 chiều (Work Item Detail)
 - **Hiện tại:** Schedule State đủ 6 nút nhưng ghi **"In Progress"** (sai chính tả). **Flow State dropdown chỉ 4 giá trị** (`Defined/In Progress/Completed/Accepted`) — **thiếu `Idea` và `Release`**. Đổi Schedule **không** cập nhật Flow và ngược lại (hai field độc lập hoàn toàn).
-- **Cần sửa:** Cả Schedule State và Flow State dùng **đúng 6 giá trị** `Idea / Defined / In-Progress / Completed / Accepted / Release` (đúng chính tả `In-Progress`). Hai field **mirror 2 chiều**: đổi bên nào thì bên kia đổi theo, lưu atomic. **Thiết kế đúng như mockup.**
+- **Cần sửa:** Cả Schedule State và Flow State dùng **đúng 6 giá trị** `Idea / Defined / In-Progress / Completed / Accepted / Release` (đúng chính tả `In-Progress`). **Schedule State hiển thị dạng 6 ô**, **Flow State là dropdown**. Hai field **mirror 2 chiều**: đổi bên nào thì bên kia đổi theo, lưu atomic. **Thiết kế đúng như mockup/SRS A3.**
 - **Ref:** BR-WI-01; WIC-FR-012..013; WID-FR-012; mockup.
 
 ### DEV-009 · P0 · Control State trên Backlog
 - **Hiện tại:** Backlog chỉ hiện 1 cột **Schedule State** dạng 6 nút; **không có Flow State**.
-- **Cần sửa:** Trên Backlog, **Flow State = control 6 nút**, thêm **Schedule State = dropdown**; đúng catalog 6 giá trị; cập nhật cả hai atomic theo cả 2 chiều (đồng bộ DEV-020).
+- **Cần sửa:** Trên Backlog, **Schedule State = control 6 nút**, thêm **Flow State = dropdown**; đúng catalog 6 giá trị; cập nhật cả hai atomic theo cả 2 chiều (đồng bộ DEV-020).
 - **Ref:** BR-WI-01; reconciliation DevInt alignment.
 
 ### DEV-017 · P0 · Auto-complete phải mirror cả Schedule + Flow
@@ -61,7 +61,7 @@ Gợi ý gom theo module để sửa 1 lần: **(A) Work Item State**, **(B) Tas
 
 ### DEV-014 · P0 · Inline edit trên Task Dashboard
 - **Hiện tại:** dòng Task chỉ hiển thị text tĩnh, **không sửa inline** được (chỉ có checkbox + link ID).
-- **Cần sửa:** inline edit **Name, State, Owner, To Do, Actuals**; Estimate read-only derived; cập nhật Totals + parent ngay.
+- **Cần sửa:** inline edit **Name, State, Owner, To Do, Actuals**; Estimate read-only derived `Estimate = To Do + Actuals`; cập nhật Totals + parent ngay.
 - **Ref:** TASK-FR-013/014; mockup.
 
 ### DEV-016 · P1 · Task Detail — một Task State duy nhất
@@ -127,7 +127,7 @@ Gợi ý gom theo module để sửa 1 lần: **(A) Work Item State**, **(B) Tas
 
 ### DEV-008 · P1 · Quick-create thiếu Project + lọc Team
 - **Hiện tại:** form quick-create **thiếu Project**; hiện `No team` và `Team Alpha` (không thuộc NXP).
-- **Cần sửa:** thêm **Project** (default context hiện tại); **Team lọc theo membership của Project**; căn requiredness/option theo mockup (Iteration/Release không nằm trong quick-create).
+- **Cần sửa:** thêm **Project** (default context hiện tại); **Team optional**: blank = Project backlog, selected Team = Team backlog; Team options lọc theo Project; căn requiredness/option theo mockup (Iteration/Release không nằm trong quick-create).
 - **Ref:** P1 Work Item Create; mockup.
 
 ### DEV-002 · P1 · Quick-create Iteration thiếu Type + Project
@@ -140,7 +140,7 @@ Gợi ý gom theo module để sửa 1 lần: **(A) Work Item State**, **(B) Tas
 ## F. Docs / Test data
 
 ### DOC-002 · P0 · Reconcile SRS thời gian Task
-- **Cần sửa:** cập nhật `04_Developement_tracking/Phase 1/04_Task_Management/SRS.md` và `05_Time_Tracking/SRS.md` theo quy tắc **Estimate = To Do + Actuals** (derived, read-only) và **Actual nhập tay**. SRS hiện còn mô tả Estimate độc lập / cho `Actual > Estimate` — mâu thuẫn quyết định BA.
+- **Cần sửa:** triển khai theo `04_Developement_tracking/Phase 1/04_Task_Management/SRS.md` và `05_Time_Tracking/SRS.md` đã cập nhật A3: **Estimate = To Do + Actuals** (derived, read-only), **Actual nhập tay**, Completed không tự zero To Do.
 
 ### DEV-003 · P2 · Test data Team
 - **Cần sửa:** cung cấp Team **link đúng** vào project NXP để test lại luồng Team-scoped (hiện `Team Alpha` không link NXP nên nhiều checkpoint phải dùng `No team`).

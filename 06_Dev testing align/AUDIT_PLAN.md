@@ -1,7 +1,9 @@
-# DevInt Audit Plan — un-tested checkpoints (Phase 1 leftovers → Phase 2 → Phase 3)
+# DevInt Audit Plan — Phase 0 to Phase 4
 
 **Created:** 2026-07-23 · **Environment:** `https://rally-dev.qnsc.vn/` (Microsoft SSO, `hieuvbm@qnsc.vn`)
 **Follows:** `README.md` working rule + same discipline as `RETEST_PLAN.md`. First-time audit (not retest).
+
+> **Status 2026-07-24:** Phase 0–3 regression is complete. Phase 4 first audit is also complete across Notifications, Roles & Permissions and Settings & Audit. Results are recorded in `DEVINT_PHASE_0_4_AUDIT_TRACKER.xlsx`; BA confirmed the classifications and fix directions, so SRS/mockup reconciliation is now proceeding by approved alignment package.
 
 ## Objective
 Audit checkpoints never executed, comparing three sources: **Business Expected ↔ Mockup ↔ DevInt Actual**. Record evidence, classify, BA confirms per phase before moving on.
@@ -24,6 +26,10 @@ Audit checkpoints never executed, comparing three sources: **Business Expected �
 **Step 2 — Phase 2:** `P2-IT-01` → `P2-IT-02` → `P2-IS-01` → `P2-IS-02` → `P2-IS-04` → `P2-BL-01`.
 
 **Step 3 — Phase 3:** `P3-TS-01` → `P3-REL-01/02` → `P3-MS-01/02/03` → `P3-QA-01/02`.
+
+**Step 4 — Phase 4:** `P4-NOTIF-01..04` → `P4-RBAC-01..05` → `P4-SET-01..06`.
+
+Phase 4 deferred boundary: Workflow Status, Labels and Team Board remain Future Backlog; Phase 5 Portfolio/Release Planning/Reports are not tested here.
 
 ## Self-run
 Per checkpoint: navigate → observe (read_page/screenshot/network) → compare 3 sources → classify → one-line result + evidence. Run a whole phase/group, then stop to report.

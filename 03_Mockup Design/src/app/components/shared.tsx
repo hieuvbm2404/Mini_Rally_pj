@@ -168,7 +168,7 @@ export function NewItemModal({ onClose, onCreate, defaultProjectKey, defaultTeam
   const [title, setTitle] = useState("");
   const initialProject = SCOPE_PROJECTS.find(project => project.key === defaultProjectKey) || SCOPE_PROJECTS[0];
   const [projectKey, setProjectKey] = useState(initialProject.key);
-  const [team, setTeam] = useState(defaultTeam && initialProject.teams.includes(defaultTeam) ? defaultTeam : initialProject.teams[0]);
+  const [team, setTeam] = useState(defaultTeam && defaultTeam !== "All Teams" && initialProject.teams.includes(defaultTeam) ? defaultTeam : "");
   const [ownerName, setOwnerName] = useState(OWNERS[0].name);
   const [planEstimate, setPlanEstimate] = useState(0);
   const selectedProject = SCOPE_PROJECTS.find(project => project.key === projectKey) || SCOPE_PROJECTS[0];
@@ -176,12 +176,12 @@ export function NewItemModal({ onClose, onCreate, defaultProjectKey, defaultTeam
   function selectProject(nextProjectKey: string) {
     const nextProject = SCOPE_PROJECTS.find(project => project.key === nextProjectKey) || SCOPE_PROJECTS[0];
     setProjectKey(nextProject.key);
-    setTeam(nextProject.teams[0]);
+    setTeam("");
   }
   function submit(openDetails: boolean) {
     if (!canCreate || (type !== "Story" && type !== "Defect")) return;
     const owner = OWNERS.find(candidate => candidate.name === ownerName) || OWNERS[0];
-    onCreate({ type, title: title.trim(), project: projectKey, team, owner, planEstimate }, openDetails);
+    onCreate({ type, title: title.trim(), project: projectKey, team: team || undefined, owner, planEstimate }, openDetails);
     onClose();
   }
   return (
@@ -189,7 +189,7 @@ export function NewItemModal({ onClose, onCreate, defaultProjectKey, defaultTeam
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.28)" }} onClick={onClose} />
       <div className="relative bg-white rounded shadow-2xl flex flex-col overflow-hidden" style={{ width: 520, maxHeight: "80vh", border: "1px solid #d4d8de" }}>
         <div className="flex items-center justify-between px-5 py-3.5 shrink-0" style={{ backgroundColor: "#f7f8fa", borderBottom: "1px solid #e2e6eb" }}>
-          <div><p className="text-[13px] font-semibold" style={{ color: "#1a2234" }}>New Work Item</p><p className="text-[11px]" style={{ color: "#8c94a6" }}>{selectedProject.name} · {team}</p></div>
+          <div><p className="text-[13px] font-semibold" style={{ color: "#1a2234" }}>New Work Item</p><p className="text-[11px]" style={{ color: "#8c94a6" }}>{selectedProject.name} · {team || "Project backlog"}</p></div>
           <button onClick={onClose} className="p-1 rounded" style={{ color: "#8c94a6" }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = "#edf0f4"; e.currentTarget.style.color = "#1a2234"; }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#8c94a6"; }}><X size={15} /></button>
         </div>
         <div className="overflow-y-auto flex-1 p-5 space-y-4">
@@ -198,7 +198,7 @@ export function NewItemModal({ onClose, onCreate, defaultProjectKey, defaultTeam
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Project</label><select aria-label="Project" value={projectKey} onChange={event => selectProject(event.target.value)} className="w-full text-[12px] px-2.5 py-1.5 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#1a2234" }}>{SCOPE_PROJECTS.map(project => <option key={project.key} value={project.key}>{project.key} · {project.name}</option>)}</select></div>
-            <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Team</label><select aria-label="Team" value={team} onChange={event => setTeam(event.target.value)} className="w-full text-[12px] px-2.5 py-1.5 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#1a2234" }}>{selectedProject.teams.map(projectTeam => <option key={projectTeam}>{projectTeam}</option>)}</select></div>
+            <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Team optional</label><select aria-label="Team" value={team} onChange={event => setTeam(event.target.value)} className="w-full text-[12px] px-2.5 py-1.5 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#1a2234" }}><option value="">Project backlog</option>{selectedProject.teams.map(projectTeam => <option key={projectTeam}>{projectTeam}</option>)}</select></div>
           </div>
           <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Title <span style={{ color: "#dc2626" }}>*</span></label>
             <input autoFocus type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Enter a concise, descriptive title..." className="w-full text-[13px] px-3 py-2 rounded focus:outline-none" style={{ border: "1px solid #dde2ea", color: "#1a2234" }} onFocus={e => (e.currentTarget.style.borderColor = "rgba(29,63,115,0.4)")} onBlur={e => (e.currentTarget.style.borderColor = "#dde2ea")} />
