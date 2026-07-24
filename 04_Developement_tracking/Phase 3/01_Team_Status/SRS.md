@@ -105,6 +105,7 @@ Parent Story/Defect auto-completion follows a simple rule:
 - Initial partial completion does not force a parent status change; only roll-up/progress is refreshed.
 - If all child Tasks under the same parent Story/Defect are `Completed`, the system automatically sets the parent Story/Defect status to `Completed`.
 - If a Task transitions from `Completed` to `Defined` or `In-Progress` after all child Tasks had been Completed, the system automatically sets the parent Story/Defect status to `In-Progress`.
+- This reopen roll-up applies even when the parent was subsequently promoted to `Accepted` after auto-completion; reopening a child Task still moves the parent back to `In-Progress`. `Accepted` is not exempt from the reopen roll-up. (BA-confirmed 2026-07-24)
 - The auto-completion is triggered by the Task state update. The user does not need a separate action on the parent Story/Defect.
 - Status automation is helper behavior. Authorized users can still manually change the parent Story/Defect status from the existing Work Item edit surfaces after the Task-triggered roll-up.
 
@@ -164,7 +165,7 @@ The Work Item Detail `Tasks` tab is treated as the Task Dashboard for the select
 | P3-TS-FR-038 | Authorized users can inline edit Task Name, State, Owner, To Do, Actuals and Estimate from the Task Dashboard table. |
 | P3-TS-FR-039 | Project Admin outside managed Project can read the Task Dashboard but cannot inline edit Task fields. |
 | P3-TS-FR-040 | Clicking Task ID opens Task Detail; inline editing fields must not trigger Task Detail navigation. |
-| P3-TS-FR-041 | Reopening a Task after all child Tasks had been Completed must recalculate metrics and automatically set the parent Story/Defect status to `In-Progress`. |
+| P3-TS-FR-041 | Reopening a Task after all child Tasks had been Completed must recalculate metrics and automatically set the parent Story/Defect status to `In-Progress`. This applies even when the parent had been manually promoted to `Accepted`; `Accepted` is not exempt from the reopen roll-up. |
 
 ## 7. Screen Mapping With Approved Mockup
 

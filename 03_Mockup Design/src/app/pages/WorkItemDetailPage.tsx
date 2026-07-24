@@ -36,6 +36,34 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   return <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#64748b" }}>{label}</label>{children}</div>;
 }
 
+const STATE_ABBREV: Record<string, string> = { Idea: "I", Defined: "D", "In-Progress": "P", Completed: "C", Accepted: "A", Release: "R" };
+
+// Flow State renders as a six-box segmented control (one box per state) to match DevInt and GAP-P1-BL-005 / GAP-P1-WID-005.
+// Schedule State stays a dropdown; both fields share the same synchronized value.
+function StateBoxes({ label, value, disabled, onChange }: { label: string; value: string; disabled?: boolean; onChange: (next: StatusType) => void }) {
+  return (
+    <div role="group" aria-label={label} className="inline-flex overflow-hidden rounded" style={{ border: "1px solid #bdd0ef" }}>
+      {WORK_ITEM_STATE_OPTIONS.map((state, index) => {
+        const active = state === value;
+        return (
+          <button
+            key={state}
+            type="button"
+            title={state}
+            disabled={disabled}
+            aria-pressed={active}
+            onClick={() => onChange(state as StatusType)}
+            className="px-2 py-1 text-[11px] font-semibold"
+            style={{ minWidth: 26, borderLeft: index === 0 ? "none" : "1px solid #dbe4f0", backgroundColor: active ? "#2558a6" : "#ffffff", color: active ? "#ffffff" : "#64748b", cursor: disabled ? "default" : "pointer" }}
+          >
+            {STATE_ABBREV[state] ?? state.slice(0, 1)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function EditorButton({ label, command, disabled, children }: { label: string; command?: string; disabled?: boolean; children: ReactNode }) {
   return <button type="button" aria-label={label} title={label} disabled={disabled} onMouseDown={event => { event.preventDefault(); if (command && !disabled) document.execCommand(command); }} className="w-7 h-7 flex items-center justify-center rounded-sm disabled:opacity-35" style={{ color: "#475569" }} onMouseEnter={event => (event.currentTarget.style.backgroundColor = "#edf2f7")} onMouseLeave={event => (event.currentTarget.style.backgroundColor = "transparent")}>{children}</button>;
 }
@@ -454,7 +482,7 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
           <Field label="Project"><select disabled={readOnly} aria-label="Detail project" value={selectedProjectKey} onChange={event => changeProject(event.target.value)} className={fieldClass} style={fieldStyle}>{SCOPE_PROJECTS.map(scopeProject => <option key={scopeProject.key} value={scopeProject.key}>{scopeProject.key} · {scopeProject.name}</option>)}</select></Field>
           <Field label="Team"><select disabled={readOnly} aria-label="Detail team" value={team} onChange={event => changeTeam(event.target.value)} className={fieldClass} style={fieldStyle}>{selectedProject.teams.map(scopeTeam => <option key={scopeTeam}>{scopeTeam}</option>)}</select></Field>
           <Field label="Schedule State"><select aria-label="Schedule State" disabled={readOnly} className={fieldClass} style={fieldStyle} value={item.status} onChange={event => changeWorkItemState(event.target.value as StatusType)}>{WORK_ITEM_STATE_OPTIONS.map(status => <option key={status}>{status}</option>)}</select></Field>
-          <Field label="Flow State"><select aria-label="Flow State" disabled={readOnly} className={fieldClass} style={fieldStyle} value={item.status} onChange={event => changeWorkItemState(event.target.value as StatusType)}>{WORK_ITEM_STATE_OPTIONS.map(status => <option key={status}>{status}</option>)}</select></Field>
+          <Field label="Flow State"><StateBoxes label="Flow State" value={item.status} disabled={readOnly} onChange={next => changeWorkItemState(next)} /></Field>
           {item.type === "Defect" && <Field label="Priority"><select disabled={readOnly} className={fieldClass} style={fieldStyle} defaultValue={DEFECT_PRIORITY_DEFAULTS[item.priority] ?? "None"}>{DEFECT_PRIORITY_OPTIONS.map(priority => <option key={priority}>{priority}</option>)}</select></Field>}
           <Field label="Plan Estimate"><input aria-label="Detail plan estimate" disabled={readOnly} className={fieldClass} style={fieldStyle} type="number" min={0} value={item.planEstimate} onChange={event => onUpdateItem(item.id, { planEstimate: Number(event.target.value) })} /></Field>
           <Field label="Release"><select aria-label="Detail release" disabled={readOnly || role === "Project Member"} className={fieldClass} style={fieldStyle} value={item.release} onChange={event => onUpdateItem(item.id, { release: event.target.value, releaseId: releases.find(release => release.name === event.target.value)?.id })}>{workItemReleaseOptions.map(release => <option key={release}>{release}</option>)}</select></Field>
