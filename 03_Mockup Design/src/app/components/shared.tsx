@@ -76,6 +76,40 @@ export function StatusBadge({ status }: { status: StatusType }) {
   );
 }
 
+const SCHEDULE_STATE_ORDER: StatusType[] = ["Idea", "Defined", "In-Progress", "Completed", "Accepted", "Release"];
+const SCHEDULE_STATE_ABBR: Record<StatusType, string> = { Idea: "I", Defined: "D", "In-Progress": "P", Completed: "C", Accepted: "A", Release: "R" };
+
+export function ScheduleStateBar({ value, onChange, "aria-label": ariaLabel }: { value: StatusType; onChange?: (next: StatusType) => void; "aria-label"?: string }) {
+  const editable = Boolean(onChange);
+  return (
+    <div className="inline-flex rounded-sm overflow-hidden shrink-0" style={{ border: "1px solid #bdd0ef" }} role={editable ? "radiogroup" : undefined} aria-label={ariaLabel || "Schedule State"}>
+      {SCHEDULE_STATE_ORDER.map((state, i) => {
+        const active = state === value;
+        return (
+          <button
+            key={state}
+            type="button"
+            disabled={!editable}
+            title={state}
+            aria-label={state}
+            aria-pressed={active}
+            onClick={() => onChange && onChange(state)}
+            className="w-5 h-5 flex items-center justify-center text-[10px] font-bold focus:outline-none"
+            style={{
+              backgroundColor: active ? "#2558a6" : "#fff",
+              color: active ? "#fff" : "#8c94a6",
+              borderRight: i < SCHEDULE_STATE_ORDER.length - 1 ? "1px solid #dde2ea" : "none",
+              cursor: editable ? "pointer" : "default",
+            }}
+          >
+            {SCHEDULE_STATE_ABBR[state]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export const PRI_CFG: Record<PriorityType, { dot: string; bg: string; text: string }> = {
   Critical: { dot: "#dc2626", bg: "#fef2f2", text: "#b91c1c" },
   High: { dot: "#ea8c2a", bg: "#fff7ed", text: "#c2610c" },

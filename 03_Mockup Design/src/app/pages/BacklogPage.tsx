@@ -19,7 +19,7 @@ import {
   ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell,
 } from "recharts";
 import { type IterationItem, type NewWorkItemInput, type Role, type Page, type WorkItemType, type StatusType, type PriorityType, type Owner, type WorkItem, type Notification, type Feature, type Project, type ScopeProject, type Initiative, type ReleaseItem, type WorkspaceUser, type WorkflowStatusItem, type LabelItem, can, OWNERS, PROJECTS, ROLE_SCOPE, SCOPE_PROJECTS, FEATURES, NOTIFICATIONS, VELOCITY_DATA, BURNDOWN_DATA, STATUS_PIE, INITIATIVES, RELEASES_DATA, WORKSPACE_USERS, WORKFLOW_STATUSES, LABELS_DATA, WORKLOAD_DATA, PLANNED_VS_COMPLETED, PERMISSIONS_MATRIX, DEFECT_ENVIRONMENTS, RELATED_STORIES } from "../model";
-import { releaseStatusCfg, cx, Avatar, TYPE_CFG, TypeBadge, STATUS_CFG, StatusBadge, PRI_CFG, PriorityBadge, MiniProgress, RoleBadge, DetailPanel, NewItemModal, EmptyState, SectionCard } from "../components/shared";
+import { releaseStatusCfg, cx, Avatar, TYPE_CFG, TypeBadge, STATUS_CFG, StatusBadge, ScheduleStateBar, PRI_CFG, PriorityBadge, MiniProgress, RoleBadge, DetailPanel, NewItemModal, EmptyState, SectionCard } from "../components/shared";
 
 export type BacklogColumnKey = "rank" | "type" | "id" | "name" | "priority" | "estimate" | "owner" | "status" | "iteration" | "release";
 type BacklogFilterColumn = "id" | "name" | "type" | "priority" | "estimate" | "owner" | "status" | "iteration" | "release";
@@ -430,7 +430,7 @@ export function BacklogPage({ role, project, team, iterations, releases, items, 
                     {editable ? <select aria-label={`${item.id} owner`} value={item.owner.name} onChange={event => updateItemOwner(item.id, event.target.value)} className="min-w-0 flex-1 text-[11px] bg-transparent focus:outline-none" style={{ color: "#5c6478" }}>{OWNERS.map(owner => <option key={owner.name}>{owner.name}</option>)}</select> : <span className="text-[11px] truncate" style={{ color: "#5c6478" }}>{item.owner.initials}</span>}
                   </div>
                   <div className="shrink-0 overflow-hidden" style={{ width: columnWidths.status }} onClick={event => event.stopPropagation()}>
-                    {editable ? <select aria-label={`${item.id} schedule state`} value={item.status} onChange={event => updateItem(item.id, { status: event.target.value as StatusType })} className="w-[118px] text-[11px] rounded-sm bg-white focus:outline-none" style={{ border: "1px solid #bdd0ef", color: "#2558a6" }}>{BACKLOG_STATUS_OPTIONS.map(status => <option key={status}>{status}</option>)}</select> : <StatusBadge status={item.status} />}
+                    <ScheduleStateBar aria-label={`${item.id} schedule state`} value={item.status} onChange={editable ? next => updateItem(item.id, { status: next }) : undefined} />
                   </div>
                   <div className="shrink-0 overflow-hidden text-[11px]" style={{ width: columnWidths.iteration, color: "#5c6478" }} onClick={event => event.stopPropagation()}>
                     {editable ? <select aria-label={`${item.id} iteration`} value={item.iteration} onChange={event => updateItem(item.id, { iteration: event.target.value })} className="w-[122px] text-[11px] bg-transparent focus:outline-none" style={{ color: "#5c6478" }}>{iterationOptions.map(iteration => <option key={iteration}>{iteration}</option>)}</select> : item.iteration}

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { AlignLeft, AtSign, Bold, ChevronLeft, Code2, FileText, History, ImagePlus, Italic, Link2, List, ListChecks, ListOrdered, Maximize2, Minimize2, MoreHorizontal, Plus, Redo2, Strikethrough, Table2, Underline, Undo2 } from "lucide-react";
 import { type IterationItem, type MilestoneItem, type NewTaskInput, type ReleaseItem, type Role, type ScopeProject, type StatusType, type TaskItem, type TaskState, type WorkItem, OWNERS, SCOPE_PROJECTS } from "../model";
-import { Avatar, TypeBadge } from "../components/shared";
+import { Avatar, TypeBadge, ScheduleStateBar } from "../components/shared";
 
 type DetailTab = "details" | "tasks" | "history";
 type TaskDetailTab = "details" | "history";
@@ -32,7 +32,7 @@ const ACTIVITY_ROWS = [
   { id: "ACT-1002", at: "Oct 21, 2024", actor: OWNERS[0], action: "created Work Item", target: "US-4821", detail: "Implement SSO authentication via SAML 2.0" },
 ];
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({ label, children }: { label: string; children: ReactNode }) {
   return <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#64748b" }}>{label}</label>{children}</div>;
 }
 
@@ -40,7 +40,7 @@ function EditorButton({ label, command, disabled, children }: { label: string; c
   return <button type="button" aria-label={label} title={label} disabled={disabled} onMouseDown={event => { event.preventDefault(); if (command && !disabled) document.execCommand(command); }} className="w-7 h-7 flex items-center justify-center rounded-sm disabled:opacity-35" style={{ color: "#475569" }} onMouseEnter={event => (event.currentTarget.style.backgroundColor = "#edf2f7")} onMouseLeave={event => (event.currentTarget.style.backgroundColor = "transparent")}>{children}</button>;
 }
 
-function RichTextEditor({ title, initialValue = "", minHeight, readOnly }: { title: string; initialValue?: string; minHeight: number; readOnly: boolean }) {
+export function RichTextEditor({ title, initialValue = "", minHeight, readOnly }: { title: string; initialValue?: string; minHeight: number; readOnly: boolean }) {
   return (
     <section className="bg-white rounded overflow-hidden" style={{ border: "1px solid #dde2ea" }}>
       <div className="px-4 py-2 text-[11px] font-semibold" style={{ color: "#475569", backgroundColor: "#f8fafc", borderBottom: "1px solid #dde2ea" }}>{title}</div>
@@ -81,7 +81,7 @@ function TaskHeaderCell({ label, activeSort }: { label: string; activeSort?: boo
   );
 }
 
-function TaskStateBadge({ state }: { state: TaskState }) {
+export function TaskStateBadge({ state }: { state: TaskState }) {
   const colors: Record<string, { bg: string; text: string; border: string; dot: string }> = {
     Defined: { bg: "#eef3fb", text: "#2558a6", border: "#bdd0ef", dot: "#2558a6" },
     "In-Progress": { bg: "#fef5e4", text: "#8a5808", border: "#f5d899", dot: "#e59f0c" },
@@ -160,8 +160,8 @@ function TaskActivityLogView({ task }: { task: TaskItem }) {
   );
 }
 
-const fieldClass = "w-full text-[12px] px-3 py-2 rounded bg-white focus:outline-none";
-const fieldStyle = { border: "1px solid #d7dde7", color: "#1a2234" };
+export const fieldClass = "w-full text-[12px] px-3 py-2 rounded bg-white focus:outline-none";
+export const fieldStyle = { border: "1px solid #d7dde7", color: "#1a2234" };
 
 function AddTaskModal({ defaultOwner, onClose, onCreate }: { defaultOwner: string; onClose: () => void; onCreate: (input: NewTaskInput, openDetails: boolean) => void }) {
   const [name, setName] = useState("");
@@ -453,7 +453,7 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
           <Field label="Owner"><select disabled={readOnly} aria-label="Detail owner" className={fieldClass} style={fieldStyle} value={item.owner.name} onChange={event => onUpdateItem(item.id, { owner: OWNERS.find(owner => owner.name === event.target.value) ?? item.owner })}>{OWNERS.map(owner => <option key={owner.name}>{owner.name}</option>)}</select></Field>
           <Field label="Project"><select disabled={readOnly} aria-label="Detail project" value={selectedProjectKey} onChange={event => changeProject(event.target.value)} className={fieldClass} style={fieldStyle}>{SCOPE_PROJECTS.map(scopeProject => <option key={scopeProject.key} value={scopeProject.key}>{scopeProject.key} · {scopeProject.name}</option>)}</select></Field>
           <Field label="Team"><select disabled={readOnly} aria-label="Detail team" value={team} onChange={event => changeTeam(event.target.value)} className={fieldClass} style={fieldStyle}>{selectedProject.teams.map(scopeTeam => <option key={scopeTeam}>{scopeTeam}</option>)}</select></Field>
-          <Field label="Schedule State"><select aria-label="Schedule State" disabled={readOnly} className={fieldClass} style={fieldStyle} value={item.status} onChange={event => changeWorkItemState(event.target.value as StatusType)}>{WORK_ITEM_STATE_OPTIONS.map(status => <option key={status}>{status}</option>)}</select></Field>
+          <Field label="Schedule State"><ScheduleStateBar aria-label="Schedule State" value={item.status} onChange={readOnly ? undefined : next => changeWorkItemState(next)} /></Field>
           <Field label="Flow State"><select aria-label="Flow State" disabled={readOnly} className={fieldClass} style={fieldStyle} value={item.status} onChange={event => changeWorkItemState(event.target.value as StatusType)}>{WORK_ITEM_STATE_OPTIONS.map(status => <option key={status}>{status}</option>)}</select></Field>
           {item.type === "Defect" && <Field label="Priority"><select disabled={readOnly} className={fieldClass} style={fieldStyle} defaultValue={DEFECT_PRIORITY_DEFAULTS[item.priority] ?? "None"}>{DEFECT_PRIORITY_OPTIONS.map(priority => <option key={priority}>{priority}</option>)}</select></Field>}
           <Field label="Plan Estimate"><input aria-label="Detail plan estimate" disabled={readOnly} className={fieldClass} style={fieldStyle} type="number" min={0} value={item.planEstimate} onChange={event => onUpdateItem(item.id, { planEstimate: Number(event.target.value) })} /></Field>

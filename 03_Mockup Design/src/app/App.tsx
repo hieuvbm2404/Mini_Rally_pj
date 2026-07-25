@@ -1,7 +1,7 @@
 ﻿import { useState } from "react";
 import { TopNav, ContextBar } from "./components/layout";
 import { useEffect } from "react";
-import { type IterationItem, type MilestoneItem, type NewIterationInput, type NewMilestoneInput, type NewReleaseInput, type NewTaskInput, type NewWorkItemInput, type Page, type ReleaseItem, type Role, type ScopeProject, type TaskItem, type WorkItem, ITERATIONS_DATA, MILESTONES_DATA, NOTIFICATIONS, OWNERS, RELEASES_DATA, ROLE_SCOPE, SCOPE_PROJECTS, TASKS_DATA, WORK_ITEMS } from "./model";
+import { type Feature, type IterationItem, type MilestoneItem, type NewFeatureInput, type NewIterationInput, type NewMilestoneInput, type NewReleaseInput, type NewTaskInput, type NewWorkItemInput, type Page, type ReleaseItem, type Role, type ScopeProject, type TaskItem, type WorkItem, FEATURES, ITERATIONS_DATA, MILESTONES_DATA, NOTIFICATIONS, OWNERS, RELEASES_DATA, ROLE_SCOPE, SCOPE_PROJECTS, TASKS_DATA, WORK_ITEMS } from "./model";
 import { HomePage } from "./pages/HomePage";
 import { TrackPage } from "./pages/IterationStatusPage";
 import { TeamBoardPage } from "./pages/TeamBoardPage";
@@ -19,6 +19,15 @@ import { LoginPage } from "./pages/LoginPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { AccessStatePage } from "./pages/AccessStatePage";
 
+function formatAuditTimestamp(date: Date) {
+  const weekday = date.toLocaleDateString("en-US", { weekday: "long" });
+  const month = date.toLocaleDateString("en-US", { month: "long" });
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  const ss = String(date.getSeconds()).padStart(2, "0");
+  return `${weekday}, ${month} ${date.getDate()}, ${date.getFullYear()} ${hh}:${mm}:${ss}`;
+}
+
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>("home");
@@ -34,6 +43,7 @@ export default function App() {
   const [iterations, setIterations] = useState<IterationItem[]>(ITERATIONS_DATA);
   const [releases, setReleases] = useState<ReleaseItem[]>(RELEASES_DATA);
   const [milestones, setMilestones] = useState<MilestoneItem[]>(MILESTONES_DATA);
+  const [features, setFeatures] = useState<Feature[]>(FEATURES);
   const [activeItem, setActiveItem] = useState<WorkItem | null>(null);
   const [showFullDetail, setShowFullDetail] = useState(false);
   const [fullDetailItem, setFullDetailItem] = useState<WorkItem | null>(null);
@@ -66,6 +76,7 @@ export default function App() {
       release: input.release || "Unscheduled",
       releaseId: input.releaseId || releases.find(release => release.name === input.release)?.id,
       milestoneIds: [],
+      featureId: input.featureId,
       tags: [],
       description: input.title,
       lastUpdated: "Just now",
@@ -166,6 +177,27 @@ export default function App() {
       team: input.team,
     };
     setReleases(previous => [...previous, item]);
+    return item;
+  }
+  function updateFeature(id: string, patch: Partial<Feature>) {
+    setFeatures(previous => previous.map(feature => feature.id === id ? { ...feature, ...patch } : feature));
+  }
+  function createFeature(input: NewFeatureInput): Feature {
+    const nextNumber = Math.max(0, ...features.map(feature => Number(feature.id.split("-")[1]) || 0)) + 1;
+    const item: Feature = {
+      id: `FE-${nextNumber}`,
+      name: input.name,
+      status: input.state,
+      priority: "Medium",
+      owner: input.owner,
+      release: input.release || "Unscheduled",
+      project: input.project,
+      team: input.team,
+      preliminaryEstimate: input.preliminaryEstimate,
+      milestoneIds: [],
+      createdAt: formatAuditTimestamp(new Date()),
+    };
+    setFeatures(previous => [...previous, item]);
     return item;
   }
   function updateMilestone(id: string, patch: Partial<MilestoneItem>) {
@@ -298,7 +330,7 @@ export default function App() {
       case "teamBoard": return <TeamBoardPage role={currentRole} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
       case "teamStatus": return <TeamStatusPage role={currentRole} readOnly={projectReadOnly} items={workItems} tasks={tasks} onUpdateTask={updateTask} onOpenFull={openFullDetail} />;
       case "quality": return <QualityPage role={currentRole} readOnly={projectReadOnly} projectKey={currentProject.key} items={workItems} onUpdateItem={updateWorkItem} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
-      case "portfolio": return <PortfolioPage role={currentRole} />;
+      case "portfolio": return <PortfolioPage role={currentRole} features={features} workItems={workItems} tasks={tasks} milestones={milestones} onCreateFeature={createFeature} onUpdateFeature={updateFeature} onUpdateItem={updateWorkItem} onCreateItem={createWorkItem} onOpenFull={openFullDetail} />;
       case "releasePlanning": return <ReleasePlanningPlaceholder />;
       case "releases": return <ReleasesPage role={currentRole} readOnly={projectReadOnly} />;
       case "reports": return <ReportsPage role={currentRole} readOnly={projectReadOnly} />;

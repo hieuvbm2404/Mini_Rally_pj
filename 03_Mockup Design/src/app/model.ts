@@ -5,6 +5,8 @@ export type StatusType = "Idea" | "Defined" | "In-Progress" | "Completed" | "Acc
 export type TaskState = "Defined" | "In-Progress" | "Completed";
 export type PriorityType = "Critical" | "High" | "Medium" | "Low";
 export type MilestoneState = "Planned" | "At Risk" | "Met" | "Missed" | "Cancelled" | "Completed";
+export type PortfolioState = "No Entry" | "Intake" | "Idea Prioritization" | "Problem Discovery" | "Solution Discovery" | "Feature Prioritization" | "Developing" | "Accepted" | "Measuring" | "Done" | "Cancelled";
+export type EstimateSize = "No Entry" | "XS" | "S" | "M" | "L" | "XL";
 
 export interface Owner { name: string; initials: string; color: string; }
 export interface WorkItem {
@@ -12,7 +14,7 @@ export interface WorkItem {
   status: StatusType; priority: PriorityType; owner: Owner;
   planEstimate: number; taskCount: number; completedTasks: number;
   taskEstimate?: number; todoEstimate?: number;
-  iteration: string; release: string; releaseId?: string; milestoneIds?: string[]; tags: string[];
+  iteration: string; release: string; releaseId?: string; milestoneIds?: string[]; featureId?: string; tags: string[];
   description: string; lastUpdated: string; dueDate?: string;
   blocked?: boolean; defectCount?: number; commentCount?: number;
   attachmentCount?: number; project?: string; team?: string; rank?: number;
@@ -37,6 +39,16 @@ export interface NewWorkItemInput {
   iteration?: string;
   release?: string;
   releaseId?: string;
+  featureId?: string;
+}
+export interface NewFeatureInput {
+  name: string;
+  project: string;
+  team: string;
+  owner: Owner;
+  release: string;
+  state: PortfolioState;
+  preliminaryEstimate: EstimateSize;
 }
 export interface NewTaskInput {
   name: string;
@@ -61,9 +73,15 @@ export interface NewMilestoneInput {
   releaseIds: string[]; startDate: string; endDate: string; state: MilestoneState; owner: Owner;
 }
 export interface Feature {
-  id: string; title: string; status: StatusType; priority: PriorityType;
-  owner: Owner; release: string; planEstimate: number; acceptedEstimate: number;
-  storyCount: number; completedStories: number;
+  id: string; name: string; status: PortfolioState; priority: PriorityType;
+  owner: Owner; release: string; project?: string; team?: string;
+  preliminaryEstimate: EstimateSize;
+  rank?: number;
+  milestoneIds?: string[];
+  createdAt: string;
+  plannedStartDate?: string; plannedEndDate?: string; marketReleaseDate?: string;
+  // Plan Estimate, story count and progress are computed from linked
+  // Story/Defect (WorkItem.featureId) - never stored directly on a Feature.
 }
 export interface Project {
   key: string; name: string; activeSprint: string; progress: number;
@@ -117,6 +135,7 @@ export const can = {
   delete: (_r: Role) => true,
   manageUsers: (r: Role) => r === "Workspace Admin",
   manageSprints: (r: Role) => r !== "Project Member",
+  manageFeatures: (r: Role) => r !== "Project Member",
   manageBacklog: (_r: Role) => true,
   manageSettings: (r: Role) => r !== "Project Member",
   manageRoles: (r: Role) => r === "Workspace Admin",
@@ -161,7 +180,7 @@ export const WORK_ITEMS: WorkItem[] = [
     title: "Implement SSO authentication via SAML 2.0 for enterprise tenant onboarding",
     status: "In-Progress", priority: "High", owner: OWNERS[0], project: "NXP",
     planEstimate: 8, taskCount: 6, completedTasks: 4, taskEstimate: 16, todoEstimate: 4,
-    iteration: "Sprint 24.3", release: "Q4 2024", tags: ["auth", "security"],
+    iteration: "Sprint 24.3", release: "Q4 2024", featureId: "FE-311", tags: ["auth", "security"],
     dueDate: "Oct 28, 2024", commentCount: 4, attachmentCount: 2, defectCount: 0,
     description: "Enterprise customers require SAML 2.0 SSO support for automated provisioning through their identity provider. Covers IdP metadata upload, attribute mapping, and session management across tenant boundaries.",
     lastUpdated: "Oct 21, 2024",
@@ -181,23 +200,13 @@ export const WORK_ITEMS: WorkItem[] = [
     title: "Bulk export to CSV for work item backlog with custom field mapping",
     status: "Completed", priority: "Medium", owner: OWNERS[2], project: "NXP",
     planEstimate: 5, taskCount: 4, completedTasks: 4, taskEstimate: 10, todoEstimate: 0,
-    iteration: "Sprint 24.2", release: "Q4 2024", tags: ["export", "backlog"],
+    iteration: "Sprint 24.2", release: "Q4 2024", featureId: "FE-315", tags: ["export", "backlog"],
     commentCount: 2, defectCount: 0,
     description: "Users need to export their full backlog to CSV for offline reporting. Supports custom field selection, column ordering, and encoding options for compatibility with Excel and Google Sheets.",
     lastUpdated: "Oct 18, 2024",
   },
   {
-    id: "FE-318", type: "Feature", rank: 4,
-    title: "Advanced reporting module with configurable KPI dashboards and drill-through",
-    status: "In-Progress", priority: "High", owner: OWNERS[3], project: "NXP",
-    planEstimate: 21, taskCount: 14, completedTasks: 8, taskEstimate: 42, todoEstimate: 18,
-    iteration: "Sprint 24.3", release: "Q1 2025", tags: ["reporting", "dashboards"],
-    commentCount: 9, attachmentCount: 4, defectCount: 1,
-    description: "New reporting module providing configurable KPI dashboard templates, drill-through capabilities from summary to detail, and scheduled email delivery of report snapshots.",
-    lastUpdated: "Oct 22, 2024",
-  },
-  {
-    id: "US-4803", type: "Story", rank: 5,
+    id: "US-4803", type: "Story", rank: 4,
     title: "Per-user notification preference center with channel routing and digest options",
     status: "Defined", priority: "Low", owner: OWNERS[4], project: "NXP",
     planEstimate: 5, taskCount: 5, completedTasks: 0, taskEstimate: 0, todoEstimate: 0,
@@ -221,7 +230,7 @@ export const WORK_ITEMS: WorkItem[] = [
     title: "Sprint velocity chart renders incorrect data when user timezone differs from server",
     status: "In-Progress", priority: "High", owner: OWNERS[1], project: "NXP",
     planEstimate: 3, taskCount: 3, completedTasks: 1, taskEstimate: 8, todoEstimate: 4,
-    iteration: "Sprint 24.3", release: "Q4 2024", tags: ["reporting", "timezone"],
+    iteration: "Sprint 24.3", release: "Q4 2024", featureId: "FE-318", tags: ["reporting", "timezone"],
     commentCount: 3, defectCount: 0,
     description: "When browser timezone is UTC-5 or earlier, sprint completion dates shift by one day on the velocity chart, causing stories accepted on sprint's last day to appear in the following sprint.",
     lastUpdated: "Oct 21, 2024",
@@ -269,7 +278,7 @@ export const WORK_ITEMS: WorkItem[] = [
     title: "Report export generates corrupt XLSX file for datasets over 10,000 rows",
     status: "Defined", priority: "High", owner: OWNERS[3], project: "NXP",
     planEstimate: 3, taskCount: 2, completedTasks: 0,
-    iteration: "Unscheduled", release: "Q4 2024", tags: ["export", "reporting"],
+    iteration: "Unscheduled", release: "Q4 2024", featureId: "FE-318", tags: ["export", "reporting"],
     description: "When exporting reports containing more than 10,000 rows, the resulting XLSX file fails to open in Excel. LibreOffice reports an XML structure error on the shared strings table.",
     lastUpdated: "Oct 20, 2024",
   },
@@ -355,11 +364,11 @@ export const WORK_ITEMS: WorkItem[] = [
 ];
 
 export const FEATURES: Feature[] = [
-  { id: "FE-318", title: "Advanced Reporting Module", status: "In-Progress", priority: "High", owner: OWNERS[3], release: "Q1 2025", planEstimate: 55, acceptedEstimate: 18, storyCount: 12, completedStories: 4 },
-  { id: "FE-311", title: "Enterprise Authentication Suite (SAML / OIDC)", status: "Completed", priority: "High", owner: OWNERS[0], release: "Q4 2024", planEstimate: 34, acceptedEstimate: 34, storyCount: 9, completedStories: 9 },
-  { id: "FE-322", title: "Mobile Application MVP — iOS & Android", status: "Defined", priority: "Medium", owner: OWNERS[4], release: "Q2 2025", planEstimate: 89, acceptedEstimate: 0, storyCount: 22, completedStories: 0 },
-  { id: "FE-315", title: "Backlog Automation & Smart Prioritization Engine", status: "In-Progress", priority: "High", owner: OWNERS[1], release: "Q1 2025", planEstimate: 42, acceptedEstimate: 14, storyCount: 10, completedStories: 3 },
-  { id: "FE-308", title: "Cross-Project Portfolio Hierarchy & Roadmap View", status: "Defined", priority: "Medium", owner: OWNERS[2], release: "Q2 2025", planEstimate: 60, acceptedEstimate: 0, storyCount: 15, completedStories: 0 },
+  { id: "FE-318", name: "Advanced Reporting Module", status: "Developing", priority: "High", owner: OWNERS[3], release: "Nexus Platform Q1 2025", project: "NXP", team: "Data & Reporting", preliminaryEstimate: "L", rank: 1, createdAt: "Thursday, September 12, 2024 09:15:42", plannedStartDate: "Nov 1, 2024", plannedEndDate: "2025-01-31", marketReleaseDate: "2025-02-01" },
+  { id: "FE-311", name: "Enterprise Authentication Suite (SAML / OIDC)", status: "Done", priority: "High", owner: OWNERS[0], release: "Nexus Platform Q4 2024", project: "NXP", team: "Identity & Access", preliminaryEstimate: "M", rank: 2, createdAt: "Wednesday, July 3, 2024 14:22:10", plannedStartDate: "Jul 15, 2024", plannedEndDate: "2024-10-25", marketReleaseDate: "2024-11-01" },
+  { id: "FE-322", name: "Mobile Application MVP — iOS & Android", status: "Idea Prioritization", priority: "Medium", owner: OWNERS[4], release: "Nexus Platform Q2 2025", project: "MOB", team: "Mobile Experience", preliminaryEstimate: "XL", rank: 3, createdAt: "Wednesday, October 2, 2024 11:05:33" },
+  { id: "FE-315", name: "Backlog Automation & Smart Prioritization Engine", status: "Developing", priority: "High", owner: OWNERS[1], release: "Nexus Platform Q1 2025", project: "NXP", team: "Core Platform", preliminaryEstimate: "M", rank: 4, createdAt: "Friday, September 20, 2024 16:40:05", plannedStartDate: "Dec 1, 2024", plannedEndDate: "2025-02-15" },
+  { id: "FE-308", name: "Cross-Project Portfolio Hierarchy & Roadmap View", status: "Problem Discovery", priority: "Medium", owner: OWNERS[2], release: "Nexus Platform Q2 2025", project: "NXP", team: "Core Platform", preliminaryEstimate: "S", rank: 5, createdAt: "Thursday, October 10, 2024 10:30:00" },
 ];
 
 export const NOTIFICATIONS: Notification[] = [
