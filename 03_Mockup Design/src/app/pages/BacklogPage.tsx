@@ -44,21 +44,6 @@ const BACKLOG_FILTER_COLUMNS: Array<{ key: BacklogFilterColumn; label: string; m
   { key: "release", label: "Release", mode: "select" },
 ];
 
-function BacklogStateBoxes({ value, disabled, onChange }: { value: StatusType; disabled: boolean; onChange: (state: StatusType) => void }) {
-  return (
-    <div role="group" aria-label="Schedule State" className="inline-flex overflow-hidden rounded" style={{ border: "1px solid #bdd0ef" }}>
-      {BACKLOG_STATUS_OPTIONS.map(status => {
-        const active = value === status;
-        return (
-          <button key={status} type="button" disabled={disabled} aria-label={`Schedule State ${status}`} title={status} onClick={() => onChange(status)} className="h-6 w-6 text-[10px] font-bold disabled:cursor-not-allowed" style={{ backgroundColor: active ? "#1d3f73" : "#f8fafc", color: active ? "white" : "#2558a6", borderRight: status === "Release" ? "0" : "1px solid #bdd0ef" }}>
-            {status === "In-Progress" ? "P" : status[0]}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function getSortTooltip(column: BacklogColumnKey, direction: "asc" | "desc") {
   if (column === "estimate") return direction === "desc" ? "Largest to smallest" : "Smallest to largest";
   if (column === "id") return direction === "desc" ? "Newest to oldest" : "Oldest to newest";
@@ -449,7 +434,7 @@ export function BacklogPage({ role, project, team, iterations, releases, items, 
                     {editable ? <select aria-label={`${item.id} owner`} value={item.owner.name} onChange={event => updateItemOwner(item.id, event.target.value)} className="min-w-0 flex-1 text-[11px] bg-transparent focus:outline-none" style={{ color: "#5c6478" }}>{OWNERS.map(owner => <option key={owner.name}>{owner.name}</option>)}</select> : <span className="text-[11px] truncate" style={{ color: "#5c6478" }}>{item.owner.initials}</span>}
                   </div>
                   <div className="shrink-0 overflow-hidden" style={{ width: columnWidths.status }} onClick={event => event.stopPropagation()}>
-                    {editable ? <BacklogStateBoxes value={item.status} disabled={!editable} onChange={status => updateItem(item.id, { status })} /> : <StatusBadge status={item.status} />}
+                    <ScheduleStateBar aria-label={`${item.id} schedule state`} value={item.status} onChange={editable ? next => updateItem(item.id, { status: next }) : undefined} />
                   </div>
                   <div className="shrink-0 overflow-hidden" style={{ width: columnWidths.flowState }} onClick={event => event.stopPropagation()}>
                     {editable ? <select aria-label={`${item.id} flow state`} value={item.status} onChange={event => updateItem(item.id, { status: event.target.value as StatusType })} className="w-[118px] text-[11px] rounded-sm bg-white focus:outline-none" style={{ border: "1px solid #bdd0ef", color: "#2558a6" }}>{BACKLOG_STATUS_OPTIONS.map(status => <option key={status}>{status}</option>)}</select> : <StatusBadge status={item.status} />}

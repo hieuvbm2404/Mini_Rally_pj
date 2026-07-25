@@ -113,35 +113,6 @@ function ResizableIterationHeader({ label, width, column, onResize, sort, onSort
   );
 }
 
-function IterationStateBoxes({ value, disabled, onChange }: { value: StatusType; disabled: boolean; onChange: (state: StatusType) => void }) {
-  return (
-    <div className="flex items-center gap-0.5" aria-label="Schedule State">
-      {ITERATION_STATUS_OPTIONS.map(status => {
-        const active = status === value;
-        const cfg = STATUS_CFG[status];
-        return (
-          <button
-            key={status}
-            type="button"
-            disabled={disabled}
-            title={status}
-            aria-label={`Schedule State ${status}`}
-            onClick={() => onChange(status)}
-            className="h-5 w-5 rounded-sm text-[9px] font-semibold disabled:cursor-not-allowed"
-            style={{
-              backgroundColor: active ? cfg.bg : "#f7f8fa",
-              color: active ? cfg.text : "#8c94a6",
-              border: `1px solid ${active ? cfg.border : "#dde2ea"}`,
-            }}
-          >
-            {status === "In-Progress" ? "P" : status[0]}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 export function SelectedItemToolbar({ count, onClear }: { count: number; onClear: () => void }) {
   return (
     <div className="flex items-center h-8 px-3 gap-1 shrink-0" style={{ backgroundColor: "#edf2fb", borderBottom: "1px solid #bdd0ef" }}>
@@ -651,7 +622,7 @@ export function TrackPage({ title = "Iteration Status", role, readOnly = false, 
                           <input aria-label={`${item.id} title`} readOnly={!editable} value={item.title} onChange={event => updateItem(item.id, { title: event.target.value })} className="block w-full truncate text-[12px] font-medium bg-transparent focus:outline-none focus:bg-white focus:px-1 focus:py-0.5 focus:rounded" style={{ color: "#1a2234", border: editable ? "1px solid transparent" : "0" }} />
                         </div>
                         <div className="shrink-0 overflow-hidden" style={{ width: columnWidths.status }} onClick={event => event.stopPropagation()}>
-                          <IterationStateBoxes value={toIterationScheduleState(item.status)} disabled={!editable} onChange={status => updateItem(item.id, { status })} />
+                          <ScheduleStateBar aria-label={`${item.id} schedule state`} value={toIterationScheduleState(item.status)} onChange={editable ? next => updateItem(item.id, { status: next }) : undefined} />
                         </div>
                         <div className="shrink-0 overflow-hidden" style={{ width: columnWidths.flowState }} onClick={event => event.stopPropagation()}>
                           {editable ? <select aria-label={`${item.id} flow state`} value={toIterationScheduleState(item.status)} onChange={event => updateItem(item.id, { status: event.target.value as StatusType })} className="w-[118px] max-w-full text-[11px] rounded-sm bg-white focus:outline-none" style={{ border: "1px solid #bdd0ef", color: "#2558a6" }}>{ITERATION_STATUS_OPTIONS.map(status => <option key={status}>{status}</option>)}</select> : <StatusBadge status={toIterationScheduleState(item.status)} />}
