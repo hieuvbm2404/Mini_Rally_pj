@@ -4,6 +4,8 @@
 
 **DEFERRED TO PHASE 5 — BA confirmation required when Phase 5 starts.**
 
+> **2026-07-25 naming note:** Phase 5 is now scoped as the Portfolio module (Rally-aligned: Portfolio Items, Release Planning, Capacity Planning, Release Tracking — see `../Phase 5/PHASE5_DEVELOPMENT_TRACKING.md`). Everything on this page (progress %, zero-state, formulas) is actually **Release Tracking** in that model, not Release Planning — Release Planning is the separate act of assigning Features to a Release. This file's content maps to task **P5-RT-01..04**; kept here unmodified for history, do not edit further — continue in the Phase 5 tracker.
+
 ## Navigation direction
 
 - Remove `Releases` from top-level navigation.

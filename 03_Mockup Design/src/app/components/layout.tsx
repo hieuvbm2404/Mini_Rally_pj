@@ -25,7 +25,7 @@ export const NAV_ITEMS: { key: Page; label: string; icon: React.ReactNode; child
   { key: "backlog", label: "Plan", icon: <Calendar size={12} />, children: [{ key: "backlog", label: "Backlog", icon: <AlignJustify size={12} /> }, { key: "iterations", label: "Timeboxes", icon: <RotateCw size={12} /> }] },
   { key: "track", label: "Track", icon: <Activity size={12} />, children: [{ key: "track", label: "Iteration Status", icon: <Activity size={12} /> }, { key: "teamStatus", label: "Team status", icon: <ListChecks size={12} /> }] },
   { key: "quality", label: "Quality", icon: <CheckCircle size={12} />, children: [{ key: "quality", label: "Defect", icon: <AlertTriangle size={12} /> }] },
-  { key: "portfolio", label: "Portfolio", icon: <Package size={12} />, children: [{ key: "releasePlanning", label: "Release Planning (Phase 5)", icon: <Tag size={12} /> }] },
+  { key: "portfolio", label: "Portfolio", icon: <Package size={12} />, children: [{ key: "portfolio", label: "Portfolio Items", icon: <Package size={12} /> }, { key: "releasePlanning", label: "Release Planning (Phase 5)", icon: <Tag size={12} /> }] },
   { key: "reports", label: "Reports", icon: <BarChart2 size={12} /> },
 ];
 
@@ -250,7 +250,7 @@ export function ContextBar({ currentPage, currentProject, currentTeam }: { curre
     teamBoard: [currentProject.name, "Track", "Team board"],
     teamStatus: [currentProject.name, "Track", "Team status"],
     quality: [currentProject.name, "Quality", "Defects"],
-    portfolio: [currentProject.name, "Portfolio", "Initiatives"],
+    portfolio: [currentProject.name, "Portfolio", "Portfolio Items"],
     releasePlanning: [currentProject.name, "Portfolio", "Release Planning (Phase 5)"],
     releases: [currentProject.name, "Plan", "Timeboxes", "Releases"],
     reports: [currentProject.name, "Reports"],
