@@ -197,25 +197,29 @@ export function DetailPanel({ item, onClose, role, onOpenFull }: { item: WorkIte
 
 // ─── New Item Modal ───────────────────────────────────────────────────────────
 
-export function NewItemModal({ onClose, onCreate, defaultProjectKey, defaultTeam, defaultType, allowedTypes = ["Feature", "Story", "Defect", "Task"] }: { onClose: () => void; onCreate: (input: NewWorkItemInput, openDetails: boolean) => void; defaultProjectKey?: string; defaultTeam?: string; defaultType?: WorkItemType; allowedTypes?: WorkItemType[] }) {
+export function NewItemModal({ onClose, onCreate, defaultProjectKey, defaultTeam, defaultType, allowedTypes = ["Feature", "Story", "Defect", "Task"], features = FEATURES, defaultFeatureId }: { onClose: () => void; onCreate: (input: NewWorkItemInput, openDetails: boolean) => void; defaultProjectKey?: string; defaultTeam?: string; defaultType?: WorkItemType; allowedTypes?: WorkItemType[]; features?: Feature[]; defaultFeatureId?: string }) {
   const [type, setType] = useState<WorkItemType>(defaultType && allowedTypes.includes(defaultType) ? defaultType : allowedTypes[0]);
   const [title, setTitle] = useState("");
   const initialProject = SCOPE_PROJECTS.find(project => project.key === defaultProjectKey) || SCOPE_PROJECTS[0];
   const [projectKey, setProjectKey] = useState(initialProject.key);
   const [team, setTeam] = useState(defaultTeam && defaultTeam !== "All Teams" && initialProject.teams.includes(defaultTeam) ? defaultTeam : "");
+  const initialFeature = features.find(feature => feature.id === defaultFeatureId && feature.project === initialProject.key && !feature.archivedAt);
+  const [featureId, setFeatureId] = useState(initialFeature?.id || "");
   const [ownerName, setOwnerName] = useState(OWNERS[0].name);
   const [planEstimate, setPlanEstimate] = useState(0);
   const selectedProject = SCOPE_PROJECTS.find(project => project.key === projectKey) || SCOPE_PROJECTS[0];
+  const featureOptions = features.filter(feature => feature.project === projectKey && !feature.archivedAt);
   const canCreate = title.trim().length > 0 && (type === "Story" || type === "Defect");
   function selectProject(nextProjectKey: string) {
     const nextProject = SCOPE_PROJECTS.find(project => project.key === nextProjectKey) || SCOPE_PROJECTS[0];
     setProjectKey(nextProject.key);
     setTeam("");
+    setFeatureId(previous => features.some(feature => feature.id === previous && feature.project === nextProject.key && !feature.archivedAt) ? previous : "");
   }
   function submit(openDetails: boolean) {
     if (!canCreate || (type !== "Story" && type !== "Defect")) return;
     const owner = OWNERS.find(candidate => candidate.name === ownerName) || OWNERS[0];
-    onCreate({ type, title: title.trim(), project: projectKey, team: team || undefined, owner, planEstimate }, openDetails);
+    onCreate({ type, title: title.trim(), project: projectKey, team: team || undefined, owner, planEstimate, featureId: featureId || undefined }, openDetails);
     onClose();
   }
   return (
@@ -234,6 +238,7 @@ export function NewItemModal({ onClose, onCreate, defaultProjectKey, defaultTeam
             <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Project</label><select aria-label="Project" value={projectKey} onChange={event => selectProject(event.target.value)} className="w-full text-[12px] px-2.5 py-1.5 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#1a2234" }}>{SCOPE_PROJECTS.map(project => <option key={project.key} value={project.key}>{project.key} · {project.name}</option>)}</select></div>
             <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Team optional</label><select aria-label="Team" value={team} onChange={event => setTeam(event.target.value)} className="w-full text-[12px] px-2.5 py-1.5 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#1a2234" }}><option value="">Project backlog</option>{selectedProject.teams.map(projectTeam => <option key={projectTeam}>{projectTeam}</option>)}</select></div>
           </div>
+          <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Feature</label><select aria-label="Feature" value={featureId} onChange={event => setFeatureId(event.target.value)} className="w-full text-[12px] px-2.5 py-1.5 rounded focus:outline-none bg-white" style={{ border: "1px solid #dde2ea", color: "#1a2234" }}><option value="">Unassigned</option>{featureOptions.map(feature => <option key={feature.id} value={feature.id}>{feature.id} · {feature.name}</option>)}</select><p className="mt-1 text-[10px]" style={{ color: "#8c94a6" }}>Creating from a Feature pre-fills this field.</p></div>
           <div><label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#5c6478" }}>Title <span style={{ color: "#dc2626" }}>*</span></label>
             <input autoFocus type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Enter a concise, descriptive title..." className="w-full text-[13px] px-3 py-2 rounded focus:outline-none" style={{ border: "1px solid #dde2ea", color: "#1a2234" }} onFocus={e => (e.currentTarget.style.borderColor = "rgba(29,63,115,0.4)")} onBlur={e => (e.currentTarget.style.borderColor = "#dde2ea")} />
           </div>

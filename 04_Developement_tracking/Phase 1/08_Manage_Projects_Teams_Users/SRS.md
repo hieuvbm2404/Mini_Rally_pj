@@ -6,7 +6,7 @@
 |---|---|
 | Module ID | `P1-MANAGE-ORG` |
 | Status | Draft for Development |
-| Scope | Manage Projects entry point; Settings gear owns Teams and User Management |
+| Scope | Project Management entry point under the Settings gear; Settings gear owns Teams and User Management |
 | Priority | P1 - required |
 | Depends on | Phase 0 App Shell, Auth/Role, Project/Team/User DB |
 | Mockup source | `03_Mockup Design/src/app/pages/ProjectsPage.tsx` |
@@ -14,15 +14,15 @@
 
 ## 1. Objective
 
-Phase 1 needs a clean Manage area so Workspace Admin can maintain the organization structure used by Backlog, Work Item Create, Work Item Detail, and later Iteration flows.
+Phase 1 needs a clean Project Management area so Workspace Admin can maintain the organization structure used by Backlog, Work Item Create, Work Item Detail, and later Iteration flows.
 
-`Workspace menu > Manage Projects` contains the `Projects` list only. `Settings gear` owns `Teams` and `User Management`. The three surfaces together maintain the organization structure used by work management.
+`Settings gear > Workspace > Project Management` contains the `Projects` list only. The same Settings gear also owns `Teams` and `User Management`. The three surfaces together maintain the organization structure used by work management.
 
 ## 2. Actors
 
 | Actor | Access |
 |---|---|
-| Workspace Admin | Full access to Manage Projects and Settings Teams/User Management |
+| Workspace Admin | Full access to Project Management and Settings Teams/User Management |
 | Project Admin | Project-scoped access only when granted by permission |
 | Project Member | No organization administration access |
 
@@ -35,8 +35,8 @@ Manage is the administration surface for the organization structure used by all 
 Business flow:
 
 ```text
-Workspace Admin opens Workspace menu
--> Opens Manage Projects and creates or maintains Projects
+Workspace Admin opens top-right Settings gear
+-> Opens Workspace > Project Management and creates or maintains Projects
 -> Opens Settings gear > Teams and creates Teams/links them to Projects
 -> Opens Settings gear > User Management and invites/maintains Users
 -> Grants Users workspace role and team membership
@@ -62,9 +62,9 @@ Business rules:
 
 | UI area | Requirement |
 |---|---|
-| Workspace menu | `Manage Projects` opens the Projects page |
-| Breadcrumb | Shows `ACME Space Inc. > Manage Projects` |
-| Page title | `Manage Projects` |
+| Top-right Settings gear | `Workspace > Project Management` opens the Projects page |
+| Breadcrumb | Shows `ACME Space Inc. > Project Management` |
+| Page title | `Project Management` |
 | Tabs | Projects only |
 | Primary action | `Create Project`; Team/User actions live under Settings gear |
 | Style | Same dense list design language as Backlog and Timeboxes; no marketing/hero layout |
@@ -404,7 +404,7 @@ Workspace Admin has all permissions in current mockup. More granular permission 
 
 ## 10. Acceptance Criteria
 
-1. Workspace menu `Manage Projects` opens Project management with the `Projects` view only; the top-right Settings gear contains `Teams` and `User Management` as workspace administration sections.
+1. Top-right Settings gear `Workspace > Project Management` opens Project management with the `Projects` view only; the same Settings gear contains `Teams` and `User Management` as workspace administration sections.
 2. `Settings > Teams` shows only columns: Key, Team, Project, Status, Lead, Updated.
 3. `Settings > Teams` does not show Members, Capacity or Velocity columns; its Actions area is limited to permitted administration actions.
 4. `Create Team` modal includes Team Info and Members tabs.

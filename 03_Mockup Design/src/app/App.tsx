@@ -1,7 +1,7 @@
 ﻿import { useState } from "react";
 import { TopNav, ContextBar } from "./components/layout";
 import { useEffect } from "react";
-import { type Feature, type IterationItem, type MilestoneItem, type NewFeatureInput, type NewIterationInput, type NewMilestoneInput, type NewReleaseInput, type NewTaskInput, type NewWorkItemInput, type Page, type ReleaseItem, type Role, type ScopeProject, type TaskItem, type WorkItem, FEATURES, ITERATIONS_DATA, MILESTONES_DATA, NOTIFICATIONS, OWNERS, RELEASES_DATA, ROLE_SCOPE, SCOPE_PROJECTS, TASKS_DATA, WORK_ITEMS } from "./model";
+import { type CapacityPlan, type Feature, type IterationItem, type MilestoneItem, type NewCapacityPlanInput, type NewFeatureInput, type NewIterationInput, type NewMilestoneInput, type NewReleaseInput, type NewTaskInput, type NewWorkItemInput, type Page, type ReleaseItem, type Role, type ScopeProject, type TaskItem, type WorkItem, CAPACITY_PLANS_DATA, FEATURES, ITERATIONS_DATA, MILESTONES_DATA, NOTIFICATIONS, OWNERS, RELEASES_DATA, ROLE_SCOPE, SCOPE_PROJECTS, TASKS_DATA, WORK_ITEMS } from "./model";
 import { HomePage } from "./pages/HomePage";
 import { TrackPage } from "./pages/IterationStatusPage";
 import { TeamBoardPage } from "./pages/TeamBoardPage";
@@ -10,6 +10,7 @@ import { BacklogPage } from "./pages/BacklogPage";
 import { IterationsPage } from "./pages/IterationsPage";
 import { QualityPage } from "./pages/QualityPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
+import { CapacityPlanningPage } from "./pages/CapacityPlanningPage";
 import { ReleasesPage } from "./pages/ReleasesPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
@@ -44,6 +45,7 @@ export default function App() {
   const [releases, setReleases] = useState<ReleaseItem[]>(RELEASES_DATA);
   const [milestones, setMilestones] = useState<MilestoneItem[]>(MILESTONES_DATA);
   const [features, setFeatures] = useState<Feature[]>(FEATURES);
+  const [capacityPlans, setCapacityPlans] = useState<CapacityPlan[]>(CAPACITY_PLANS_DATA);
   const [activeItem, setActiveItem] = useState<WorkItem | null>(null);
   const [showFullDetail, setShowFullDetail] = useState(false);
   const [fullDetailItem, setFullDetailItem] = useState<WorkItem | null>(null);
@@ -95,7 +97,7 @@ export default function App() {
     if (siblings.length === 0) return;
     const completedTasks = siblings.filter(task => task.state === "Completed").length;
     const nextStatus: WorkItem["status"] = completedTasks === siblings.length ? "Completed" : "In-Progress";
-    const taskEstimate = siblings.reduce((total, task) => total + task.todo + task.actuals, 0);
+    const taskEstimate = siblings.reduce((total, task) => total + task.estimate, 0);
     const todoEstimate = siblings.reduce((total, task) => total + task.todo, 0);
     const patch: Partial<WorkItem> = { status: nextStatus, taskCount: siblings.length, completedTasks, taskEstimate, todoEstimate };
     setWorkItems(previous => previous.map(item => item.id === parentId ? { ...item, ...patch } : item));
@@ -106,7 +108,8 @@ export default function App() {
     const nextTasks = tasks.map(task => {
       if (task.id !== id) return task;
       const updated = { ...task, ...patch };
-      return { ...updated, estimate: Math.max(0, (Number(updated.todo) || 0) + (Number(updated.actuals) || 0)) };
+      if (updated.state === "Completed") return { ...updated, todo: 0 };
+      return updated;
     });
     setTasks(nextTasks);
     const changedTask = nextTasks.find(task => task.id === id);
@@ -125,7 +128,7 @@ export default function App() {
       owner: input.owner,
       project: parent.project || currentProject.key,
       team: parent.team || "",
-      estimate: input.todo + input.actuals,
+      estimate: input.estimate,
       todo: input.todo,
       actuals: input.actuals,
       description: input.name,
@@ -173,6 +176,7 @@ export default function App() {
       setWorkItems(previous => previous.map(syncReleaseLabel));
       setActiveItem(previous => previous ? syncReleaseLabel(previous) : previous);
       setFullDetailItem(previous => previous ? syncReleaseLabel(previous) : previous);
+      setFeatures(previous => previous.map(feature => feature.releaseId === id ? { ...feature, release: patch.name as string } : feature));
     }
   }
   function createRelease(input: NewReleaseInput): ReleaseItem {
@@ -208,14 +212,59 @@ export default function App() {
       priority: "Medium",
       owner: input.owner,
       release: input.release || "Unscheduled",
+      releaseId: input.releaseId,
       project: input.project,
       team: input.team,
       preliminaryEstimate: input.preliminaryEstimate,
       milestoneIds: [],
       createdAt: formatAuditTimestamp(new Date()),
+      description: "",
+      notes: "",
+      successCriteria: "",
+      attachments: [],
     };
     setFeatures(previous => [...previous, item]);
     return item;
+  }
+  function createCapacityPlan(input: NewCapacityPlanInput): CapacityPlan {
+    const release = releases.find(candidate => candidate.id === input.releaseId);
+    const nextNumber = Math.max(0, ...capacityPlans.map(plan => Number(plan.id.split("-")[1]) || 0)) + 1;
+    const plan: CapacityPlan = {
+      id: `CP-${String(nextNumber).padStart(3, "0")}`,
+      name: input.name,
+      projectKey: input.projectKey,
+      releaseId: input.releaseId,
+      release: release?.name || "Unscheduled",
+      status: "Draft",
+      lastUpdated: formatAuditTimestamp(new Date()),
+      viewBy: input.viewBy,
+      teams: [],
+      allocations: [],
+    };
+    setCapacityPlans(previous => [...previous, plan]);
+    return plan;
+  }
+  function updateCapacityPlan(id: string, updater: (plan: CapacityPlan) => CapacityPlan) {
+    setCapacityPlans(previous => previous.map(plan => plan.id === id ? updater(plan) : plan));
+  }
+  function publishCapacityPlan(id: string, updateFields = true) {
+    const plan = capacityPlans.find(candidate => candidate.id === id);
+    if (!plan || plan.status === "Published") return;
+    const release = releases.find(candidate => candidate.id === plan.releaseId);
+    const allocatedFeatureIds = new Set(plan.allocations.filter(allocation => allocation.team).map(allocation => allocation.featureId));
+    if (updateFields) {
+      setFeatures(previous => previous.map(feature => {
+        if (!allocatedFeatureIds.has(feature.id)) return feature;
+        return {
+          ...feature,
+          release: plan.release,
+          releaseId: plan.releaseId,
+          plannedStartDate: release?.startDate || feature.plannedStartDate,
+          plannedEndDate: release?.releaseDate || feature.plannedEndDate,
+        };
+      }));
+    }
+    setCapacityPlans(previous => previous.map(candidate => candidate.id === id ? { ...candidate, status: "Published", publishedMode: updateFields ? "Update Fields" : "Visibility Only", lastUpdated: formatAuditTimestamp(new Date()) } : candidate));
   }
   function updateMilestone(id: string, patch: Partial<MilestoneItem>) {
     setMilestones(previous => previous.map(milestone => milestone.id === id ? { ...milestone, ...patch } : milestone));
@@ -251,7 +300,7 @@ export default function App() {
         ...item,
         taskCount: children.length,
         completedTasks,
-        taskEstimate: children.reduce((sum, task) => sum + task.todo + task.actuals, 0),
+        taskEstimate: children.reduce((sum, task) => sum + task.estimate, 0),
         todoEstimate: children.reduce((sum, task) => sum + task.todo, 0),
         status: rolledUpStatus,
       };
@@ -273,7 +322,7 @@ export default function App() {
   }, [workItems]);
   function handleItemClick(item: WorkItem) { setActiveItem(previous => previous?.id === item.id ? null : item); }
   function navigateTo(page: Page) {
-    if (currentRole === "Project Member" && !["home", "backlog", "track", "notifications", "settings"].includes(page)) {
+    if (currentRole === "Project Member" && !["home", "backlog", "track", "portfolio", "capacityPlanning", "notifications", "settings"].includes(page)) {
       setAccessState("access-denied");
       setActiveItem(null);
       closeFullDetail();
@@ -300,7 +349,7 @@ export default function App() {
       const memberProject = SCOPE_PROJECTS.find(project => project.key === ROLE_SCOPE.projectMemberProjectKey) ?? SCOPE_PROJECTS[0];
       setCurrentProject(memberProject);
       setCurrentTeam(ROLE_SCOPE.projectMemberTeams[0]);
-      if (!["home", "backlog", "track", "notifications", "settings"].includes(currentPage)) setAccessState("access-denied");
+      if (!["home", "backlog", "track", "portfolio", "capacityPlanning", "notifications", "settings"].includes(currentPage)) setAccessState("access-denied");
       else setAccessState(null);
     } else {
       setAccessState(null);
@@ -341,13 +390,14 @@ export default function App() {
     switch (currentPage) {
       case "home": return <HomePage role={currentRole} onNavigate={navigateTo} />;
       case "projects": return <ProjectsPage role={currentRole} createRequest={projectCreateRequest} onCreateRequestHandled={() => setProjectCreateRequest(0)} />;
-      case "backlog": return <BacklogPage role={currentRole} project={currentProject} team={currentTeam} iterations={iterations} releases={releases} items={workItems} onCreateItem={createWorkItem} onUpdateItem={updateWorkItem} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
+      case "backlog": return <BacklogPage role={currentRole} project={currentProject} team={currentTeam} iterations={iterations} releases={releases} features={features} items={workItems} onCreateItem={createWorkItem} onUpdateItem={updateWorkItem} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
       case "iterations": return <IterationsPage role={currentRole} readOnly={projectReadOnly} iterations={iterations} releases={releases} milestones={milestones} workItems={workItems} onCreateIteration={createIteration} onUpdateIteration={updateIteration} onCreateRelease={createRelease} onUpdateRelease={updateRelease} onCreateMilestone={createMilestone} onUpdateMilestone={updateMilestone} onUpdateWorkItem={updateWorkItem} />;
       case "track": return <TrackPage key="track" title="Iteration" role={currentRole} readOnly={projectReadOnly} projectKey={currentProject.key} iterations={iterations} onCreateItem={createWorkItem} onUpdateIteration={updateIteration} items={workItems} tasks={tasks} onUpdateItem={updateWorkItem} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
       case "teamBoard": return <TeamBoardPage role={currentRole} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
       case "teamStatus": return <TeamStatusPage role={currentRole} readOnly={projectReadOnly} items={workItems} tasks={tasks} onUpdateTask={updateTask} onOpenFull={openFullDetail} />;
       case "quality": return <QualityPage role={currentRole} readOnly={projectReadOnly} projectKey={currentProject.key} items={workItems} onUpdateItem={updateWorkItem} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
-      case "portfolio": return <PortfolioPage role={currentRole} features={features} workItems={workItems} tasks={tasks} milestones={milestones} onCreateFeature={createFeature} onUpdateFeature={updateFeature} onUpdateItem={updateWorkItem} onCreateItem={createWorkItem} onOpenFull={openFullDetail} />;
+      case "portfolio": return <PortfolioPage role={currentRole} project={currentProject} team={currentTeam} releases={releases} features={features} workItems={workItems} tasks={tasks} milestones={milestones} onCreateFeature={createFeature} onUpdateFeature={updateFeature} onUpdateItem={updateWorkItem} onCreateItem={createWorkItem} onOpenFull={openFullDetail} />;
+      case "capacityPlanning": return <CapacityPlanningPage role={currentRole} project={currentProject} releases={releases} features={features} workItems={workItems} capacityPlans={capacityPlans} onCreateCapacityPlan={createCapacityPlan} onUpdateCapacityPlan={updateCapacityPlan} onPublishCapacityPlan={publishCapacityPlan} />;
       case "releasePlanning": return <ReleasePlanningPlaceholder />;
       case "releases": return <ReleasesPage role={currentRole} readOnly={projectReadOnly} />;
       case "reports": return <ReportsPage role={currentRole} readOnly={projectReadOnly} />;
@@ -360,13 +410,13 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden" style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", backgroundColor: "#f0f2f5" }}>
-      <TopNav currentPage={currentPage} onNavigate={navigateTo} currentRole={currentRole} onRoleChange={changeRole} unreadCount={unreadCount} currentProject={currentProject} currentTeam={currentTeam} onScopeChange={changeScope} onSignOut={signOut} onCreateProject={() => { setCurrentPage("projects"); setProjectCreateRequest(1); }} />
+      <TopNav currentPage={currentPage} onNavigate={navigateTo} currentRole={currentRole} onRoleChange={changeRole} unreadCount={unreadCount} currentProject={currentProject} currentTeam={currentTeam} onScopeChange={changeScope} onSignOut={signOut} />
       <ContextBar currentPage={currentPage} currentProject={currentProject} currentTeam={currentTeam} />
       <div className="flex flex-1 overflow-hidden">
         {accessState
           ? <AccessStatePage variant={accessState} onBack={() => { setAccessState(null); setCurrentPage("backlog"); }} />
           : showFullDetail && fullDetailItem
-            ? <WorkItemDetailPage item={fullDetailItem} role={currentRole} readOnly={currentRole === "Project Admin" && !ROLE_SCOPE.projectAdminProjectKeys.includes((fullDetailItem.project ?? "") as typeof ROLE_SCOPE.projectAdminProjectKeys[number])} project={currentProject} team={currentTeam} iterations={iterations} releases={releases} milestones={milestones} tasks={tasks.filter(task => task.parentWorkItemId === fullDetailItem.id)} onCreateTask={createTask} onUpdateTask={updateTask} onUpdateItem={updateWorkItem} onBack={closeFullDetail} onMinimize={minimizeFullDetail} />
+            ? <WorkItemDetailPage item={fullDetailItem} role={currentRole} readOnly={currentRole === "Project Admin" && !ROLE_SCOPE.projectAdminProjectKeys.includes((fullDetailItem.project ?? "") as typeof ROLE_SCOPE.projectAdminProjectKeys[number])} project={currentProject} team={currentTeam} iterations={iterations} releases={releases} milestones={milestones} features={features} tasks={tasks.filter(task => task.parentWorkItemId === fullDetailItem.id)} onCreateTask={createTask} onUpdateTask={updateTask} onUpdateItem={updateWorkItem} onBack={closeFullDetail} onMinimize={minimizeFullDetail} />
             : renderPage()}
       </div>
     </div>

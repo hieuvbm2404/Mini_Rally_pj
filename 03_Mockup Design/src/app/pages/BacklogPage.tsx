@@ -103,8 +103,9 @@ export function ResizableBacklogHeader({ label, width, column, onResize, sort, o
   );
 }
 
-export function BacklogPage({ role, project, team, iterations, releases, items, onCreateItem, onUpdateItem, activeItem, onItemClick, onOpenFull }: { role: Role; project: ScopeProject; team: string; iterations: IterationItem[]; releases: ReleaseItem[]; items: WorkItem[]; onCreateItem: (input: NewWorkItemInput, openDetails: boolean) => void; onUpdateItem: (id: string, patch: Partial<WorkItem>) => void; activeItem: WorkItem | null; onItemClick: (i: WorkItem) => void; onOpenFull?: (item: WorkItem) => void }) {
-  const backlogItems = items.filter(item => item.type === "Story" || item.type === "Defect");
+export function BacklogPage({ role, project, team, iterations, releases, features, items, onCreateItem, onUpdateItem, activeItem, onItemClick, onOpenFull }: { role: Role; project: ScopeProject; team: string; iterations: IterationItem[]; releases: ReleaseItem[]; features: Feature[]; items: WorkItem[]; onCreateItem: (input: NewWorkItemInput, openDetails: boolean) => void; onUpdateItem: (id: string, patch: Partial<WorkItem>) => void; activeItem: WorkItem | null; onItemClick: (i: WorkItem) => void; onOpenFull?: (item: WorkItem) => void }) {
+  const workItemRows = items.filter(item => item.type === "Story" || item.type === "Defect");
+  const backlogItems = workItemRows.filter(item => item.iteration === "Unscheduled");
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<BacklogFilters>({});
@@ -118,8 +119,8 @@ export function BacklogPage({ role, project, team, iterations, releases, items, 
   const [columnWidths, setColumnWidths] = useState<Record<BacklogColumnKey, number>>({ rank: 56, type: 72, id: 82, name: 440, priority: 96, estimate: 56, owner: 124, status: 166, flowState: 128, iteration: 128, release: 88 });
   const [sort, setSort] = useState<BacklogSort | null>(null);
 
-  const releaseOptions = Array.from(new Set(["Unscheduled", ...releases.map(release => release.name), ...backlogItems.map(item => item.release)])).sort();
-  const iterationOptions = Array.from(new Set([...iterations.map(iteration => iteration.name), "Unscheduled", ...backlogItems.map(item => item.iteration)])).sort();
+  const releaseOptions = Array.from(new Set(["Unscheduled", ...releases.map(release => release.name), ...workItemRows.map(item => item.release)])).sort();
+  const iterationOptions = Array.from(new Set([...iterations.map(iteration => iteration.name), "Unscheduled", ...workItemRows.map(item => item.iteration)])).sort();
   const editable = can.manageBacklog(role) && !(role === "Project Admin" && !ROLE_SCOPE.projectAdminProjectKeys.includes(project.key as typeof ROLE_SCOPE.projectAdminProjectKeys[number]));
   const canEditRelease = editable && role !== "Project Member";
   const activeFilterColumns = BACKLOG_FILTER_COLUMNS.filter(column => filters[column.key] !== undefined);
@@ -236,7 +237,7 @@ export function BacklogPage({ role, project, team, iterations, releases, items, 
     setCurrentPage(1);
   }
   function moveItem(id: string, direction: -1 | 1) {
-    const ordered = [...backlogItems].sort((a, b) => (a.rank || 99) - (b.rank || 99));
+    const ordered = backlogItems.filter(item => item.project === project.key).sort((a, b) => (a.rank || 99) - (b.rank || 99));
     const index = ordered.findIndex(item => item.id === id);
     const targetIndex = index + direction;
     if (index < 0 || targetIndex < 0 || targetIndex >= ordered.length) return;
@@ -467,7 +468,7 @@ export function BacklogPage({ role, project, team, iterations, releases, items, 
         </div>
         {activeItem && <DetailPanel item={activeItem} onClose={() => onItemClick(activeItem)} role={role} onOpenFull={onOpenFull} />}
       </div>
-      {showModal && <NewItemModal onClose={() => setShowModal(false)} onCreate={onCreateItem} defaultProjectKey={project.key} defaultTeam={team} defaultType="Story" allowedTypes={["Story", "Defect"]} />}
+      {showModal && <NewItemModal onClose={() => setShowModal(false)} onCreate={onCreateItem} defaultProjectKey={project.key} defaultTeam={team} defaultType="Story" allowedTypes={["Story", "Defect"]} features={features} />}
     </div>
   );
 }

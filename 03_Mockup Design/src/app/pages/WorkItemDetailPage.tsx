@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { AlignLeft, AtSign, Bold, ChevronLeft, Code2, FileText, History, ImagePlus, Italic, Link2, List, ListChecks, ListOrdered, Maximize2, Minimize2, MoreHorizontal, Plus, Redo2, Strikethrough, Table2, Underline, Undo2 } from "lucide-react";
-import { type IterationItem, type MilestoneItem, type NewTaskInput, type ReleaseItem, type Role, type ScopeProject, type StatusType, type TaskItem, type TaskState, type WorkItem, OWNERS, SCOPE_PROJECTS } from "../model";
+import { type Feature, type IterationItem, type MilestoneItem, type NewTaskInput, type ReleaseItem, type Role, type ScopeProject, type StatusType, type TaskItem, type TaskState, type WorkItem, OWNERS, SCOPE_PROJECTS } from "../model";
 import { Avatar, TypeBadge, ScheduleStateBar } from "../components/shared";
 
 type DetailTab = "details" | "tasks" | "history";
@@ -40,7 +40,7 @@ function EditorButton({ label, command, disabled, children }: { label: string; c
   return <button type="button" aria-label={label} title={label} disabled={disabled} onMouseDown={event => { event.preventDefault(); if (command && !disabled) document.execCommand(command); }} className="w-7 h-7 flex items-center justify-center rounded-sm disabled:opacity-35" style={{ color: "#475569" }} onMouseEnter={event => (event.currentTarget.style.backgroundColor = "#edf2f7")} onMouseLeave={event => (event.currentTarget.style.backgroundColor = "transparent")}>{children}</button>;
 }
 
-export function RichTextEditor({ title, initialValue = "", minHeight, readOnly }: { title: string; initialValue?: string; minHeight: number; readOnly: boolean }) {
+export function RichTextEditor({ title, initialValue = "", minHeight, readOnly, onChange }: { title: string; initialValue?: string; minHeight: number; readOnly: boolean; onChange?: (value: string) => void }) {
   return (
     <section className="bg-white rounded overflow-hidden" style={{ border: "1px solid #dde2ea" }}>
       <div className="px-4 py-2 text-[11px] font-semibold" style={{ color: "#475569", backgroundColor: "#f8fafc", borderBottom: "1px solid #dde2ea" }}>{title}</div>
@@ -67,7 +67,7 @@ export function RichTextEditor({ title, initialValue = "", minHeight, readOnly }
         <div className="flex-1 min-w-1" />
         <EditorButton label={`${title}: Expand editor`}><Maximize2 size={15} /></EditorButton>
       </div>
-      <div contentEditable={!readOnly} suppressContentEditableWarning className="px-4 py-3 text-[13px] leading-6 focus:outline-none" style={{ minHeight, color: "#334155", backgroundColor: readOnly ? "#f8fafc" : "white" }}>{initialValue}</div>
+      <div contentEditable={!readOnly} suppressContentEditableWarning onInput={event => onChange?.(event.currentTarget.textContent || "")} className="px-4 py-3 text-[13px] leading-6 focus:outline-none" style={{ minHeight, color: "#334155", backgroundColor: readOnly ? "#f8fafc" : "white" }}>{initialValue}</div>
     </section>
   );
 }
@@ -165,16 +165,29 @@ export const fieldStyle = { border: "1px solid #d7dde7", color: "#1a2234" };
 
 function AddTaskModal({ defaultOwner, onClose, onCreate }: { defaultOwner: string; onClose: () => void; onCreate: (input: NewTaskInput, openDetails: boolean) => void }) {
   const [name, setName] = useState("");
+  const [estimate, setEstimate] = useState("");
   const [todo, setTodo] = useState("");
   const [actuals, setActuals] = useState("");
+  const [todoTouched, setTodoTouched] = useState(false);
   const [owner, setOwner] = useState(defaultOwner);
   const canCreate = name.trim().length > 0;
-  const derivedEstimate = Math.max(0, Number(todo) || 0) + Math.max(0, Number(actuals) || 0);
+  const estimateValue = Math.max(0, Number(estimate) || 0);
+
+  function changeEstimate(nextValue: string) {
+    const normalized = Math.max(0, Number(nextValue) || 0);
+    setEstimate(nextValue);
+    if (!todoTouched && Math.max(0, Number(actuals) || 0) === 0) setTodo(String(normalized));
+  }
+
+  function changeTodo(nextValue: string) {
+    setTodoTouched(true);
+    setTodo(nextValue);
+  }
 
   function submit(openDetails: boolean) {
     if (!canCreate) return;
     const selectedOwner = OWNERS.find(candidate => candidate.name === owner) || OWNERS[0];
-    onCreate({ name: name.trim(), owner: selectedOwner, todo: Math.max(0, Number(todo) || 0), actuals: Math.max(0, Number(actuals) || 0), estimate: derivedEstimate }, openDetails);
+    onCreate({ name: name.trim(), owner: selectedOwner, todo: Math.max(0, Number(todo) || 0), actuals: Math.max(0, Number(actuals) || 0), estimate: estimateValue }, openDetails);
     onClose();
   }
 
@@ -196,20 +209,20 @@ function AddTaskModal({ defaultOwner, onClose, onCreate }: { defaultOwner: strin
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field label="To Do">
-              <input value={todo} onChange={event => setTodo(event.target.value)} type="number" min={0} placeholder="0" className={fieldClass} style={fieldStyle} />
+            <Field label="Estimate">
+              <input value={estimate} onChange={event => changeEstimate(event.target.value)} type="number" min={0} placeholder="0" className={fieldClass} style={fieldStyle} />
+              <p className="mt-1 text-[10px]" style={{ color: "#64748b" }}>Entering Estimate first copies the same hours to To Do once.</p>
             </Field>
-            <Field label="Actual">
-              <input value={actuals} onChange={event => setActuals(event.target.value)} type="number" min={0} placeholder="0" className={fieldClass} style={fieldStyle} />
+            <Field label="To Do">
+              <input value={todo} onChange={event => changeTodo(event.target.value)} type="number" min={0} placeholder="0" className={fieldClass} style={fieldStyle} />
             </Field>
             <Field label="Owner">
               <select value={owner} onChange={event => setOwner(event.target.value)} className={fieldClass} style={fieldStyle}>
                 {OWNERS.map(candidate => <option key={candidate.name}>{candidate.name}</option>)}
               </select>
             </Field>
-            <Field label="Estimate">
-              <input readOnly value={derivedEstimate} type="number" className={fieldClass} style={{ ...fieldStyle, backgroundColor: "#f8fafc", color: "#64748b" }} />
-              <p className="mt-1 text-[10px]" style={{ color: "#64748b" }}>Estimate = To Do + Actual</p>
+            <Field label="Actual">
+              <input value={actuals} onChange={event => setActuals(event.target.value)} type="number" min={0} placeholder="0" className={fieldClass} style={fieldStyle} />
             </Field>
           </div>
         </div>
@@ -229,9 +242,9 @@ function TaskDetailView({ task, parentItem, readOnly, onBack, onUpdateTask }: { 
   const [taskProject, setTaskProject] = useState(task.project);
   const selectedTaskProject = SCOPE_PROJECTS.find(candidate => candidate.key === taskProject) || SCOPE_PROJECTS[0];
   const [taskTeam, setTaskTeam] = useState(task.team && selectedTaskProject.teams.includes(task.team) ? task.team : "");
+  const [taskEstimate, setTaskEstimate] = useState(task.estimate);
   const [taskTodo, setTaskTodo] = useState(task.todo);
   const [taskActuals, setTaskActuals] = useState(task.actuals);
-  const taskEstimate = Math.max(0, taskTodo + taskActuals);
 
   function changeTaskProject(projectKey: string) {
     const nextProject = SCOPE_PROJECTS.find(candidate => candidate.key === projectKey) || SCOPE_PROJECTS[0];
@@ -239,12 +252,29 @@ function TaskDetailView({ task, parentItem, readOnly, onBack, onUpdateTask }: { 
     setTaskTeam("");
   }
 
+  function updateTaskEstimate(nextEstimate: number) {
+    const estimate = Math.max(0, nextEstimate);
+    const shouldCopyToDo = taskTodo === 0 && taskActuals === 0;
+    setTaskEstimate(estimate);
+    if (shouldCopyToDo) setTaskTodo(estimate);
+    onUpdateTask(task.id, { estimate, ...(shouldCopyToDo ? { todo: estimate } : {}) });
+  }
+
   function updateTaskTime(nextTodo: number, nextActuals: number) {
     const todo = Math.max(0, nextTodo);
     const actuals = Math.max(0, nextActuals);
     setTaskTodo(todo);
     setTaskActuals(actuals);
-    onUpdateTask(task.id, { todo, actuals, estimate: todo + actuals });
+    onUpdateTask(task.id, { todo, actuals });
+  }
+
+  function changeTaskState(nextState: TaskState) {
+    if (nextState === "Completed") {
+      setTaskTodo(0);
+      onUpdateTask(task.id, { state: nextState, todo: 0 });
+      return;
+    }
+    onUpdateTask(task.id, { state: nextState });
   }
 
   return (
@@ -290,12 +320,12 @@ function TaskDetailView({ task, parentItem, readOnly, onBack, onUpdateTask }: { 
       </main>
 
       <aside className="w-[340px] shrink-0 overflow-y-scroll p-5 space-y-4 bg-white" style={{ borderLeft: "1px solid #d7dde7", scrollbarGutter: "stable" }}>
-        <Field label="State"><select disabled={readOnly} className={fieldClass} style={fieldStyle} defaultValue={task.state} onChange={event => onUpdateTask(task.id, { state: event.target.value as TaskState })}>{["Defined", "In-Progress", "Completed"].map(state => <option key={state}>{state}</option>)}</select></Field>
+        <Field label="State"><select disabled={readOnly} className={fieldClass} style={fieldStyle} value={task.state} onChange={event => changeTaskState(event.target.value as TaskState)}>{["Defined", "In-Progress", "Completed"].map(state => <option key={state}>{state}</option>)}</select></Field>
         <Field label="Owner"><select disabled={readOnly} className={fieldClass} style={fieldStyle} defaultValue={task.owner.name}>{OWNERS.map(owner => <option key={owner.name}>{owner.name}</option>)}</select></Field>
         <Field label="Project"><select disabled={readOnly} aria-label="Task project" value={taskProject} onChange={event => changeTaskProject(event.target.value)} className={fieldClass} style={fieldStyle}>{SCOPE_PROJECTS.map(scopeProject => <option key={scopeProject.key} value={scopeProject.key}>{scopeProject.key} · {scopeProject.name}</option>)}</select></Field>
         <Field label="Team"><select disabled={readOnly} aria-label="Task team" value={taskTeam} onChange={event => setTaskTeam(event.target.value)} className={fieldClass} style={fieldStyle}><option value="">Project backlog</option>{selectedTaskProject.teams.map(scopeTeam => <option key={scopeTeam}>{scopeTeam}</option>)}</select></Field>
         <Field label="Work Product"><select disabled={readOnly} className={fieldClass} style={fieldStyle} defaultValue={parentItem.id}><option value={parentItem.id}>{parentItem.id} · {parentItem.title}</option><option value="unscheduled">Unassigned</option></select></Field>
-        <Field label="Estimate"><input readOnly className={fieldClass} style={{ ...fieldStyle, backgroundColor: "#f8fafc", color: "#64748b" }} type="number" min={0} value={taskEstimate} /></Field>
+        <Field label="Estimate"><input disabled={readOnly} className={fieldClass} style={fieldStyle} type="number" min={0} value={taskEstimate} onChange={event => updateTaskEstimate(Number(event.target.value) || 0)} /></Field>
         <Field label="To Do"><input disabled={readOnly} className={fieldClass} style={fieldStyle} type="number" min={0} value={taskTodo} onChange={event => updateTaskTime(Number(event.target.value) || 0, taskActuals)} /></Field>
         <Field label="Actual"><input disabled={readOnly} className={fieldClass} style={fieldStyle} type="number" min={0} value={taskActuals} onChange={event => updateTaskTime(taskTodo, Number(event.target.value) || 0)} /></Field>
       </aside>
@@ -305,7 +335,7 @@ function TaskDetailView({ task, parentItem, readOnly, onBack, onUpdateTask }: { 
   );
 }
 
-export function WorkItemDetailPage({ item, role, readOnly = false, project, team: initialTeam, iterations, releases, milestones, tasks, onCreateTask, onUpdateTask, onUpdateItem, onBack, onMinimize }: { item: WorkItem; role: Role; readOnly?: boolean; project: ScopeProject; team: string; iterations: IterationItem[]; releases: ReleaseItem[]; milestones: MilestoneItem[]; tasks: TaskItem[]; onCreateTask: (parent: WorkItem, input: NewTaskInput) => TaskItem; onUpdateTask: (id: string, patch: Partial<TaskItem>) => void; onUpdateItem: (id: string, patch: Partial<WorkItem>) => void; onBack: () => void; onMinimize?: (item: WorkItem) => void }) {
+export function WorkItemDetailPage({ item, role, readOnly = false, project, team: initialTeam, iterations, releases, milestones, features, tasks, onCreateTask, onUpdateTask, onUpdateItem, onBack, onMinimize }: { item: WorkItem; role: Role; readOnly?: boolean; project: ScopeProject; team: string; iterations: IterationItem[]; releases: ReleaseItem[]; milestones: MilestoneItem[]; features: Feature[]; tasks: TaskItem[]; onCreateTask: (parent: WorkItem, input: NewTaskInput) => TaskItem; onUpdateTask: (id: string, patch: Partial<TaskItem>) => void; onUpdateItem: (id: string, patch: Partial<WorkItem>) => void; onBack: () => void; onMinimize?: (item: WorkItem) => void }) {
   const [activeTab, setActiveTab] = useState<DetailTab>("details");
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const taskRows = tasks;
@@ -317,6 +347,7 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
   const taskDashboardEditable = !readOnly;
   const workItemIterationOptions = Array.from(new Set([item.iteration, ...iterations.map(iteration => iteration.name), "Unscheduled"]));
   const workItemReleaseOptions = Array.from(new Set([item.release, "Unscheduled", ...releases.filter(release => release.projectKey === selectedProjectKey).map(release => release.name)]));
+  const featureOptions = features.filter(feature => feature.project === selectedProjectKey && !feature.archivedAt);
   const selectedMilestoneIds = item.milestoneIds || [];
   const selectedRelease = releases.find(release => release.id === item.releaseId) || releases.find(release => release.name === item.release);
   const milestoneOptions = milestones.filter(milestone =>
@@ -326,9 +357,10 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
 
   function changeProject(projectKey: string) {
     const nextProject = SCOPE_PROJECTS.find(candidate => candidate.key === projectKey) || project;
+    const keepFeatureId = features.some(feature => feature.id === item.featureId && feature.project === nextProject.key && !feature.archivedAt);
     setSelectedProjectKey(nextProject.key);
     setTeam("");
-    onUpdateItem(item.id, { project: nextProject.key, team: undefined });
+    onUpdateItem(item.id, { project: nextProject.key, team: undefined, featureId: keepFeatureId ? item.featureId : undefined });
   }
 
   function changeTeam(nextTeam: string) {
@@ -349,9 +381,15 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
 
   function updateTaskRow(id: string, patch: Partial<TaskItem>) {
     const currentTask = taskRows.find(task => task.id === id) || selectedTask;
-    const derivedPatch = currentTask
-      ? { ...patch, estimate: Math.max(0, Number(patch.todo ?? currentTask.todo) + Number(patch.actuals ?? currentTask.actuals)) }
-      : patch;
+    const nextTodo = Math.max(0, Number(patch.todo ?? currentTask?.todo ?? 0));
+    const nextActuals = Math.max(0, Number(patch.actuals ?? currentTask?.actuals ?? 0));
+    const shouldComplete = patch.state === "Completed";
+    const shouldCopyEstimateToTodo = patch.estimate !== undefined && nextTodo === 0 && nextActuals === 0;
+    const derivedPatch = {
+      ...patch,
+      ...(shouldComplete ? { todo: 0 } : {}),
+      ...(shouldCopyEstimateToTodo ? { todo: Math.max(0, Number(patch.estimate) || 0) } : {}),
+    };
     onUpdateTask(id, derivedPatch);
     setSelectedTask(previous => previous?.id === id ? { ...previous, ...derivedPatch } : previous);
   }
@@ -463,7 +501,7 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
                       <span className="px-3 truncate">{task.team || "Project backlog"}</span>
                       <span className="px-3"><input aria-label={`${task.id} task dashboard todo`} readOnly={!taskDashboardEditable} type="number" min={0} value={task.todo} onChange={event => updateTaskRow(task.id, { todo: Number(event.target.value) })} className="w-full rounded-sm bg-transparent px-1 py-1 text-right font-mono focus:outline-none focus:bg-white" style={{ border: taskDashboardEditable ? "1px solid transparent" : "0", color: "#334155" }} /></span>
                       <span className="px-3"><input aria-label={`${task.id} task dashboard actuals`} readOnly={!taskDashboardEditable} type="number" min={0} value={task.actuals} onChange={event => updateTaskRow(task.id, { actuals: Number(event.target.value) })} className="w-full rounded-sm bg-transparent px-1 py-1 text-right font-mono focus:outline-none focus:bg-white" style={{ border: taskDashboardEditable ? "1px solid transparent" : "0", color: "#334155" }} /></span>
-                      <span className="px-3"><input aria-label={`${task.id} task dashboard estimate`} readOnly type="number" min={0} value={task.estimate} className="w-full rounded-sm bg-transparent px-1 py-1 text-right font-mono focus:outline-none" style={{ border: "0", color: "#64748b" }} /></span>
+                      <span className="px-3"><input aria-label={`${task.id} task dashboard estimate`} readOnly={!taskDashboardEditable} type="number" min={0} value={task.estimate} onChange={event => updateTaskRow(task.id, { estimate: Number(event.target.value) })} className="w-full rounded-sm bg-transparent px-1 py-1 text-right font-mono focus:outline-none focus:bg-white" style={{ border: taskDashboardEditable ? "1px solid transparent" : "0", color: "#334155" }} /></span>
                     </div>
                   ))}
                 </div>
@@ -477,6 +515,7 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
           <Field label="Owner"><select disabled={readOnly} aria-label="Detail owner" className={fieldClass} style={fieldStyle} value={item.owner.name} onChange={event => onUpdateItem(item.id, { owner: OWNERS.find(owner => owner.name === event.target.value) ?? item.owner })}>{OWNERS.map(owner => <option key={owner.name}>{owner.name}</option>)}</select></Field>
           <Field label="Project"><select disabled={readOnly} aria-label="Detail project" value={selectedProjectKey} onChange={event => changeProject(event.target.value)} className={fieldClass} style={fieldStyle}>{SCOPE_PROJECTS.map(scopeProject => <option key={scopeProject.key} value={scopeProject.key}>{scopeProject.key} · {scopeProject.name}</option>)}</select></Field>
           <Field label="Team"><select disabled={readOnly} aria-label="Detail team" value={team} onChange={event => changeTeam(event.target.value)} className={fieldClass} style={fieldStyle}><option value="">Project backlog</option>{selectedProject.teams.map(scopeTeam => <option key={scopeTeam}>{scopeTeam}</option>)}</select></Field>
+          <Field label="Feature"><select disabled={readOnly} aria-label="Detail feature" className={fieldClass} style={fieldStyle} value={item.featureId || ""} onChange={event => onUpdateItem(item.id, { featureId: event.target.value || undefined })}><option value="">Unassigned</option>{featureOptions.map(feature => <option key={feature.id} value={feature.id}>{feature.id} · {feature.name}</option>)}</select></Field>
           <Field label="Schedule State"><ScheduleStateBar aria-label="Schedule State" value={item.status} onChange={readOnly ? undefined : next => changeWorkItemState(next)} /></Field>
           <Field label="Flow State"><select aria-label="Flow State" disabled={readOnly} className={fieldClass} style={fieldStyle} value={item.status} onChange={event => changeWorkItemState(event.target.value as StatusType)}>{WORK_ITEM_STATE_OPTIONS.map(status => <option key={status}>{status}</option>)}</select></Field>
           {item.type === "Defect" && <Field label="Priority"><select disabled={readOnly} className={fieldClass} style={fieldStyle} defaultValue={DEFECT_PRIORITY_DEFAULTS[item.priority] ?? "None"}>{DEFECT_PRIORITY_OPTIONS.map(priority => <option key={priority}>{priority}</option>)}</select></Field>}

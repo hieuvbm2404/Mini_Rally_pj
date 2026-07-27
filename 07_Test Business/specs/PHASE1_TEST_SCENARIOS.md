@@ -1,12 +1,12 @@
 # Phase 1 Test Scenarios - Core Work Item Management
 
-Phase 1 validates the core work management slice: Manage Projects, Settings Teams/User Management, Backlog, Work Item Create/Detail, Task, Time, Content/Attachments and Activity Log.
+Phase 1 validates the core work management slice: Project Management, Settings Teams/User Management, Backlog, Work Item Create/Detail, Task, Time, Content/Attachments and Activity Log.
 
-## P1-MANAGE - Manage Projects and Settings Teams/Users
+## P1-MANAGE - Project Management and Settings Teams/Users
 
 | ID | Priority | Scenario | Steps | Expected result | Status |
 |---|---|---|---|---|---|
-| P1-MANAGE-001 | P0 | Open Manage Projects | Open Workspace/Company menu; choose Manage Projects | Project management opens with Projects only; no Teams tab is present | Pass (navigation reconciliation 2026-07-19) |
+| P1-MANAGE-001 | P0 | Open Project Management | Open top-right Settings gear; under Workspace choose Project Management | Project management opens with Projects only; no Teams tab is present | Pass - browser smoke 2026-07-27 |
 | P1-MANAGE-002 | P0 | Settings Teams columns | Open top-right Settings gear; choose Teams | Columns are Key, Team, Project, Status, Lead, Updated and permitted Actions; no Members/Capacity/Velocity columns | Pass (runtime smoke 2026-07-19) |
 | P1-MANAGE-003 | P0 | Create Team happy path | Create Team with Project, lead, name, key, description, status | Team is created under selected Project and available for context/backlog flows | Not Run |
 | P1-MANAGE-004 | P0 | Create Team validation | Submit missing required name/key/project or duplicate key | Validation blocks save with clear errors | Not Run |
