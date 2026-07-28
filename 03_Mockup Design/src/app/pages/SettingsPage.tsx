@@ -27,8 +27,9 @@ export const ROLE_TO_PROD_CODE: Record<Role, ProdRoleCode> = { "Workspace Admin"
  * Reads one permission out of the saved role matrix. `E` means the role may
  * perform the action, anything else (`R` read-only, `D` disabled, `H` hidden)
  * means it may not. This is how the Settings > Workspace matrix actually gates
- * Capacity Planning: a Project Admin set to `R` on `capacity_planning:edit_plan`
- * is the "planner = View" case and can open a plan but change nothing.
+ * Capacity Planning temporarily uses one `capacity_planning:manage` row:
+ * `E` is planner Full and `R` is planner View. Action-level RBAC will be
+ * defined in a later phase.
  * Workspace Admin stays `E` because its matrix column is intentionally locked,
  * so a Workspace Admin cannot lock itself out of planning.
  */
@@ -174,17 +175,14 @@ export const PROD_ROLE_ACTION_MATRIX: RoleActionRow[] = [
   { screen: "Settings > Workspace", action: "Edit workspace settings", permission: "workspace_settings:edit", states: roleStates("E", "H", "H") },
   { screen: "Settings > Workspace", action: "Edit role matrix and permissions", permission: "permission_matrix:edit", states: roleStates("E", "H", "H") },
   { screen: "Audit Log", action: "View workspace audit trail", permission: "audit_log:view", states: roleStates("E", "H", "H") },
-  // Phase 5 Portfolio rows. The Capacity Planner permission is graded, not boolean:
-  // Enabled = planner Full (may create/edit/publish), Read-only = planner View
-  // (may open a plan but change nothing). A Project Member only ever sees a
-  // Published plan, and only its assigned Team inside that plan.
+  // Phase 5 Portfolio rows. Capacity Planning temporarily uses one graded
+  // permission: Enabled = Full (create/edit/publish), Read-only = View.
+  // Action-level RBAC is deferred. A Project Member only ever sees a Published
+  // plan, and only its assigned Team inside that plan.
   { screen: "Portfolio > Portfolio Items", action: "View Feature list and detail", permission: "portfolio_items:view", states: roleStates("E", "E", "R") },
   { screen: "Portfolio > Portfolio Items", action: "Create feature", permission: "portfolio_items:create", states: roleStates("E", "E", "H") },
   { screen: "Portfolio > Portfolio Items", action: "Edit feature fields and archive state", permission: "portfolio_items:edit", states: roleStates("E", "E", "H") },
-  { screen: "Portfolio > Capacity Planning", action: "View capacity plan list and detail", permission: "capacity_planning:view", states: roleStates("E", "E", "R") },
-  { screen: "Portfolio > Capacity Planning", action: "Create capacity plan", permission: "capacity_planning:create", states: roleStates("E", "E", "H") },
-  { screen: "Portfolio > Capacity Planning", action: "Edit teams, capacity and feature allocation", permission: "capacity_planning:edit_plan", states: roleStates("E", "E", "H") },
-  { screen: "Portfolio > Capacity Planning", action: "Edit plan status to published or draft", permission: "capacity_planning:publish", states: roleStates("E", "E", "H") },
+  { screen: "Portfolio > Capacity Planning", action: "Capacity Planner (Full / View)", permission: "capacity_planning:manage", states: roleStates("E", "E", "R") },
 ];
 
 export function userStatusCfg(s: WorkspaceUser["status"]) {
