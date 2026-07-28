@@ -21,6 +21,23 @@ import { type Role, type Page, type WorkItemType, type StatusType, type Priority
 import { releaseStatusCfg, cx, Avatar, TYPE_CFG, TypeBadge, STATUS_CFG, StatusBadge, PRI_CFG, PriorityBadge, MiniProgress, RoleBadge, DetailPanel, NewItemModal, EmptyState, SectionCard } from "../components/shared";
 import { TeamsSettingsPanel } from "./ProjectsPage";
 
+export const ROLE_TO_PROD_CODE: Record<Role, ProdRoleCode> = { "Workspace Admin": "WA", "Project Admin": "PA", "Project Member": "PM" };
+
+/**
+ * Reads one permission out of the saved role matrix. `E` means the role may
+ * perform the action, anything else (`R` read-only, `D` disabled, `H` hidden)
+ * means it may not. This is how the Settings > Workspace matrix actually gates
+ * Capacity Planning: a Project Admin set to `R` on `capacity_planning:edit_plan`
+ * is the "planner = View" case and can open a plan but change nothing.
+ * Workspace Admin stays `E` because its matrix column is intentionally locked,
+ * so a Workspace Admin cannot lock itself out of planning.
+ */
+export function permissionAllows(rows: RoleActionRow[], permission: string, role: Role) {
+  const row = rows.find(candidate => candidate.permission === permission);
+  if (!row) return false;
+  return row.states[ROLE_TO_PROD_CODE[role]] === "E";
+}
+
 export function Toggle({ on = true, disabled = false }: { on?: boolean; disabled?: boolean }) {
   const [v, setV] = useState(on);
   return (
@@ -44,9 +61,9 @@ export const AUDIT_LOG_DATA = [
 export const ALL_ROLES: Role[] = ["Workspace Admin", "Project Admin", "Project Member"];
 export const ROLE_ABBR: Record<Role, string> = { "Workspace Admin": "WA", "Project Admin": "PA", "Project Member": "PM" };
 
-type ProdRoleCode = "WA" | "PA" | "PM";
-type PermissionState = "E" | "R" | "D" | "H";
-type RoleActionRow = { screen: string; action: string; permission: string; states: Record<ProdRoleCode, PermissionState>; locked?: boolean };
+export type ProdRoleCode = "WA" | "PA" | "PM";
+export type PermissionState = "E" | "R" | "D" | "H";
+export type RoleActionRow = { screen: string; action: string; permission: string; states: Record<ProdRoleCode, PermissionState>; locked?: boolean };
 type SettingsUser = WorkspaceUser & { phoneNumber: string };
 
 const PROD_ROLES: { code: ProdRoleCode; name: string; slug: string; summary: string }[] = [
@@ -68,7 +85,7 @@ const PERMISSION_STATE_OPTIONS: PermissionState[] = ["E", "R", "D", "H"];
 
 const roleStates = (WA: PermissionState, PA: PermissionState, PM: PermissionState): Record<ProdRoleCode, PermissionState> => ({ WA, PA, PM });
 
-const PROD_ROLE_ACTION_MATRIX: RoleActionRow[] = [
+export const PROD_ROLE_ACTION_MATRIX: RoleActionRow[] = [
   { screen: "Auth", action: "Create session (sign in)", permission: "auth:sign_in", states: roleStates("E", "E", "E"), locked: true },
   { screen: "Auth", action: "View restored session", permission: "auth:restore_session", states: roleStates("E", "E", "E"), locked: true },
   { screen: "Auth", action: "Delete session (sign out)", permission: "auth:sign_out", states: roleStates("E", "E", "E"), locked: true },
@@ -157,6 +174,17 @@ const PROD_ROLE_ACTION_MATRIX: RoleActionRow[] = [
   { screen: "Settings > Workspace", action: "Edit workspace settings", permission: "workspace_settings:edit", states: roleStates("E", "H", "H") },
   { screen: "Settings > Workspace", action: "Edit role matrix and permissions", permission: "permission_matrix:edit", states: roleStates("E", "H", "H") },
   { screen: "Audit Log", action: "View workspace audit trail", permission: "audit_log:view", states: roleStates("E", "H", "H") },
+  // Phase 5 Portfolio rows. The Capacity Planner permission is graded, not boolean:
+  // Enabled = planner Full (may create/edit/publish), Read-only = planner View
+  // (may open a plan but change nothing). A Project Member only ever sees a
+  // Published plan, and only its assigned Team inside that plan.
+  { screen: "Portfolio > Portfolio Items", action: "View Feature list and detail", permission: "portfolio_items:view", states: roleStates("E", "E", "R") },
+  { screen: "Portfolio > Portfolio Items", action: "Create feature", permission: "portfolio_items:create", states: roleStates("E", "E", "H") },
+  { screen: "Portfolio > Portfolio Items", action: "Edit feature fields and archive state", permission: "portfolio_items:edit", states: roleStates("E", "E", "H") },
+  { screen: "Portfolio > Capacity Planning", action: "View capacity plan list and detail", permission: "capacity_planning:view", states: roleStates("E", "E", "R") },
+  { screen: "Portfolio > Capacity Planning", action: "Create capacity plan", permission: "capacity_planning:create", states: roleStates("E", "E", "H") },
+  { screen: "Portfolio > Capacity Planning", action: "Edit teams, capacity and feature allocation", permission: "capacity_planning:edit_plan", states: roleStates("E", "E", "H") },
+  { screen: "Portfolio > Capacity Planning", action: "Edit plan status to published or draft", permission: "capacity_planning:publish", states: roleStates("E", "E", "H") },
 ];
 
 export function userStatusCfg(s: WorkspaceUser["status"]) {
@@ -260,11 +288,13 @@ function UserDetailModal({ user, onClose, onSave, onRemoveAccess }: { user: Sett
   );
 }
 
-export function SettingsPage({ role, projectReadOnly = false }: { role: Role; projectReadOnly?: boolean }) {
+export function SettingsPage({ role, projectReadOnly = false, permissionMatrix, onSavePermissionMatrix }: { role: Role; projectReadOnly?: boolean; permissionMatrix: RoleActionRow[]; onSavePermissionMatrix: (rows: RoleActionRow[]) => void }) {
   const [activeTab, setActiveTab] = useState("profile");
   const [selectedProdRole, setSelectedProdRole] = useState<ProdRoleCode>("PA");
-  const [permissionRows, setPermissionRows] = useState<RoleActionRow[]>(PROD_ROLE_ACTION_MATRIX);
-  const [savedPermissionRows, setSavedPermissionRows] = useState<RoleActionRow[]>(PROD_ROLE_ACTION_MATRIX);
+  // Working copy for edit mode; the saved matrix lives in App so that other
+  // screens (Capacity Planning) are actually gated by what was saved here.
+  const [permissionRows, setPermissionRows] = useState<RoleActionRow[]>(permissionMatrix);
+  const savedPermissionRows = permissionMatrix;
   const [isPermissionEditMode, setIsPermissionEditMode] = useState(false);
   const [permissionSaved, setPermissionSaved] = useState(false);
   const [settingsUsers, setSettingsUsers] = useState<SettingsUser[]>(SETTINGS_USERS);
@@ -312,7 +342,7 @@ export function SettingsPage({ role, projectReadOnly = false }: { role: Role; pr
   }
   function savePermissionMatrix() {
     if (!canEditPermissionMatrix) return;
-    setSavedPermissionRows(permissionRows);
+    onSavePermissionMatrix(permissionRows);
     setIsPermissionEditMode(false);
     setPermissionSaved(true);
   }

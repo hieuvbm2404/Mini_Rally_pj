@@ -17,7 +17,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell,
 } from "recharts";
-import { type Role, type Page, type WorkItemType, type StatusType, type PriorityType, type PortfolioState, type EstimateSize, type MilestoneItem, type TaskItem, type NewWorkItemInput, type Owner, type WorkItem, type Notification, type Feature, type NewFeatureInput, type Project, type ScopeProject, type Initiative, type ReleaseItem, type WorkspaceUser, type WorkflowStatusItem, type LabelItem, can, OWNERS, PROJECTS, ROLE_SCOPE, SCOPE_PROJECTS, WORK_ITEMS, FEATURES, NOTIFICATIONS, VELOCITY_DATA, BURNDOWN_DATA, STATUS_PIE, INITIATIVES, RELEASES_DATA, WORKSPACE_USERS, WORKFLOW_STATUSES, LABELS_DATA, WORKLOAD_DATA, PLANNED_VS_COMPLETED, PERMISSIONS_MATRIX, DEFECT_ENVIRONMENTS, RELATED_STORIES } from "../model";
+import { type Role, type Page, type WorkItemType, type StatusType, type PriorityType, type PortfolioState, type EstimateSize, type MilestoneItem, type TaskItem, type NewWorkItemInput, type Owner, type WorkItem, type Notification, type Feature, type NewFeatureInput, type Project, type ScopeProject, type Initiative, type ReleaseItem, type WorkspaceUser, type WorkflowStatusItem, type LabelItem, can, PRELIMINARY_ESTIMATE_POINT_FALLBACK, PRELIMINARY_ESTIMATE_COUNT_FALLBACK, OWNERS, PROJECTS, ROLE_SCOPE, SCOPE_PROJECTS, WORK_ITEMS, FEATURES, NOTIFICATIONS, VELOCITY_DATA, BURNDOWN_DATA, STATUS_PIE, INITIATIVES, RELEASES_DATA, WORKSPACE_USERS, WORKFLOW_STATUSES, LABELS_DATA, WORKLOAD_DATA, PLANNED_VS_COMPLETED, PERMISSIONS_MATRIX, DEFECT_ENVIRONMENTS, RELATED_STORIES } from "../model";
 import { releaseStatusCfg, Avatar, TYPE_CFG, TypeBadge, STATUS_CFG, ScheduleStateBar, PRI_CFG, PriorityBadge, MiniProgress, RoleBadge, DetailPanel, NewItemModal, EmptyState, SectionCard } from "../components/shared";
 import { SavedViewsDrop } from "../components/layout";
 import { Field, RichTextEditor, TaskStateBadge, fieldClass, fieldStyle } from "./WorkItemDetailPage";
@@ -121,8 +121,6 @@ function FeatureListProgressCell({ pct, numerator, denominator }: { pct: number;
 
 const PORTFOLIO_STATES: PortfolioState[] = ["No Entry", "Intake", "Idea Prioritization", "Problem Discovery", "Solution Discovery", "Feature Prioritization", "Developing", "Accepted", "Measuring", "Done", "Cancelled"];
 const ESTIMATE_SIZES: EstimateSize[] = ["No Entry", "XS", "S", "M", "L", "XL"];
-const PRELIMINARY_ESTIMATE_POINT_FALLBACK: Record<EstimateSize, number> = { "No Entry": 0, XS: 1, S: 3, M: 5, L: 8, XL: 13 };
-const PRELIMINARY_ESTIMATE_COUNT_FALLBACK: Record<EstimateSize, number> = { "No Entry": 0, XS: 1, S: 2, M: 3, L: 5, XL: 8 };
 
 function getFeatureTopDownPointEstimate(feature: Feature) {
   return feature.refinedEstimate ?? PRELIMINARY_ESTIMATE_POINT_FALLBACK[feature.preliminaryEstimate];

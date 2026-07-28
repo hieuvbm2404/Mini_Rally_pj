@@ -1,7 +1,7 @@
 ﻿import { useState } from "react";
 import { TopNav, ContextBar } from "./components/layout";
 import { useEffect } from "react";
-import { type CapacityPlan, type Feature, type IterationItem, type MilestoneItem, type NewCapacityPlanInput, type NewFeatureInput, type NewIterationInput, type NewMilestoneInput, type NewReleaseInput, type NewTaskInput, type NewWorkItemInput, type Page, type ReleaseItem, type Role, type ScopeProject, type TaskItem, type WorkItem, CAPACITY_PLANS_DATA, FEATURES, ITERATIONS_DATA, MILESTONES_DATA, NOTIFICATIONS, OWNERS, RELEASES_DATA, ROLE_SCOPE, SCOPE_PROJECTS, TASKS_DATA, WORK_ITEMS } from "./model";
+import { type CapacityPlan, type Feature, type IterationItem, type MilestoneItem, type NewCapacityPlanInput, type NewFeatureInput, type NewIterationInput, type NewMilestoneInput, type NewReleaseInput, type NewTaskInput, type NewWorkItemInput, type Page, type ReleaseItem, type Role, type ScopeProject, type TaskItem, type WorkItem, toDateInputValue, CAPACITY_PLANS_DATA, FEATURES, ITERATIONS_DATA, MILESTONES_DATA, NOTIFICATIONS, OWNERS, RELEASES_DATA, ROLE_SCOPE, SCOPE_PROJECTS, TASKS_DATA, WORK_ITEMS } from "./model";
 import { HomePage } from "./pages/HomePage";
 import { TrackPage } from "./pages/IterationStatusPage";
 import { TeamBoardPage } from "./pages/TeamBoardPage";
@@ -14,7 +14,7 @@ import { CapacityPlanningPage } from "./pages/CapacityPlanningPage";
 import { ReleasesPage } from "./pages/ReleasesPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
-import { SettingsPage } from "./pages/SettingsPage";
+import { SettingsPage, type RoleActionRow, PROD_ROLE_ACTION_MATRIX } from "./pages/SettingsPage";
 import { WorkItemDetailPage } from "./pages/WorkItemDetailPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
@@ -46,6 +46,10 @@ export default function App() {
   const [milestones, setMilestones] = useState<MilestoneItem[]>(MILESTONES_DATA);
   const [features, setFeatures] = useState<Feature[]>(FEATURES);
   const [capacityPlans, setCapacityPlans] = useState<CapacityPlan[]>(CAPACITY_PLANS_DATA);
+  // Saved role permission matrix. Owned here rather than inside SettingsPage so
+  // that saving it in Settings > Workspace actually changes what other screens
+  // allow - Capacity Planning reads the capacity_planning:* rows from it.
+  const [permissionMatrix, setPermissionMatrix] = useState<RoleActionRow[]>(PROD_ROLE_ACTION_MATRIX);
   const [activeItem, setActiveItem] = useState<WorkItem | null>(null);
   const [showFullDetail, setShowFullDetail] = useState(false);
   const [fullDetailItem, setFullDetailItem] = useState<WorkItem | null>(null);
@@ -260,7 +264,9 @@ export default function App() {
           release: plan.release,
           releaseId: plan.releaseId,
           plannedStartDate: release?.startDate || feature.plannedStartDate,
-          plannedEndDate: release?.releaseDate || feature.plannedEndDate,
+          // Planned Start Date is a free-text field, so the Release's human-readable
+          // date carries over as-is. Planned End Date is a date input and needs ISO.
+          plannedEndDate: toDateInputValue(release?.releaseDate) || feature.plannedEndDate,
         };
       }));
     }
@@ -397,12 +403,12 @@ export default function App() {
       case "teamStatus": return <TeamStatusPage role={currentRole} readOnly={projectReadOnly} items={workItems} tasks={tasks} onUpdateTask={updateTask} onOpenFull={openFullDetail} />;
       case "quality": return <QualityPage role={currentRole} readOnly={projectReadOnly} projectKey={currentProject.key} items={workItems} onUpdateItem={updateWorkItem} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
       case "portfolio": return <PortfolioPage role={currentRole} project={currentProject} team={currentTeam} releases={releases} features={features} workItems={workItems} tasks={tasks} milestones={milestones} onCreateFeature={createFeature} onUpdateFeature={updateFeature} onUpdateItem={updateWorkItem} onCreateItem={createWorkItem} onOpenFull={openFullDetail} />;
-      case "capacityPlanning": return <CapacityPlanningPage role={currentRole} project={currentProject} releases={releases} features={features} workItems={workItems} capacityPlans={capacityPlans} onCreateCapacityPlan={createCapacityPlan} onUpdateCapacityPlan={updateCapacityPlan} onPublishCapacityPlan={publishCapacityPlan} />;
+      case "capacityPlanning": return <CapacityPlanningPage role={currentRole} project={currentProject} releases={releases} features={features} workItems={workItems} capacityPlans={capacityPlans} permissionMatrix={permissionMatrix} onCreateCapacityPlan={createCapacityPlan} onUpdateCapacityPlan={updateCapacityPlan} onPublishCapacityPlan={publishCapacityPlan} />;
       case "releasePlanning": return <ReleasePlanningPlaceholder />;
       case "releases": return <ReleasesPage role={currentRole} readOnly={projectReadOnly} />;
       case "reports": return <ReportsPage role={currentRole} readOnly={projectReadOnly} />;
       case "notifications": return <NotificationsPage onOpenWorkItem={openNotificationWorkItem} />;
-      case "settings": return <SettingsPage role={currentRole} projectReadOnly={projectReadOnly} />;
+      case "settings": return <SettingsPage role={currentRole} projectReadOnly={projectReadOnly} permissionMatrix={permissionMatrix} onSavePermissionMatrix={setPermissionMatrix} />;
     }
   }
 

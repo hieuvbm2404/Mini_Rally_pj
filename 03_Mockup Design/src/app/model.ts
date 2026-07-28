@@ -168,6 +168,36 @@ export interface WorkflowStatusItem {
 }
 export interface LabelItem { id: string; name: string; color: string; usage: number; }
 
+// ─── Formatting helpers ───────────────────────────────────────────────────────
+
+/**
+ * Normalises a date string to the ISO `YYYY-MM-DD` form required by
+ * `<input type="date">`. Release/Iteration records store human-readable dates
+ * such as "Feb 1, 2025", which a date input silently discards, so any value
+ * copied from those records into a date-input-backed field must pass through
+ * here first. Values already in ISO form are returned untouched.
+ */
+export function toDateInputValue(value?: string) {
+  if (!value) return "";
+  const isoDate = value.match(/\d{4}-\d{2}-\d{2}/)?.[0];
+  if (isoDate) return isoDate;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getDate()).padStart(2, "0");
+  return `${parsed.getFullYear()}-${month}-${day}`;
+}
+
+/**
+ * Numeric fallback for a Feature's T-shirt Preliminary Estimate, used as the last
+ * resort when no Refined Estimate has been supplied. Shared by Portfolio Items
+ * (Estimated Progress bars) and Capacity Planning (Estimated column), so both
+ * surfaces read the same numbers. A user-configurable mapping is still deferred
+ * to Settings > Workspace > Project Management; these are the documented defaults.
+ */
+export const PRELIMINARY_ESTIMATE_POINT_FALLBACK: Record<EstimateSize, number> = { "No Entry": 0, XS: 1, S: 3, M: 5, L: 8, XL: 13 };
+export const PRELIMINARY_ESTIMATE_COUNT_FALLBACK: Record<EstimateSize, number> = { "No Entry": 0, XS: 1, S: 2, M: 3, L: 5, XL: 8 };
+
 // ─── Permissions ──────────────────────────────────────────────────────────────
 
 export const can = {
@@ -479,6 +509,9 @@ export const RELEASES_DATA: ReleaseItem[] = [
   { id: "REL-002", name: "Nexus Platform Q1 2025", version: "v3.5.0", status: "Planning", startDate: "Nov 1, 2024", releaseDate: "Feb 1, 2025", progress: 12, totalItems: 38, completedItems: 5, openDefects: 2, blockedItems: 0, owner: OWNERS[0], description: "Q1 2025 release including advanced reporting module, notification center, and markdown support.", projectKey: "NXP", team: "Core Platform" },
   { id: "REL-003", name: "Nexus Platform Q2 2025", version: "v4.0.0", status: "Planning", startDate: "Feb 1, 2025", releaseDate: "May 1, 2025", progress: 0, totalItems: 52, completedItems: 0, openDefects: 0, blockedItems: 0, owner: OWNERS[3], description: "Major v4.0 with mobile app, portfolio hierarchy, and redesigned reporting dashboards.", projectKey: "NXP", team: "Core Platform" },
   { id: "REL-004", name: "Nexus Platform v3.3", version: "v3.3.0", status: "Accepted", startDate: "Jul 1, 2024", releaseDate: "Sep 30, 2024", progress: 100, totalItems: 18, completedItems: 18, openDefects: 0, blockedItems: 0, owner: OWNERS[0], description: "Accepted on schedule. Included board view, CSV import, and SSO foundation.", projectKey: "NXP", team: "Core Platform" },
+  // Seeded so a second Project has a Release: Capacity Planning requires one to create
+  // a plan, and without it the Project Admin unmanaged-Project RBAC path is untestable.
+  { id: "REL-005", name: "Mobile App MVP R1", version: "v1.0.0", status: "Planning", startDate: "Jan 6, 2025", releaseDate: "Mar 28, 2025", progress: 0, totalItems: 12, completedItems: 0, openDefects: 1, blockedItems: 0, owner: OWNERS[3], description: "First Mobile App MVP release covering iOS and Android onboarding scope.", projectKey: "MOB", team: "Mobile Experience" },
 ];
 
 export const CAPACITY_PLANS_DATA: CapacityPlan[] = [
