@@ -7,8 +7,8 @@
 
 ## 1. Phạm vi bàn giao
 
-- Tổng số scenario: **191**.
-- DEV cần xử lý: **23 Fail**.
+- Tổng số scenario: **192**.
+- DEV cần xử lý: **24 Fail**.
 - Không tự coi **Partial**, **Blocked** hoặc **Not Run** là bug. Các trạng thái này cần thêm dữ liệu, account hoặc BA xác nhận nhánh còn lại.
 - Chỉ xử lý FE và business behavior theo SRS/mockup đã duyệt; không mở rộng sang schema, DB hoặc hạ tầng.
 
@@ -16,20 +16,20 @@
 
 | Priority | Số lỗi | Cách xử lý |
 |---|---:|---|
-| P0 | 8 | Sửa trước; đang chặn luồng chính hoặc làm sai dữ liệu/trạng thái. |
+| P0 | 9 | Sửa trước; đang chặn luồng chính hoặc làm sai dữ liệu/trạng thái. |
 | P1 | 7 | Sửa sau P0; ảnh hưởng thao tác và tính nhất quán. |
 | P2 | 7 | Lệch UI/contract đã duyệt. |
 | P3 | 1 | Chuẩn hóa label. |
 
 ## 3. Danh sách lỗi cần sửa
 
-### Phase 0–4 carryover — 15 lỗi
+### Phase 0–4 carryover — 16 lỗi
 
 | ID | Priority | Hiện tại | DEV cần sửa |
 |---|---:|---|---|
 | `GAP-P1-BL-001` | P1 | Clear Backlog search không ổn định; dữ liệu còn bị lọc đến khi reload. | Clear search phải cập nhật danh sách ngay, không cần reload. |
 | `GAP-P1-BL-002` | P1 | Priority `None` vẫn giữ cả Story và Defect. | Priority filter chỉ áp dụng Defect; Story hiển thị dấu gạch và không thuộc `None`. |
-| `GAP-P1-CREATE-006` | P1 | Owner mặc định Unassigned và không có user đang đăng nhập trong danh sách. | Đồng nhất default và allowed Owner theo business đã duyệt. |
+| `GAP-P1-CREATE-006` | P1 | Owner mặc định Unassigned; sau khi Hieu được thêm vào Pegasus, Settings đã có Hieu nhưng Owner của US-1 vẫn chỉ có No Entry và Anh. | Giữ rule default đã duyệt; lấy allowed Owner từ membership hiện tại và refresh/invalidate cache sau khi add/remove member. |
 | `GAP-P2-IT-001` | P1 | Iteration list thiếu Project và Task Estimate. | Bổ sung đúng hai cột đã duyệt. |
 | `GAP-P2-IS-003` | P2 | Iteration Status thiếu cột Type. | Bổ sung cột Type. |
 | `GAP-P2-IS-004` | P2 | Iteration Status có cột Defects ngoài scope. | Xóa cột Defects. |
@@ -38,6 +38,7 @@
 | `GAP-P3-TS-003` | P2 | Thiếu breadcrumb Project > Track > Team Status. | Bổ sung breadcrumb đúng hierarchy. |
 | `GAP-P3-TS-005` | P2 | Task State là segmented control. | Dùng inline dropdown `Defined / In-Progress / Completed`. |
 | `GAP-P3-TS-007` | P3 | Label Task State bị viết tắt hoặc dùng câu lệnh hành động. | Dùng chính xác ba catalog label. |
+| `GAP-P3-TS-008` | P0 | User từng xuất hiện ở Team Status khi chưa thuộc Team; sau khi được add vào Team lại chưa xuất hiện trong Owner dropdown. | Dùng một nguồn Team membership hiện tại cho Team Status và mọi Owner selector; đồng bộ ngay sau add/remove. Cách xử lý Task đang thuộc member bị remove vẫn `Pending BA`. |
 | `GAP-P4-SET-002` | P0 | User Management thiếu Phone và thừa Teams. | Đồng nhất column/field theo SRS đã duyệt. |
 | `GAP-P4-SET-003` | P1 | Audit Log dùng technical event/ID, không có business detail trước/sau. | Hiển thị business-readable event và before/after. |
 | `GAP-P4-SET-004` | P1 | Deactive Team lưu ngay, không có confirmation theo đối tượng. | Bổ sung confirmation trước destructive status action. |

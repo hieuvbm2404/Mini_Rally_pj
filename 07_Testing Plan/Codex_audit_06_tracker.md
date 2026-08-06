@@ -10,7 +10,7 @@
 
 ## Current Summary
 
-- **Carryover P0-4:** 60 cases — Blocked 3, Future Backlog 9, Not Run 48
+- **Carryover P0-4:** 61 cases — Pass 8, Partial 5, Fail 16, Blocked 6, Not Run 17, Future Backlog 9
 - **Phase 5 Scenarios (DevInt run 2026-08-06):** 78 cases — Pass 37, Partial 22, Fail 4, Blocked 7, Not Required 4, Not Run 4
 - **Phase 6 Scenarios (DevInt run 2026-08-06):** 53 cases — Pass 22, Partial 6, Fail 4, Blocked 1, Not Run 20
 
@@ -532,7 +532,7 @@ Chỉ dùng dữ liệu audit có prefix P56-AUDIT; không sửa dữ liệu ngh
 
 - **Phase / Module:** Phase 1 / Work Item Create
 - **Priority:** P1
-- **Current Status:** Not Run
+- **Current Status:** Fail
 - **Previous Result:** Still Open
 - **Reference:** P1-CREATE-01
 - **Preconditions:** DevInt truy cập được và không có lỗi tải trang nghiêm trọng.
@@ -549,8 +549,9 @@ Chỉ dùng dữ liệu audit có prefix P56-AUDIT; không sửa dữ liệu ngh
 8. Kiểm tra hướng sửa đã chốt: Default Owner to the authenticated user, keep Unassigned as an explicit user-selectable option, and filter named Owner options by selected Project/Team access. Add Unassigned to the mockup and reconcile SRS WIC-FR-006 after the full audit..
 9. Ghi Actual Result, chọn Current Status, điền Evidence và Gap/Comment trong chính dòng case.
 - **Expected:** Owner defaults to the authenticated/current user, lists users valid for the selected Project/Team, and also allows an explicit Unassigned choice.
+- **Actual Result (2026-08-06):** After Hieu was added to Team Pegasus, Settings > Teams showed both Anh and Hieu, but the Owner dropdown on US-1 still showed only `— No Entry —` and Anh. The Owner selector therefore did not refresh from current Team membership.
 - **Evidence:** evidence/retest_2026-07-24/P1-CREATE-01-quick-create.png
-- **Gap / Comment:** Current build retest 2026-07-24: Owner still defaults to — No Entry —; authenticated Hieu user is not selected and is absent from Team Alpha owner choices.
+- **Gap / Comment:** Keep the approved default rule, but source every Owner selector from current Project/Team membership and invalidate stale membership options after a member is added or removed.
 - **BA Confirmation:** Fix Direction Approved
 - **Codex Audit Log:** Pending
 
@@ -1187,6 +1188,23 @@ Chỉ dùng dữ liệu audit có prefix P56-AUDIT; không sửa dữ liệu ngh
 - **BA Confirmation:** Gap Confirmed
 - **Codex Audit Log:** Pending
 
+### GAP-P3-TS-008 — Team Status membership scope
+
+- **Phase / Module:** Phase 3 / Team Status
+- **Priority:** P0
+- **Current Status:** Fail
+- **Previous Result:** New defect found 2026-08-06
+- **Reference:** Phase 3/01_Team_Status/SRS.md; Phase 1/03_Work_Item_Detail/SRS.md
+- **Preconditions:** Signed in to DevInt. Project TEST, Team Pegasus and Iteration IT-1 are available. Team membership can be checked in Settings > Teams.
+- **Test Data:** Team Pegasus; users Anh and Hieu; US-1 and a Task assigned to Hieu.
+- **Steps:** 1. Check the current member list in Settings > Teams for Pegasus. 2. Open Team Status in the same Project/Team/Iteration scope and compare the member groups. 3. Add Hieu to Pegasus. 4. Reload Team Status and verify Hieu appears once. 5. Open US-1 and inspect the Owner dropdown. 6. Reload and confirm all views use the same current membership.
+- **Expected:** Team Status member groups and all Owner selectors use the same current Team membership source. A non-member is not presented as a current Team member. After an active member is added, that person becomes available in Owner selectors without stale data.
+- **Actual Result (2026-08-06):** Hieu appeared in Team Status before belonging to Pegasus. After Hieu was added, Settings > Teams and Team Status both showed Anh and Hieu, but the US-1 Owner dropdown still showed only `— No Entry —` and Anh.
+- **Evidence:** Live DevInt review recorded in this tracker; no screenshot file was added.
+- **Gap / Comment:** DEV must use one current Team-membership source for Team Status and Owner selectors, and refresh/invalidate membership caches after add/remove. The treatment of existing Tasks owned by a removed member remains **Pending BA**.
+- **BA Confirmation:** Bug confirmed; removed-member Task behavior pending
+- **Codex Audit Log:** Fail recorded 2026-08-06
+
 ### GAP-P3-REL-001 — Release Progress widget
 
 - **Phase / Module:** Phase 3 / Release Detail
@@ -1787,7 +1805,7 @@ These results are from the read-only Carryover retest on 2026-08-05. They overri
 | GAP-P1-BL-002 | Partial | Priority filter exists with None, Low, Normal, High and Urgent. Defect-only filtering and Story dash behavior need real records. |
 | GAP-P1-BL-004 | Partial | Header sort controls are available for Rank, ID, Name, Schedule State, Priority and Est.; ID changed to ascending state. No rows exist to prove sort order and rank preservation. |
 | GAP-P1-CREATE-003 | Partial | New Work Item Team selector exposes `No team` and Pegasus. This conflicts with the historical required-Team wording, but matches the newer BA decision that a no-team item belongs to the Project backlog. BA trace/SRS must be updated before formal pass. |
-| GAP-P1-CREATE-006 | Fail | Owner defaults to Unassigned/No Entry, not the signed-in user. The selector shows only Unassigned and the current Team member; signed-in Hieu is absent. |
+| GAP-P1-CREATE-006 | Fail | Owner defaults to Unassigned/No Entry. After Hieu was added to Pegasus, Settings showed him as a member but the US-1 Owner dropdown still listed only No Entry and Anh; Owner membership options are stale/inconsistent. |
 | GAP-P1-CREATE-008 / 009 | Blocked | State defaults and persistence require a submitted Work Item. Submission would create deployed data and was not performed. |
 | GAP-P1-WID-008 | Partial | Quick Create still offers `No team`; this conflicts with historical SRS but matches the newer BA Project-backlog decision. Work Item Detail branch needs a created item to confirm. |
 | GAP-P1-TEAM-001 | Pass | New Team form shows optional `Team lead` without required marker and offers `— No lead —`; create remains available after other required fields are supplied. |
@@ -1822,6 +1840,7 @@ The controlled data set used for this completion was `P56-AUDIT Carryover Sprint
 | GAP-P3-TS-005 | Fail | Team Status task state is a three-segment control, not the required inline dropdown. |
 | GAP-P3-TS-006 | Partial | The controlled Task's omitted Actuals displayed 0, but Estimate/To Do were populated by the test data; a fully-empty Task needs a separate regression to prove all three defaults. |
 | GAP-P3-TS-007 | Fail | Task controls render abbreviated/verb labels (`D`, `I`, `Move to Completed`) rather than exact Defined / In-Progress / Completed catalog labels. |
+| GAP-P3-TS-008 | Fail | Hieu appeared in Team Status before Team membership existed; after membership was added, Hieu was still missing from the US-1 Owner dropdown. Team Status and Owner selectors do not share the same current Team-membership scope. |
 | GAP-P3-QA-001 | Pass | Quality > Add New opens the dedicated Defect form; DE-1 is listed in Quality with Submitted state, Owner and Submitted By. |
 | GAP-P4-NOTIF-001 / 002 / 003 | Blocked | No recipient account/event data is available. Actions performed by the same signed-in user did not create a testable recipient notification; unread/read persistence and target routing require a second test user. |
 
