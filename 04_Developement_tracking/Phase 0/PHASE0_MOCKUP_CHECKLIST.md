@@ -14,11 +14,11 @@ Synced date: 2026-08-10
 ## Access Reconciliation
 
 - Workspace Admin is the only company-level authority and is assigned internally.
-- Normal users receive Admin, Editor, Viewer or No Access independently per Project.
+- Normal users receive Admin or Editor independently per Project.
 - Only Workspace Admin manages Users, Projects, Teams, Project access and Team membership.
 - Admin receives All Teams and delivery authority in assigned Projects; structure is read-only.
 - Editor sees assigned Projects/Teams and approved delivery-editing surfaces.
-- Viewer is Project-wide read-only; No Access hides the Project.
+- A user without a Project assignment cannot see or directly access that Project.
 - The current authority is `Phase 4/02_Roles_Permissions/SRS.md`.
 
 ## Coverage
@@ -48,7 +48,7 @@ Synced date: 2026-08-10
 - [x] WA is excluded from Project membership lists.
 - [x] Admin sees assigned Project and All Teams but cannot mutate structure/access.
 - [x] Editor sees only assigned Project/Teams.
-- [x] Viewer/No Access behavior is defined in SRS and test pack.
+- [x] Unassigned-user hidden/denied behavior is defined in SRS and test pack; Viewer/selectable No Access are Future Backlog.
 - [x] User Details and Project Users & Permissions use one shared session state.
 - [x] Add Team can set Admin/Editor access and synchronize membership.
 - [ ] Production API/service enforcement remains DEV/QA verification.

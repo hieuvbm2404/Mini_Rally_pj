@@ -28,8 +28,8 @@ Authoritative current-scope rules:
 This addendum supersedes older global Project role wording in this Phase 0 document:
 
 - `Workspace Admin` is the only company-level authority and is assigned by internal/dev setup.
-- Normal users do not receive a global Project Admin/Project Member role.
-- Workspace Admin assigns `Admin`, `Editor`, `Viewer` or `No Access` independently for each Project.
+- Normal users do not receive a global Project role.
+- Workspace Admin assigns `Admin` or `Editor` independently for each Project. Removing the assignment hides the Project and denies direct access.
 - Only Workspace Admin invites/disables users and manages Project access or Team membership.
 - Project access changes apply on next sign-in; company disable/removal applies on next refresh.
 - Detailed capabilities are governed by `Phase 4/02_Roles_Permissions/SRS.md`.
@@ -231,7 +231,7 @@ List response contract:
 |---|---|---|---|
 | Invitation ID | `workspace_invitations.id` | Action resend/cancel | Hidden |
 | Email | `workspace_invitations.email` | Người được mời | Required, normalized, valid email |
-| Initial Project Access | Dev-defined invitation/access contract | Quyền ban đầu sau accept | Optional Project + Admin/Editor/Viewer + Editor Teams |
+| Initial Project Access | Dev-defined invitation/access contract | Quyền ban đầu sau accept | Optional Project + Admin/Editor + Editor Teams |
 | Status | `workspace_invitations.status` | Pending/accepted/expired/cancelled badge | Derived expired nếu now > expires_at và pending |
 | Invited by | `invited_by → users.full_name` | Audit display | Read-only |
 | Expires at | `expires_at` | Cho biết link còn hiệu lực | UTC → company timezone |

@@ -3,7 +3,7 @@
 Date: 2026-07-24
 Environment: `https://rally-dev.qnsc.vn/`
 Baseline: Phase 4 SRS + mockup + confirmed Phase 4 tracking/checklist
-Tracker: `DEVINT_PHASE_0_4_AUDIT_TRACKER.xlsx`
+Current tracker: `07_Testing Plan/PHASE_0_6_AUDIT_TRACKER.xlsx`
 
 > **Historical evidence notice — 2026-08-10:** This file preserves what was audited on 2026-07-24. Its three-global-role and editable E/R/D/H wording is no longer the current requirement. Retests must use `Phase 4/02_Roles_Permissions/SRS.md`: Workspace Admin plus per-Project Admin/Editor/Viewer/No Access, with WA-only Project/Team/user-access administration.
 

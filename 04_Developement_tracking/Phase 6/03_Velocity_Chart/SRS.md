@@ -1,6 +1,6 @@
 # Phase 6 - Reports > Velocity
 
-> **Project Access:** Workspace Admin, assigned-Project `Admin` and `Viewer` can open this read-only report. `Editor` and `No Access` cannot open Reports.
+> **Project Access:** Workspace Admin and assigned-Project `Admin` can open this read-only report. `Editor` and unassigned users cannot open Reports. Viewer/selectable No Access are Future Backlog.
 
 ## 1. Scope boundary
 

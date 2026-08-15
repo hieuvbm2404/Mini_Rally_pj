@@ -8,7 +8,7 @@ import { Avatar } from "../components/shared";
 
 type ProjectStatus = "Active" | "Archived";
 type TeamStatus = "Active" | "Deactive";
-export type ProjectPermission = "Admin" | "Editor" | "Viewer" | "No Access";
+export type ProjectPermission = "Admin" | "Editor";
 export type SharedProjectAccess = { projectKey: string; level: ProjectPermission; teams: string[] };
 export type SharedWorkspaceUser = { name: string; email: string; owner: Owner; status: string; projectAccess: SharedProjectAccess[] };
 type ProjectTab = "details" | "users" | "teams";
@@ -44,7 +44,7 @@ type AdminUser = {
   email: string;
   owner: Owner;
   status: "Active" | "Invited" | "Disabled";
-  permissions: Record<string, ProjectPermission>;
+  permissions: Partial<Record<string, ProjectPermission>>;
   teams: string[];
 };
 
@@ -76,12 +76,11 @@ const INITIAL_TEAMS: AdminTeam[] = SCOPE_PROJECTS.flatMap((project, projectIndex
   })),
 );
 
-function accessFor(role: Role, projectKey: string): ProjectPermission {
+function accessFor(role: Role, projectKey: string): ProjectPermission | undefined {
   if (role === "Workspace Admin") return "Admin";
-  if (role === "Project Member") return projectKey === ROLE_SCOPE.projectMemberProjectKey ? "Editor" : "No Access";
-  if (ROLE_SCOPE.projectAdminProjectKeys.includes(projectKey as typeof ROLE_SCOPE.projectAdminProjectKeys[number])) return "Admin";
-  if (ROLE_SCOPE.projectAdminViewerProjectKeys.includes(projectKey as typeof ROLE_SCOPE.projectAdminViewerProjectKeys[number])) return "Viewer";
-  return "No Access";
+  if (role === "Editor") return projectKey === ROLE_SCOPE.editorProjectKey ? "Editor" : undefined;
+  if (ROLE_SCOPE.adminProjectKeys.includes(projectKey as typeof ROLE_SCOPE.adminProjectKeys[number])) return "Admin";
+  return undefined;
 }
 
 function StatusBadge({ value }: { value: ProjectStatus | TeamStatus }) {
@@ -148,17 +147,17 @@ function ProjectModal({ project, onClose, onSave }: { project: AdminProject | nu
 }
 
 function TeamModal({ team, project, users, canManageAccess, onClose, onSave }: { team: AdminTeam | null; project: AdminProject; users: AdminUser[]; canManageAccess: boolean; onClose: () => void; onSave: (draft: TeamDraft) => void }) {
-  const leadCandidates = users.filter(user => user.email !== "marcus.webb@acme.com" && ["Admin", "Editor"].includes(user.permissions[project.key] ?? "No Access"));
+  const leadCandidates = users.filter(user => user.email !== "marcus.webb@acme.com" && Boolean(user.permissions[project.key]));
   const memberCandidates = users.filter(user => {
     if (user.email === "marcus.webb@acme.com") return false;
-    return canManageAccess || ["Admin", "Editor"].includes(user.permissions[project.key] ?? "No Access");
+    return canManageAccess || Boolean(user.permissions[project.key]);
   });
-  const initialMemberAccess = Object.fromEntries(users.filter(user => (user.permissions[project.key] ?? "No Access") === "Admin").map(user => [user.email, "Admin"])) as TeamMemberAccess;
+  const initialMemberAccess = Object.fromEntries(users.filter(user => user.permissions[project.key] === "Admin").map(user => [user.email, "Admin"])) as TeamMemberAccess;
   const [draft, setDraft] = useState<TeamDraft>(team ? { name: team.name, key: team.key, leadName: team.lead.name, status: team.status, memberAccess: {} } : { name: "", key: "", leadName: leadCandidates[0]?.name ?? OWNERS[1].name, status: "Active", memberAccess: initialMemberAccess });
   const [error, setError] = useState("");
 
   function toggleMember(user: AdminUser) {
-    const currentPermission = user.permissions[project.key] ?? "No Access";
+    const currentPermission = user.permissions[project.key];
     if (currentPermission === "Admin") return;
     setDraft(previous => {
       const memberAccess = { ...previous.memberAccess };
@@ -187,7 +186,7 @@ function TeamModal({ team, project, users, canManageAccess, onClose, onSave }: {
           {error && <div className="rounded border px-3 py-2 text-[11px]" style={{ color: "#b91c1c", backgroundColor: "#fef2f2", borderColor: "#f0c7c1" }}>{error}</div>}
           <div className="grid grid-cols-[1fr_140px] gap-4"><Field label="Team name"><input value={draft.name} onChange={event => setDraft({ ...draft, name: event.target.value })} className="admin-input" /></Field><Field label="Team key"><input disabled={Boolean(team)} value={draft.key} onChange={event => setDraft({ ...draft, key: event.target.value.toUpperCase() })} className="admin-input disabled:bg-[#f1f3f6]" /></Field></div>
           <div className="grid grid-cols-2 gap-4"><Field label="Team lead"><select value={draft.leadName} onChange={event => setDraft({ ...draft, leadName: event.target.value })} className="admin-input bg-white">{leadCandidates.map(user => <option key={user.email}>{user.name}</option>)}</select></Field><Field label="Status"><select value={draft.status} onChange={event => setDraft({ ...draft, status: event.target.value as TeamStatus })} className="admin-input bg-white"><option>Active</option><option>Deactive</option></select></Field></div>
-          {!team && <div className="pt-1"><div className="mb-2 flex items-center justify-between"><p className="text-[10px] font-semibold uppercase" style={{ color: "#5c6478" }}>Members & Access</p><p className="text-[9px]" style={{ color: "#8c94a6" }}>{canManageAccess ? "Admin joins All Teams; Editor joins this Team" : "Add existing project Editors to this Team"}</p></div><div className="overflow-hidden rounded border" style={{ borderColor: "#e2e6eb" }}><div className="grid grid-cols-[minmax(240px,1fr)_110px_140px] bg-[#f7f8fa] px-3 py-2 text-[9px] font-semibold uppercase" style={{ color: "#8c94a6" }}><span>User</span><span>Current</span><span>{canManageAccess ? "New Access" : "Team Access"}</span></div>{memberCandidates.map(user => { const currentPermission = user.permissions[project.key] ?? "No Access"; const isProjectAdmin = currentPermission === "Admin"; const selectedAccess = draft.memberAccess[user.email]; const selected = Boolean(selectedAccess); return <div key={user.id} className="grid min-h-11 grid-cols-[minmax(240px,1fr)_110px_140px] items-center border-t px-3" style={{ borderColor: "#edf0f4", opacity: user.status === "Disabled" ? 0.5 : 1 }}><button type="button" disabled={isProjectAdmin || user.status === "Disabled"} onClick={() => toggleMember(user)} className="flex items-center gap-2 text-left"><span className="flex h-3.5 w-3.5 items-center justify-center rounded-sm border" style={{ borderColor: selected ? "#1d3f73" : "#b8bfcc", backgroundColor: selected ? "#1d3f73" : "white" }}>{selected && <Check size={9} color="white" />}</span><Avatar owner={user.owner} size="sm" /><span><span className="block text-[10px] font-semibold" style={{ color: "#1a2234" }}>{user.name}</span><span className="block text-[9px]" style={{ color: "#8c94a6" }}>{user.email}</span></span></button><span className="text-[9px]" style={{ color: "#5c6478" }}>{currentPermission}</span>{selected ? canManageAccess ? <select disabled={isProjectAdmin} value={selectedAccess} onChange={event => changeMemberAccess(user.email, event.target.value as "Admin" | "Editor")} className="rounded border bg-white px-2 py-1 text-[10px] disabled:bg-[#f4f6f9]" style={{ borderColor: "#d9dee7", color: "#1a2234" }}><option>Admin</option><option>Editor</option></select> : <span className="text-[10px] font-semibold" style={{ color: "#1e6930" }}>{selectedAccess}</span> : <span className="text-[9px]" style={{ color: "#b0b8c8" }}>Not added</span>}</div>; })}</div></div>}
+          {!team && <div className="pt-1"><div className="mb-2 flex items-center justify-between"><p className="text-[10px] font-semibold uppercase" style={{ color: "#5c6478" }}>Members & Access</p><p className="text-[9px]" style={{ color: "#8c94a6" }}>{canManageAccess ? "Admin joins All Teams; Editor joins this Team" : "Add existing project Editors to this Team"}</p></div><div className="overflow-hidden rounded border" style={{ borderColor: "#e2e6eb" }}><div className="grid grid-cols-[minmax(240px,1fr)_110px_140px] bg-[#f7f8fa] px-3 py-2 text-[9px] font-semibold uppercase" style={{ color: "#8c94a6" }}><span>User</span><span>Current</span><span>{canManageAccess ? "New Access" : "Team Access"}</span></div>{memberCandidates.map(user => { const currentPermission = user.permissions[project.key]; const isProjectAdmin = currentPermission === "Admin"; const selectedAccess = draft.memberAccess[user.email]; const selected = Boolean(selectedAccess); return <div key={user.id} className="grid min-h-11 grid-cols-[minmax(240px,1fr)_110px_140px] items-center border-t px-3" style={{ borderColor: "#edf0f4", opacity: user.status === "Disabled" ? 0.5 : 1 }}><button type="button" disabled={isProjectAdmin || user.status === "Disabled"} onClick={() => toggleMember(user)} className="flex items-center gap-2 text-left"><span className="flex h-3.5 w-3.5 items-center justify-center rounded-sm border" style={{ borderColor: selected ? "#1d3f73" : "#b8bfcc", backgroundColor: selected ? "#1d3f73" : "white" }}>{selected && <Check size={9} color="white" />}</span><Avatar owner={user.owner} size="sm" /><span><span className="block text-[10px] font-semibold" style={{ color: "#1a2234" }}>{user.name}</span><span className="block text-[9px]" style={{ color: "#8c94a6" }}>{user.email}</span></span></button><span className="text-[9px]" style={{ color: "#5c6478" }}>{currentPermission ?? "Not assigned"}</span>{selected ? canManageAccess ? <select disabled={isProjectAdmin} value={selectedAccess} onChange={event => changeMemberAccess(user.email, event.target.value as "Admin" | "Editor")} className="rounded border bg-white px-2 py-1 text-[10px] disabled:bg-[#f4f6f9]" style={{ borderColor: "#d9dee7", color: "#1a2234" }}><option>Admin</option><option>Editor</option></select> : <span className="text-[10px] font-semibold" style={{ color: "#1e6930" }}>{selectedAccess}</span> : <span className="text-[9px]" style={{ color: "#b0b8c8" }}>Not added</span>}</div>; })}</div></div>}
         </div>
         <ModalActions primary={team ? "Save Changes" : "Add Team"} onClose={onClose} />
       </form>
@@ -223,16 +222,16 @@ function EditorTeamsModal({ user, project, projectTeams, selectedTeamIds, onClos
   );
 }
 
-function AddExistingUserModal({ project, projectTeams, users, onClose, onAdd }: { project: AdminProject; projectTeams: AdminTeam[]; users: AdminUser[]; onClose: () => void; onAdd: (userId: string, permission: Exclude<ProjectPermission, "No Access">, teamIds: string[]) => void }) {
+function AddExistingUserModal({ project, projectTeams, users, onClose, onAdd }: { project: AdminProject; projectTeams: AdminTeam[]; users: AdminUser[]; onClose: () => void; onAdd: (userId: string, permission: ProjectPermission, teamIds: string[]) => void }) {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState("");
-  const [permission, setPermission] = useState<Exclude<ProjectPermission, "No Access">>("Editor");
+  const [permission, setPermission] = useState<ProjectPermission>("Editor");
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
   const activeTeams = projectTeams.filter(team => team.status === "Active");
-  const candidates = users.filter(user => user.email !== "marcus.webb@acme.com" && (user.permissions[project.key] ?? "No Access") === "No Access" && `${user.name} ${user.email}`.toLowerCase().includes(search.toLowerCase()));
+  const candidates = users.filter(user => user.email !== "marcus.webb@acme.com" && !user.permissions[project.key] && `${user.name} ${user.email}`.toLowerCase().includes(search.toLowerCase()));
   const canAdd = Boolean(selectedId) && (permission !== "Editor" || selectedTeamIds.length > 0);
 
-  function changePermission(next: Exclude<ProjectPermission, "No Access">) {
+  function changePermission(next: ProjectPermission) {
     setPermission(next);
     setSelectedTeamIds(next === "Admin" ? activeTeams.map(team => team.id) : []);
   }
@@ -250,11 +249,10 @@ function AddExistingUserModal({ project, projectTeams, users, onClose, onAdd }: 
         <div className="grid min-h-0 flex-1 grid-cols-[1fr_240px] border-t" style={{ borderColor: "#e2e6eb" }}>
           <div className="overflow-auto p-4" style={{ borderRight: "1px solid #e2e6eb" }}>{candidates.map(user => <button key={user.id} onClick={() => setSelectedId(user.id)} className="mb-1 flex w-full items-center gap-2 rounded border px-3 py-2 text-left" style={{ color: "#1a2234", backgroundColor: selectedId === user.id ? "#edf2fb" : "white", borderColor: selectedId === user.id ? "#bdd0ea" : "#e2e6eb" }}><Avatar owner={user.owner} size="sm" /><span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-semibold">{user.name}</span><span className="block truncate text-[9px]" style={{ color: "#8c94a6" }}>{user.email}</span></span><span className="text-[9px]" style={{ color: user.status === "Disabled" ? "#b91c1c" : "#5c6478" }}>{user.status}</span>{selectedId === user.id && <Check size={12} style={{ color: "#1d3f73" }} />}</button>)}{candidates.length === 0 && <p className="py-10 text-center text-[11px]" style={{ color: "#8c94a6" }}>No users available to add.</p>}</div>
           <div className="space-y-4 p-4">
-            <Field label="Access Level"><select value={permission} onChange={event => changePermission(event.target.value as Exclude<ProjectPermission, "No Access">)} className="admin-input bg-white"><option>Admin</option><option>Editor</option><option>Viewer</option></select></Field>
+            <Field label="Access Level"><select value={permission} onChange={event => changePermission(event.target.value as ProjectPermission)} className="admin-input bg-white"><option>Admin</option><option>Editor</option></select></Field>
             <div><p className="text-[10px] font-semibold uppercase" style={{ color: "#5c6478" }}>Teams</p><div className="mt-2">
               {permission === "Admin" && <span className="inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[10px] font-semibold" style={{ color: "#1d3f73", backgroundColor: "#edf2fb", borderColor: "#bdd0ea" }}><Check size={11} />All Teams</span>}
               {permission === "Editor" && <div className="space-y-1.5">{activeTeams.map(team => { const checked = selectedTeamIds.includes(team.id); return <button key={team.id} onClick={() => toggleTeam(team.id)} className="flex w-full items-center gap-2 rounded border px-2 py-1.5 text-left text-[10px]" style={{ color: checked ? "#1d3f73" : "#5c6478", backgroundColor: checked ? "#edf2fb" : "white", borderColor: checked ? "#bdd0ea" : "#d9dee7" }}><span className="flex h-3 w-3 items-center justify-center rounded-sm border" style={{ borderColor: checked ? "#1d3f73" : "#b8bfcc", backgroundColor: checked ? "#1d3f73" : "white" }}>{checked && <Check size={9} color="white" />}</span>{team.name}</button>; })}<p className="text-[9px]" style={{ color: selectedTeamIds.length ? "#8c94a6" : "#b91c1c" }}>Select at least one team.</p></div>}
-              {permission === "Viewer" && <p className="text-[10px] leading-4" style={{ color: "#8c94a6" }}>Project-wide read-only access. No team assignment.</p>}
             </div></div>
           </div>
         </div>
@@ -264,7 +262,7 @@ function AddExistingUserModal({ project, projectTeams, users, onClose, onAdd }: 
   );
 }
 
-export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAccess, onAddProjectTeam }: { role: Role; workspaceUsers: SharedWorkspaceUser[]; onChangeProjectAccess: (email: string, projectKey: string, permission: ProjectPermission, teamNames: string[]) => void; onAddProjectTeam: (projectKey: string, teamName: string) => void }) {
+export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAccess, onAddProjectTeam }: { role: Role; workspaceUsers: SharedWorkspaceUser[]; onChangeProjectAccess: (email: string, projectKey: string, permission: ProjectPermission | undefined, teamNames: string[]) => void; onAddProjectTeam: (projectKey: string, teamName: string) => void }) {
   const [projects, setProjects] = useState(INITIAL_PROJECTS);
   const [teams, setTeams] = useState(INITIAL_TEAMS);
   const [selected, setSelected] = useState<SelectedNode>({ type: "project", key: "NXP" });
@@ -281,7 +279,7 @@ export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAc
   const [editTeamsUser, setEditTeamsUser] = useState<AdminUser | null>(null);
 
   const users = useMemo<AdminUser[]>(() => workspaceUsers.map((user, index) => {
-    const permissions = Object.fromEntries(user.projectAccess.map(access => [access.projectKey, access.level])) as Record<string, ProjectPermission>;
+    const permissions = Object.fromEntries(user.projectAccess.map(access => [access.projectKey, access.level])) as Partial<Record<string, ProjectPermission>>;
     const assignedTeamIds = user.projectAccess.flatMap(access => {
       if (access.level === "Admin") return teams.filter(team => team.projectKey === access.projectKey).map(team => team.id);
       if (access.level !== "Editor") return [];
@@ -298,11 +296,11 @@ export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAc
     };
   }), [workspaceUsers, teams]);
 
-  const visibleProjects = useMemo(() => projects.filter(project => accessFor(role, project.key) !== "No Access"), [projects, role]);
-  const visibleTeams = useMemo(() => teams.filter(team => role !== "Project Member" || (team.projectKey === ROLE_SCOPE.projectMemberProjectKey && ROLE_SCOPE.projectMemberTeams.includes(team.name as typeof ROLE_SCOPE.projectMemberTeams[number]))), [teams, role]);
+  const visibleProjects = useMemo(() => projects.filter(project => Boolean(accessFor(role, project.key))), [projects, role]);
+  const visibleTeams = useMemo(() => teams.filter(team => role !== "Editor" || (team.projectKey === ROLE_SCOPE.editorProjectKey && ROLE_SCOPE.editorTeams.includes(team.name as typeof ROLE_SCOPE.editorTeams[number]))), [teams, role]);
   const selectedProject = selected.type === "project" ? projects.find(project => project.key === selected.key) : selected.type === "team" ? projects.find(project => project.key === teams.find(team => team.id === selected.id)?.projectKey) : undefined;
   const selectedTeam = selected.type === "team" ? visibleTeams.find(team => team.id === selected.id) : undefined;
-  const effectiveAccess = selectedProject ? accessFor(role, selectedProject.key) : role === "Workspace Admin" ? "Admin" : "No Access";
+  const effectiveAccess = selectedProject ? accessFor(role, selectedProject.key) : role === "Workspace Admin" ? "Admin" : undefined;
   const canManageProjectDetails = Boolean(selectedProject && role === "Workspace Admin");
   const canManageTeams = Boolean(selectedProject && role === "Workspace Admin");
   const canManageMembership = role === "Workspace Admin";
@@ -310,15 +308,15 @@ export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAc
   const projectTeams = selectedProject ? visibleTeams.filter(team => team.projectKey === selectedProject.key) : [];
   const filteredUsers = users.filter(user => {
     if (!selectedProject) return false;
-    const permission = user.permissions[selectedProject.key] ?? "No Access";
-    return user.email !== "marcus.webb@acme.com" && permission !== "No Access" && `${user.name} ${user.email}`.toLowerCase().includes(userSearch.toLowerCase());
+    const permission = user.permissions[selectedProject.key];
+    return user.email !== "marcus.webb@acme.com" && Boolean(permission) && `${user.name} ${user.email}`.toLowerCase().includes(userSearch.toLowerCase());
   });
 
   useEffect(() => {
-    if (role !== "Project Member") return;
-    setSelected({ type: "project", key: ROLE_SCOPE.projectMemberProjectKey });
+    if (role !== "Editor") return;
+    setSelected({ type: "project", key: ROLE_SCOPE.editorProjectKey });
     setProjectTab("details");
-    setExpanded(new Set([ROLE_SCOPE.projectMemberProjectKey]));
+    setExpanded(new Set([ROLE_SCOPE.editorProjectKey]));
   }, [role]);
 
   function toggleProject(key: string) {
@@ -362,7 +360,7 @@ export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAc
     setTeamModal(undefined);
   }
 
-  function updatePermission(userId: string, projectKey: string, permission: ProjectPermission) {
+  function updatePermission(userId: string, projectKey: string, permission: ProjectPermission | undefined) {
     const user = users.find(candidate => candidate.id === userId);
     if (!user) return;
     const projectTeams = teams.filter(team => team.projectKey === projectKey);
@@ -370,7 +368,7 @@ export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAc
     onChangeProjectAccess(user.email, projectKey, permission, permission === "Admin" ? ["All Teams"] : permission === "Editor" ? currentTeamNames : []);
   }
 
-  function addExistingUser(userId: string, projectKey: string, permission: Exclude<ProjectPermission, "No Access">, teamIds: string[]) {
+  function addExistingUser(userId: string, projectKey: string, permission: ProjectPermission, teamIds: string[]) {
     const user = users.find(candidate => candidate.id === userId);
     if (!user) return;
     const teamNames = teams.filter(team => teamIds.includes(team.id)).map(team => team.name);
@@ -427,7 +425,7 @@ export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAc
             <div className="flex-1" />
             {canManageProjectDetails && <div className="flex gap-1"><IconButton label="Edit project" onClick={() => setProjectModal(selectedProject)}><Edit3 size={12} /></IconButton><IconButton label={selectedProject.status === "Active" ? "Archive project" : "Restore project"} onClick={() => selectedProject.status === "Active" ? setArchiveProject(selectedProject) : setProjects(previous => previous.map(project => project.id === selectedProject.id ? { ...project, status: "Active" } : project))}>{selectedProject.status === "Active" ? <Archive size={12} /> : <RotateCcw size={12} />}</IconButton><IconButton label="Delete project" danger onClick={() => setDeleteProject(selectedProject)}><Trash2 size={12} /></IconButton></div>}
           </div>
-          <div className="flex h-9 items-end gap-5 px-5" style={{ borderBottom: "1px solid #e2e6eb" }}>{([['details', 'Details'], ...(role === "Project Member" ? [] : [['users', 'Users & Permissions']]), ['teams', 'Teams']] as [ProjectTab, string][]).map(([key, label]) => <button key={key} onClick={() => setProjectTab(key)} className="h-9 border-b-2 px-1 text-[11px] font-semibold" style={{ color: projectTab === key ? "#1d3f73" : "#5c6478", borderColor: projectTab === key ? "#1d3f73" : "transparent" }}>{label}</button>)}</div>
+          <div className="flex h-9 items-end gap-5 px-5" style={{ borderBottom: "1px solid #e2e6eb" }}>{([['details', 'Details'], ...(role === "Editor" ? [] : [['users', 'Users & Permissions']]), ['teams', 'Teams']] as [ProjectTab, string][]).map(([key, label]) => <button key={key} onClick={() => setProjectTab(key)} className="h-9 border-b-2 px-1 text-[11px] font-semibold" style={{ color: projectTab === key ? "#1d3f73" : "#5c6478", borderColor: projectTab === key ? "#1d3f73" : "transparent" }}>{label}</button>)}</div>
 
           {projectTab === "details" && (
             <div className="max-w-3xl space-y-5 overflow-auto p-5">
@@ -445,7 +443,6 @@ export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAc
                 </div>
                 <div><p className="text-[10px] font-semibold" style={{ color: "#5c6478" }}>Point Conversion</p><p className="mt-1 text-[12px] font-medium" style={{ color: "#1a2234" }}>1 point = {selectedProject.hoursPerPoint} hours</p></div>
               </div>
-              {effectiveAccess === "Viewer" && <div className="rounded border px-3 py-2 text-[11px]" style={{ color: "#5c6478", backgroundColor: "#f7f8fa", borderColor: "#d9dee7" }}>You can view this project, but project settings and membership are read-only.</div>}
             </div>
           )}
 
@@ -460,7 +457,7 @@ export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAc
               <div className="overflow-auto">
                 <div className="grid min-w-[720px] grid-cols-[minmax(280px,1fr)_130px_160px_100px] items-center border-b bg-[#f7f8fa] px-4 py-2 text-[9px] font-semibold uppercase" style={{ color: "#8c94a6", borderColor: "#e2e6eb" }}><span>User</span><span>Status</span><span>Access Level</span><span>Action</span></div>
                 {filteredUsers.map(user => {
-                  const permission = user.permissions[selectedProject.key] ?? "No Access";
+                  const permission = user.permissions[selectedProject.key];
                   const statusColor = user.status === "Disabled" ? "#b91c1c" : user.status === "Invited" ? "#a16207" : "#1e6930";
                   const statusBg = user.status === "Disabled" ? "#fef2f2" : user.status === "Invited" ? "#fffbeb" : "#eef6f0";
                   return (
@@ -468,7 +465,7 @@ export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAc
                       <div className="flex items-center gap-2"><Avatar owner={user.owner} size="sm" /><span><span className="block text-[11px] font-semibold" style={{ color: "#1a2234" }}>{user.name}</span><span className="block text-[9px]" style={{ color: "#8c94a6" }}>{user.email}</span></span></div>
                       <span className="w-fit rounded-sm px-2 py-0.5 text-[9px] font-semibold" style={{ color: statusColor, backgroundColor: statusBg }}>{user.status}</span>
                       <div className="flex flex-col items-start gap-1">
-                        <select aria-label={`${user.name} access level`} disabled={!canManageMembership} value={permission} onChange={event => { const next = event.target.value as Exclude<ProjectPermission, "No Access">; if (next === "Editor") setEditTeamsUser(user); else updatePermission(user.id, selectedProject.key, next); }} className="w-32 rounded border bg-white px-2 py-1 text-[10px] disabled:bg-[#f4f6f9]" style={{ borderColor: "#d9dee7", color: "#1a2234" }}><option>Admin</option><option>Editor</option><option>Viewer</option></select>
+                        <select aria-label={`${user.name} access level`} disabled={!canManageMembership} value={permission} onChange={event => { const next = event.target.value as ProjectPermission; if (next === "Editor") setEditTeamsUser(user); else updatePermission(user.id, selectedProject.key, next); }} className="w-32 rounded border bg-white px-2 py-1 text-[10px] disabled:bg-[#f4f6f9]" style={{ borderColor: "#d9dee7", color: "#1a2234" }}><option>Admin</option><option>Editor</option></select>
                         {permission === "Admin" && <span className="text-[9px]" style={{ color: "#8c94a6" }}>All Teams</span>}
                       </div>
                       <div>{canManageMembership ? <button onClick={() => setRemoveUser(user)} className="rounded border px-2 py-1 text-[10px] font-semibold" style={{ color: "#b91c1c", borderColor: "#f0c7c1" }}>Remove</button> : <span className="text-[10px]" style={{ color: "#b0b8c8" }}>-</span>}</div>
@@ -490,7 +487,7 @@ export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAc
       {teamModal !== undefined && selectedProject && <TeamModal team={teamModal} project={selectedProject} users={users} canManageAccess={canManageMembership} onClose={() => setTeamModal(undefined)} onSave={saveTeam} />}
       {addUserOpen && selectedProject && <AddExistingUserModal project={selectedProject} projectTeams={projectTeams} users={users} onClose={() => setAddUserOpen(false)} onAdd={(userId, permission, teamIds) => { addExistingUser(userId, selectedProject.key, permission, teamIds); setAddUserOpen(false); }} />}
       {editTeamsUser && selectedProject && <EditorTeamsModal user={editTeamsUser} project={selectedProject} projectTeams={projectTeams} selectedTeamIds={editTeamsUser.teams} onClose={() => setEditTeamsUser(null)} onSave={teamIds => saveEditorTeams(editTeamsUser.id, selectedProject.key, teamIds)} />}
-      {removeUser && selectedProject && <ConfirmDialog title={`Remove ${removeUser.name} from ${selectedProject.name}?`} body="The user's project access becomes No Access and all team memberships in this project are removed." action="Remove Access" onClose={() => setRemoveUser(null)} onConfirm={() => { updatePermission(removeUser.id, selectedProject.key, "No Access"); setRemoveUser(null); }} />}
+      {removeUser && selectedProject && <ConfirmDialog title={`Remove ${removeUser.name} from ${selectedProject.name}?`} body="The Project assignment and all Team memberships in this Project are removed. The Project will no longer be visible to this user." action="Remove Access" onClose={() => setRemoveUser(null)} onConfirm={() => { updatePermission(removeUser.id, selectedProject.key, undefined); setRemoveUser(null); }} />}
       {archiveProject && <ConfirmDialog title={`${archiveProject.status === "Active" ? "Archive" : "Restore"} ${archiveProject.name}?`} body="The project becomes read-only and is removed from active delivery selectors. Existing work and audit history are preserved." action={archiveProject.status === "Active" ? "Archive Project" : "Restore Project"} onClose={() => setArchiveProject(null)} onConfirm={() => { setProjects(previous => previous.map(project => project.id === archiveProject.id ? { ...project, status: project.status === "Active" ? "Archived" : "Active" } : project)); setArchiveProject(null); }} />}
       {deleteProject && <ConfirmDialog title={`Delete ${deleteProject.name}?`} body="This removes the project from the workspace administration tree. This mockup treats delete as a Workspace Admin-only destructive action." action="Delete Project" requiredText={deleteProject.key} onClose={() => setDeleteProject(null)} onConfirm={() => { setProjects(previous => previous.filter(project => project.id !== deleteProject.id)); setTeams(previous => previous.filter(team => team.projectKey !== deleteProject.key)); setSelected({ type: "workspace" }); setDeleteProject(null); }} />}
       {archiveTeam && <ConfirmDialog title={`Deactivate ${archiveTeam.name}?`} body="The team becomes unavailable for new membership assignments. Existing delivery history is preserved." action="Deactivate Team" onClose={() => setArchiveTeam(null)} onConfirm={() => { setTeams(previous => previous.map(team => team.id === archiveTeam.id ? { ...team, status: "Deactive" } : team)); setArchiveTeam(null); }} />}

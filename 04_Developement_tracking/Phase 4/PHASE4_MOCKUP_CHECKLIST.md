@@ -42,7 +42,7 @@ Approved model:
 
 - `Workspace Admin` is the only company-level authority.
 - Workspace Admin is assigned internally, is not a Project member and is excluded from Project user lists.
-- Normal users receive `Admin`, `Editor`, `Viewer` or `No Access` independently per Project.
+- Normal users receive `Admin` or `Editor` independently per Project.
 - Only Workspace Admin manages users, Projects, Teams, Project access and Team membership.
 - Permission Model is read-only; there is no editable E/R/D/H role matrix.
 
@@ -59,16 +59,15 @@ Approved model:
 - [x] Editor can update Iteration Status in assigned Teams.
 - [x] Editor cannot access Timeboxes, Releases, Milestones, Team Status, Portfolio, Capacity or Reports.
 - [x] Editor does not see Project Users & Permissions.
-- [x] Viewer is project-wide read-only and has no Team membership.
-- [x] No Access Project is hidden and direct access is rejected safely.
+- [x] A user without a Project assignment cannot see the Project and direct access is rejected safely.
 
 ### Access Journey Checklist
 
 - [x] `Users > User Details > Project Access` supports multiple Projects per user.
-- [x] Project Access uses Admin/Editor/Viewer/No Access.
+- [x] Project Access uses Admin/Editor only.
 - [x] Admin automatically displays All Teams.
 - [x] Editor requires one or more Team selections.
-- [x] Viewer/No Access do not select Teams.
+- [x] Removing Project Access removes the assignment and Team scope; Viewer/selectable No Access are Future Backlog.
 - [x] `Workspaces & Projects > Project > Users & Permissions` uses User, Status, Access Level and Action.
 - [x] Access Level remains a dropdown for Workspace Admin.
 - [x] Add Existing User selects a company user and initial access.
@@ -140,7 +139,7 @@ Approved model:
 - [x] Audit columns are Time, Actor and Detail only.
 - [x] Time includes weekday, date, month, year, hour, minute and second.
 - [x] Search supports Actor and Time text.
-- [x] Audit includes administrative/settings actions only.
+- [x] Audit remains WA-only/read-only with Time, Actor and Detail; exact event scope/detail cleanup is Not Required for current acceptance.
 - [x] Remove Project user opens confirmation.
 - [x] Archive/restore Project and deactivate/restore Team open confirmation.
 - [x] Delete Project requires typed Project key.
