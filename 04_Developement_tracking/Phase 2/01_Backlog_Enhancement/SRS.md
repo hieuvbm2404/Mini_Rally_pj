@@ -6,7 +6,7 @@
 |---|---|
 | Module ID | `P2-BACKLOG-ENHANCEMENT` |
 | Trạng thái | Draft for Development |
-| Ngày cập nhật | 2026-06-28 |
+| Ngày cập nhật | 2026-08-17 |
 | Phạm vi | Backlog nâng cao cho Story và Defect, bao gồm gán Iteration |
 | Ưu tiên | P2.1 — bắt buộc |
 | Phụ thuộc | Phase 1 Backlog, Work Item API, Release data, Iteration data, Project/Team context |
@@ -58,7 +58,7 @@ Nghiệp vụ chính:
 - Project and optional Team context is read from the workspace selector in the top navigation.
 - Khi user chọn một Team thuộc Project nào, Backlog chỉ load Story/Defect thuộc đúng Project/Team đó.
 - Khi tạo Work Item từ Backlog, field Project được auto-fill theo context hiện tại; Team có thể để trống để item thuộc Project backlog.
-- Account hiện tại trong mockup là Workspace Admin, nên vẫn có quyền đổi Project/Team trong form tạo/chỉnh sửa nếu cần.
+- Project is fixed by the active Project context and remains read-only in create/detail/edit flows. Team remains optional and may be selected only from Teams valid for that Project.
 - Một Story/Defect có thể chưa thuộc Iteration nào; UI hiển thị `Unscheduled`.
 - Gán Iteration không tạo bản sao Work Item và không xóa item khỏi Backlog.
 - Khi đổi Iteration, Work Item chuyển sang Iteration mới và sẽ không còn xuất hiện trong Iteration Status của Iteration cũ.
@@ -71,8 +71,8 @@ Nghiệp vụ chính:
 |---|---|
 | P2-BL-FR-001 | Backlog load theo selected Project và Team context. |
 | P2-BL-FR-001A | Changing workspace selector Project/Team refreshes Backlog and only shows records in that Project/Team. |
-| P2-BL-FR-001B | Create Work Item defaults Project and Team from the current workspace selector context. |
-| P2-BL-FR-001C | Workspace Admin may override Project and Team during create/edit, but selected Team must be valid for selected Project. |
+| P2-BL-FR-001B | Create Work Item auto-fills Project from the active Project context and keeps it read-only; Team is optional and may default from a specific Team context. |
+| P2-BL-FR-001C | Workspace Admin/Admin cannot change Work Item Project inside create/edit. To create in another Project, change the global Project context first. Team may be changed only to a Team valid for the fixed Project. |
 | P2-BL-FR-001D | Team is optional. Blank Team means Project-level / Project backlog scope. `All Teams` is not required for Phase 0-4 Iteration Status. |
 | P2-BL-FR-002 | Backlog chỉ hiển thị Story và Defect; không hiển thị Task/Feature như backlog item độc lập. |
 | P2-BL-FR-003 | User có thể search theo `item_key` hoặc `title` bằng quick search `Search work...` ở toolbar. |
@@ -88,8 +88,10 @@ Nghiệp vụ chính:
 | P2-BL-FR-013 | User có quyền edit có thể inline edit Schedule State; Schedule State và Flow State cùng dùng catalog `Idea/Defined/In-Progress/Completed/Accepted/Release` và mirror hai chiều. |
 | P2-BL-FR-014 | User có quyền edit có thể inline edit Release. |
 | P2-BL-FR-014A | User có quyền edit có thể inline edit Iteration. |
+| P2-BL-FR-014B | Iteration inline selector includes eligible completed Iterations in the same Project/Team scope; elapsed end date or completed status does not lock assignment. |
 | P2-BL-FR-015 | User có quyền edit có thể bulk assign Release cho selected items. |
 | P2-BL-FR-015A | User có quyền edit có thể bulk assign Iteration cho selected items. |
+| P2-BL-FR-015B | Bulk Iteration assignment follows the same completed-Iteration eligibility and Project/Team scope rules as inline assignment. |
 | P2-BL-FR-016 | User có quyền manage backlog có thể reorder backlog; production cập nhật `rank`. |
 | P2-BL-FR-017 | Admin được chỉnh Backlog trong assigned Project; Editor được chỉnh trong assigned Teams; user không được gán Project không thấy Project và direct access bị từ chối. |
 | P2-BL-FR-018 | Sprint summary và Sprint planning không xuất hiện trong Backlog P2.1; Iteration assignment chỉ là field của Work Item. |
@@ -321,8 +323,8 @@ Access baseline:
 1. Backlog P2.1 only displays Story and Defect.
 2. Backlog list respects the active workspace selector Project and optional Team context.
 3. Changing workspace selector Project/Team refreshes Backlog records.
-4. Create Work Item auto-fills Project and Team from the active workspace selector context.
-5. Workspace Admin can override Project/Team in create/edit where enabled, but selected Team must belong to selected Project when supplied.
+4. Create Work Item auto-fills a read-only Project from the active Project context; Team remains optional and may default from a specific Team context.
+5. Project cannot be changed inside Work Item create/edit; changing Project requires changing the global Project context first. Any selected Team must belong to that fixed Project.
 6. Quick search `Search work...` remains visible in the toolbar and searches ID/title.
 7. Manage Filters allows selecting multiple columns and combines active filters after Apply.
 8. ID/Name/Est filters use text or number input; other supported fields use dropdown values.
@@ -339,6 +341,7 @@ Access baseline:
 19. Work Item Detail right panel shows Iteration and allows the same assignment rule.
 20. Bulk assign Release updates all selected valid items or fails all.
 21. Bulk assign Iteration updates all selected valid items or fails all.
+21a. Inline and bulk Iteration selectors allow eligible completed Iterations in the same Project/Team scope; assigning one does not change Work Item Schedule State or Flow State.
 22. Reorder updates item rank and preserves order after refresh.
 23. User không được gán Project không thể edit inline, bulk assign hoặc reorder.
 24. Sprint summary and Sprint planning are not present in Backlog P2.1.
@@ -355,7 +358,7 @@ Access baseline:
 | P2-BL-TS-006 | Try edit Story priority | UI unavailable or API rejects |
 | P2-BL-TS-007 | Switch workspace selector from Core Platform team to Identity & Access team | Backlog reloads and shows only Story/Defect records for Identity & Access |
 | P2-BL-TS-008 | Create Work Item after selecting Core Platform team | Project and Team fields default to Nexus Platform 2025 / Core Platform |
-| P2-BL-TS-009 | Workspace Admin changes Team in create form to a team outside selected Project | Validation rejects invalid Project/Team pair |
+| P2-BL-TS-009 | Workspace Admin opens create form in one Project, then tries to use another Project/invalid Team | Project remains read-only; invalid Team is absent or rejected |
 | P2-BL-TS-010 | Bulk assign selected to Q1 2025 | All selected valid items move to release |
 | P2-BL-TS-011 | Move item down then refresh | Order remains changed |
 | P2-BL-TS-012 | Unassigned user opens Backlog/direct item URL | Project/item is hidden or access is denied safely |

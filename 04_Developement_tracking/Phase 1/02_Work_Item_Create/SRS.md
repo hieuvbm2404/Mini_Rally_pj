@@ -19,7 +19,7 @@ Cho phép user tạo nhanh Story/Defect trong project/team đang chọn. Task kh
 
 BA confirmed Work Item create team policy:
 
-- Project is required and defaults to the current Project context.
+- Project is required, auto-filled from the active Project context and read-only. To create in another Project, the user must change the global Project context before opening the create flow.
 - Team is optional.
 - If Team is blank, the Work Item belongs to the Project backlog.
 - If Team is selected, the Work Item belongs to that Team backlog and the Team must be linked to the selected Project.
@@ -40,7 +40,7 @@ BA confirmed Work Item create team policy:
 | WIC-FR-001 | Button `Create Work Item` mở modal. |
 | WIC-FR-002 | Type chỉ gồm Story và Defect. |
 | WIC-FR-003 | Field `Title/Name` là required. |
-| WIC-FR-004 | Project required, default current project. |
+| WIC-FR-004 | Project is required, auto-filled from the active Project context and read-only in every Work Item create flow. The modal must not expose another Project option. |
 | WIC-FR-005 | Team optional; default blank/Project backlog unless current Team context is explicitly selected and valid for the Project. |
 | WIC-FR-006 | Owner defaults to `Unassigned`. When a Team is selected, options are `Unassigned` plus active members of that Team. When Team is blank/`No team`, Owner remains `Unassigned` only. |
 | WIC-FR-007 | Plan Estimate nullable, không âm. |
@@ -57,7 +57,7 @@ BA confirmed Work Item create team policy:
 |---|---|---|
 | Modal title | `New Work Item` | Hiển thị context project/team |
 | Type buttons | Story/Defect | Map enum `work_items.type` |
-| Project select | Project dropdown | Lấy project user có quyền |
+| Project context | Read-only Project field | Auto-fill from the active Project context; user changes Project only through the global context before opening the modal |
 | Team select | Team dropdown | Optional; blank = Project backlog; selected options filter by selected Project |
 | Title | Input placeholder | Required |
 | Owner | Dropdown | Default `Unassigned`; selected Team adds only its active members; blank/`No team` offers no named Owner |
@@ -71,7 +71,7 @@ BA confirmed Work Item create team policy:
 | UI field | API request | DB target | Mục đích | Validation |
 |---|---|---|---|---|
 | Type | `type` | `work_items.type` | Story/Defect | Required; only `story`,`defect` |
-| Project | `projectId` | `work_items.project_id` | Scope item | Required; user must access |
+| Project | `projectId` | `work_items.project_id` | Scope item | Required; derived from active Project context, read-only in the create UI, and user must have access |
 | Workspace | Server-derived | `work_items.workspace_id` | Tenant isolation/query | Derived from session/project |
 | Team | `teamId` | `work_items.team_id` | Team owner | Nullable; null = Project backlog; if provided, must exist in active `project_teams` for selected Project |
 | Title/Name | `title` | `work_items.title` | Item name | Required, trim, max 500 |
@@ -145,6 +145,7 @@ Response:
 8. Creating without Team succeeds and places the item in the Project backlog.
 9. Creating with a Team validates that Team belongs to the selected Project.
 10. Owner defaults to `Unassigned`; after Team selection, only active members of that Team become named Owner options. Clearing Team clears an invalid named Owner back to `Unassigned`.
+11. Project is auto-filled from the active Project context and cannot be changed inside Quick Create, Create with details or any reused Work Item create modal.
 
 ## 10. Implementation Breakdown
 

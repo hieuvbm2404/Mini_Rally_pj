@@ -6,7 +6,7 @@
 |---|---|
 | Module ID | `P4-PROJECT-ACCESS` |
 | Status | BA/Mockup Ready |
-| Updated date | 2026-08-14 |
+| Updated date | 2026-08-17 |
 | Scope | Workspace authority, Project Admin/Editor assignment, Team scope, permission presentation and safe denied states |
 | Depends on | Phase 0 identity/context and Phase 1 Project Management |
 | Mockup sources | `SettingsPage.tsx`, `WorkspaceProjectsPanel.tsx`, `layout.tsx`, `model.ts` |
@@ -78,7 +78,7 @@ Rules:
 | Quality / Defects | Create/View/Edit/Delete | Create/View/Edit/Delete | Create/View/Edit/Delete in assigned Teams |
 | Timeboxes / Iterations | Create/View/Edit/Delete | Create/View/Edit/Delete | Hidden |
 | Releases and Milestones | Create/View/Edit/Delete | Create/View/Edit/Delete | Hidden |
-| Team Status | View/Update | View/Update | Hidden |
+| Team Status | View/Update | View/Update | View (read-only) |
 | Portfolio Items | Create/View/Edit/Archive | Create/View/Edit/Archive | Hidden |
 | Capacity Planning | Create/View/Edit/Publish | Create/View/Edit/Publish | Hidden |
 | Release Tracking and Reports | View | View | Hidden |

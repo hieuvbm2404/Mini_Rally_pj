@@ -6,7 +6,7 @@
 |---|---|
 | Module ID | `P2-ITERATION-STATUS` |
 | Status | Ready for Development |
-| Updated date | 2026-08-14 |
+| Updated date | 2026-08-17 |
 | Scope | Track > Iteration Status |
 | Priority | P2.3 - required |
 | Depends on | Phase 1 Work Item base, Phase 2.1 Backlog Enhancement, Phase 2.2 Timeboxes > Iterations |
@@ -78,7 +78,7 @@ Nghiệp vụ chính:
 - Iteration selector only lists Iterations that belong to the selected Project and optional Team context.
 - Iteration Status only shows records related to the selected Iteration. If the Iteration is Project-level, Work Items without Team are valid. If the Iteration is Team-scoped, Work Items must match that Team.
 - Add Item modal auto-fills Project from the selected Iteration and allows Team to remain blank when the Iteration is Project-level / Project backlog.
-- Account hiện tại trong mockup là Workspace Admin, nên vẫn có quyền đổi Project/Team where the form allows it; however Project and optional Team scope must remain consistent with the selected Iteration.
+- Project is inherited from the active Project/selected Iteration context and is read-only in Add Item/create/detail. Team remains optional only for a Project-level Iteration; a Team-scoped Iteration pre-fills and constrains Team to that Iteration scope.
 - Iteration Status only shows items whose `iterationId` matches the selected Iteration.
 - The list still shows the `Iteration` column so user can confirm or move an item to another Iteration without opening Backlog.
 - If user changes Iteration from this list, the item leaves the current selected Iteration result after refresh/re-query.
@@ -130,6 +130,9 @@ Nghiệp vụ chính:
 | P2-IS-FR-031 | User with edit permission can inline edit Plan Est. |
 | P2-IS-FR-032 | User with edit permission can inline edit Owner. |
 | P2-IS-FR-032A | User with edit permission can inline edit Iteration. |
+| P2-IS-FR-032B | User with edit permission can inline edit Dev Owner where the column is available. |
+| P2-IS-FR-032C | A successful Owner or Dev Owner inline update must persist and remain unchanged after list refresh or page reload. |
+| P2-IS-FR-032D | Work Item Iteration assignment options include eligible completed Iterations in the same Project/Team scope; elapsed end date or completed status does not lock reassignment. Changing Iteration does not change Schedule State or Flow State. |
 | P2-IS-FR-033 | Work item Schedule State options in Iteration Status are exactly: Idea, Defined, In-Progress, Completed, Accepted, Release. |
 | P2-IS-FR-034 | Legacy `Code Review`, `Testing` or `Released` values must be reconciled before display; the UI must not silently normalize a value only for this screen. |
 | P2-IS-FR-035 | User can select rows and see selected-row actions consistent with Backlog list behavior where supported. |
@@ -144,7 +147,7 @@ Nghiệp vụ chính:
 | P2-IS-FR-043 | Add Item modal does not show `Choose existing backlog item`. Existing assignment is handled through the Work Item `Iteration` field in Backlog list and Work Item Detail. |
 | P2-IS-FR-044 | Add Item modal fields are Type, Project, optional Team, Iteration, Title, Owner, and Plan Estimate. |
 | P2-IS-FR-044A | Add Item modal defaults Project from the selected Iteration and allows Team to stay blank for Project backlog scope. |
-| P2-IS-FR-044B | Workspace Admin may change Project/Team where enabled, but the final Project/Team scope must match the selected Iteration. |
+| P2-IS-FR-044B | Project is inherited and read-only. Team may remain blank only for Project-level Iterations; otherwise it must match the selected Team-scoped Iteration. Workspace Admin does not override Project inside this flow. |
 | P2-IS-FR-045 | Iteration field in Add Item modal is read-only and prefilled with the selected Iteration name/date range. |
 | P2-IS-FR-046 | Schedule State is not shown in Add Item modal; backend default is used on create. |
 | P2-IS-FR-047 | Title is required for Add Item. |
@@ -168,7 +171,7 @@ Nghiệp vụ chính:
 | Manage filters | Multi-column filter chooser | Same behavior pattern as Backlog |
 | Add Item | Button beside filter controls | Opens Add Item to Iteration modal |
 | List / Board toggle | List only in Phase 0-4 | Board view/toggle is Future Backlog and must not appear as active scope |
-| Work item list | Dense editable table | Assigned Story/Defect items for selected Iteration, including Iteration column and Totals row |
+| Work item list | Dense editable table | Assigned Story/Defect items for selected Iteration, including Owner/Dev Owner inline assignment, Iteration column and Totals row |
 | Row click | Work item row | Opens full Work Item Detail page |
 | Work Item Detail right panel | Shared Backlog detail panel | Shows Iteration field and allows same assignment behavior |
 | Add Item modal | Create new work item only | Story/Defect, preselected Iteration |
@@ -202,6 +205,7 @@ Nghiệp vụ chính:
 | Task Est | `taskEstimate` | Rollup from child tasks | Read-only |
 | To Do | `toDo` | Rollup from tasks | Read-only |
 | Owner | `ownerId` | `work_items.assignee_id` | Editable; nullable if unassigned is supported |
+| Dev Owner | UI/service assignment field | Current Work Item assignment source | Editable where displayed; a successful selection must persist after refresh/reload |
 
 ### 7.3 Schedule State / Flow State Values
 
@@ -353,6 +357,7 @@ Allowed fields from Iteration Status:
 | `iterationId` | Target Iteration must belong to same Project and matching optional Team scope; nullable means Unscheduled |
 | `planEstimate` | Number >= 0 |
 | `ownerId` | User must be active and assignable in project/team |
+| Dev Owner assignment | User must be active and assignable in project/team; successful update must persist after refresh/reload |
 
 Rules:
 
@@ -478,8 +483,10 @@ Workspace Admin/Admin may update in Project scope; Editor may update in assigned
 - [ ] Show Filter / Manage Filters supports multi-column combined filters.
 - [ ] Sort icons exist on sortable headers.
 - [ ] Column resize works.
-- [ ] Inline edit works for Name, Schedule State, Flow State, Plan Est and Owner.
+- [ ] Inline edit works for Name, Schedule State, Flow State, Plan Est, Owner and Dev Owner where displayed.
+- [ ] Owner and Dev Owner values remain persisted after refresh/reload.
 - [ ] Inline edit works for Iteration and moves the item to the selected target Iteration after refresh/re-query.
+- [ ] Eligible completed Iterations remain selectable for Work Item assignment in the same Project/Team scope; reassignment does not change Work Item state.
 - [ ] Schedule State and Flow State options are exactly Idea, Defined, In-Progress, Completed, Accepted, Release.
 - [ ] Iteration Status displays List only; Board view/toggle remains Future Backlog.
 - [ ] Row click opens full Work Item Detail.

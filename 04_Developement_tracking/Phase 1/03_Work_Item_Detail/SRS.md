@@ -13,7 +13,7 @@
 
 ## 1. Mục tiêu
 
-Work Item Detail là nơi user xem/sửa dữ liệu nghiệp vụ của Story/Defect. UI gồm banner, tab Details/Tasks/Revision History, vùng nội dung trái và field sidebar phải.
+Work Item Detail là nơi user xem/sửa dữ liệu nghiệp vụ của Story/Defect. UI gồm banner, tab Details/Tasks/Connections/Revision History, vùng nội dung trái và field sidebar phải.
 
 ## 1.1 DevInt Audit Reconciliation - 2026-07-24
 
@@ -24,6 +24,7 @@ BA confirmed the current Detail state display contract:
 - Both fields use the same six-value catalog and mirror in both directions.
 - Team is optional: blank Team means Project backlog; selected Team means Team backlog.
 - Tasks under the Work Item use only one Task State and do not expose Schedule/Flow State.
+- BA retest confirmation 2026-08-17 accepts the DevInt extensions: `Connections` tab, `Linked Items` and `Comments` are part of Work Item Detail scope.
 
 ## 2. Tài liệu tham chiếu
 
@@ -41,20 +42,23 @@ BA confirmed the current Detail state display contract:
 | WID-FR-001 | Click item ID từ Backlog mở full Work Item Detail. |
 | WID-FR-002 | Header hiển thị Type, Item Key, Title. |
 | WID-FR-003 | Có icon collapse để thu về summary panel. |
-| WID-FR-004 | Tab Details hiển thị Description, Attachments, Notes, Release Notes. |
+| WID-FR-004 | Tab Details hiển thị Description, Attachments, Linked Items, Notes, Release Notes và Comments. |
 | WID-FR-005 | Tab Tasks hiển thị task list full width. |
 | WID-FR-006 | Tab Revision History hiển thị basic activity log. |
 | WID-FR-007 | Sidebar hiển thị Owner, Project, Team, Schedule State, Flow State, Plan Estimate, Release, Milestones, Iteration. Nếu Work Item là Defect thì hiển thị thêm Priority. |
 | WID-FR-008 | Field update phải persist DB và ghi activity log. |
-| WID-FR-009 | Project/team/status/release/iteration dropdown chỉ hiển thị option hợp lệ. |
+| WID-FR-009 | Team/status/release/iteration dropdown chỉ hiển thị option hợp lệ. Project is read-only and is not a dropdown. |
 | WID-FR-010 | User không có Admin/Editor assignment trong Project không thấy item và direct URL phải bị từ chối an toàn. |
 | WID-FR-011 | Refresh/direct URL detail phải load đúng item. |
 | WID-FR-012 | Schedule State và Flow State dùng cùng catalog `Idea/Defined/In-Progress/Completed/Accepted/Release`; đổi một field phải phản ánh field còn lại trong MVP. |
 | WID-FR-012A | UI rendering: Schedule State uses the six-box control; Flow State uses a dropdown. |
 | WID-FR-013 | Rule Schedule/Flow áp dụng cho Story/Defect; child Task tiếp tục chỉ dùng `Defined/In-Progress/Completed`. |
 | WID-FR-014 | Work Item có zero/one Release và zero/many Milestones. Milestone selector luôn giữ visible các giá trị đã chọn; đổi Release không tự thêm/xóa Milestone. Nếu đã có Release, chỉ option thêm mới bị lọc theo Milestone liên kết Release đó. |
-| WID-FR-015 | Gán Work Item vào Iteration chỉ thay đổi membership; không tự chuyển Iteration sang Committed và không khóa scope. Lifecycle Iteration tham chiếu Phase 2. |
+| WID-FR-015 | Gán Work Item vào Iteration chỉ thay đổi membership; không tự chuyển Iteration sang Committed và không khóa scope. Iteration selector phải cho phép chọn Iteration hợp lệ trong cùng Project/Team scope kể cả Iteration đã hoàn thành; end date hoặc Iteration status không khóa reassignment. Lifecycle Iteration tham chiếu Phase 2. |
 | WID-FR-016 | Owner selector phải đồng nhất Quick Create: `Unassigned` luôn có; Work Item có Team thì chỉ thêm active members của Team đó; Work Item `No team` chỉ cho `Unassigned`. |
+| WID-FR-017 | Project is inherited from the active Project context at creation and remains read-only in Work Item Detail. Moving a Work Item between Projects is not supported. |
+| WID-FR-018 | Tab Connections hiển thị các connection của Work Item và empty state khi chưa có connection. |
+| WID-FR-019 | Linked Items cho phép liên kết item; Comments hiển thị thread và cho phép gửi comment theo quyền hiện hành. |
 
 ## 4. Screen Mapping với Mockup
 
@@ -64,6 +68,9 @@ BA confirmed the current Detail state display contract:
 | Collapse icon | `onMinimize` | Trở về Backlog + summary panel selected |
 | Details tab | `RichTextEditor`, `AttachmentBlock` | Persist rich fields/attachments |
 | Tasks tab | `TASKS` table | Query child tasks |
+| Connections tab | DevInt Work Item connection view | Query/display Work Item connections; empty state when none |
+| Linked Items | DevInt linked-item block | Display and add linked items |
+| Comments | DevInt comment thread | Display and submit comments |
 | Revision tab | `RevisionHistoryPanel` | Query `activity_logs` |
 | Sidebar | `Field` controls | Patch field-level updates |
 
@@ -79,7 +86,7 @@ BA confirmed the current Detail state display contract:
 | Notes | `notes` | `work_items.notes` | Internal notes | Nullable; requires Phase 1 migration |
 | Release Notes | `releaseNotes` | `work_items.release_notes` | Technical writer content | Nullable; requires Phase 1 migration |
 | Owner | `assignee` | `work_items.assignee_id → users` | Responsible person | Nullable → Unassigned |
-| Project | `project` | `work_items.project_id → projects` | Scope | Required; changing project is advanced, may be disabled |
+| Project | `project` | `work_items.project_id → projects` | Scope | Required and read-only; fixed from the active Project context used at creation |
 | Team | `team` | `work_items.team_id → teams` | Team scope | Nullable; blank = Project backlog; if selected, validate `project_teams` |
 | Schedule State | `scheduleState` | `work_items.schedule_state` | Trạng thái lập lịch/độ chín nghiệp vụ | Required; enum `Idea/Defined/In-Progress/Completed/Accepted/Release`; default Idea; mirror Flow State trong MVP |
 | Flow State | `flowState` | `work_items.flow_state` | Trạng thái luồng thực thi | Required; cùng enum/default với Schedule State; mirror Schedule State trong MVP |
@@ -147,13 +154,17 @@ Patch request supports partial update:
 ## 9. Acceptance Criteria
 
 1. Direct open `/work-items/:itemKey` loads correct Story/Defect.
-2. Details tab render Description/Attachments/Notes/Release Notes.
+2. Details tab render Description, Attachments, Linked Items, Notes, Release Notes and Comments.
 3. Sidebar updates persist after refresh.
 4. Invalid team/release/iteration from another project is rejected.
 5. User không có Project assignment không thấy item và direct URL bị từ chối an toàn.
 6. Every update writes activity log with old/new value.
 7. Collapse icon returns user to summary panel state without losing selected item.
 8. Owner dropdown shows `Unassigned` plus active members of the Work Item Team; no Team shows only `Unassigned`.
+9. Project is displayed read-only and cannot be changed from Work Item Detail.
+10. Connections tab is available and shows either linked connections or an explicit empty state.
+11. Linked Items and Comments are available in Details and respect the current Work Item access permissions.
+12. Iteration field can assign or reassign the Work Item to an eligible completed Iteration in the same Project/Team scope without changing Schedule State or Flow State.
 
 ## 10. Implementation Breakdown
 
