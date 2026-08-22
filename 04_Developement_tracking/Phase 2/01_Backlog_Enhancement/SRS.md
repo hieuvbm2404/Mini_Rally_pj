@@ -6,7 +6,7 @@
 |---|---|
 | Module ID | `P2-BACKLOG-ENHANCEMENT` |
 | Trạng thái | Draft for Development |
-| Ngày cập nhật | 2026-08-17 |
+| Ngày cập nhật | 2026-08-22 |
 | Phạm vi | Backlog nâng cao cho Story và Defect, bao gồm gán Iteration |
 | Ưu tiên | P2.1 — bắt buộc |
 | Phụ thuộc | Phase 1 Backlog, Work Item API, Release data, Iteration data, Project/Team context |
@@ -58,7 +58,7 @@ Nghiệp vụ chính:
 - Project and optional Team context is read from the workspace selector in the top navigation.
 - Khi user chọn một Team thuộc Project nào, Backlog chỉ load Story/Defect thuộc đúng Project/Team đó.
 - Khi tạo Work Item từ Backlog, field Project được auto-fill theo context hiện tại; Team có thể để trống để item thuộc Project backlog.
-- Project is fixed by the active Project context and remains read-only in create/detail/edit flows. Team remains optional and may be selected only from Teams valid for that Project.
+- Account hiện tại trong mockup là Workspace Admin, nên vẫn có quyền đổi Project/Team trong form tạo/chỉnh sửa nếu cần.
 - Một Story/Defect có thể chưa thuộc Iteration nào; UI hiển thị `Unscheduled`.
 - Gán Iteration không tạo bản sao Work Item và không xóa item khỏi Backlog.
 - Khi đổi Iteration, Work Item chuyển sang Iteration mới và sẽ không còn xuất hiện trong Iteration Status của Iteration cũ.
@@ -71,12 +71,12 @@ Nghiệp vụ chính:
 |---|---|
 | P2-BL-FR-001 | Backlog load theo selected Project và Team context. |
 | P2-BL-FR-001A | Changing workspace selector Project/Team refreshes Backlog and only shows records in that Project/Team. |
-| P2-BL-FR-001B | Create Work Item auto-fills Project from the active Project context and keeps it read-only; Team is optional and may default from a specific Team context. |
-| P2-BL-FR-001C | Workspace Admin/Admin cannot change Work Item Project inside create/edit. To create in another Project, change the global Project context first. Team may be changed only to a Team valid for the fixed Project. |
+| P2-BL-FR-001B | Create Work Item defaults Project and Team from the current workspace selector context. |
+| P2-BL-FR-001C | Workspace Admin may override Project and Team during create/edit, but selected Team must be valid for selected Project. |
 | P2-BL-FR-001D | Team is optional. Blank Team means Project-level / Project backlog scope. `All Teams` is not required for Phase 0-4 Iteration Status. |
 | P2-BL-FR-002 | Backlog chỉ hiển thị Story và Defect; không hiển thị Task/Feature như backlog item độc lập. |
 | P2-BL-FR-003 | User có thể search theo `item_key` hoặc `title` bằng quick search `Search work...` ở toolbar. |
-| P2-BL-FR-004 | Filter gồm Type, Schedule State, Defect Priority, Owner, Release và Iteration. |
+| P2-BL-FR-004 | Filter gồm Type, Schedule State, Defect Priority, Owner, Dev Owner, Release và Iteration. |
 | P2-BL-FR-005 | User có thể mở Manage Filters và chọn nhiều column để combine filter. |
 | P2-BL-FR-006 | Filter ID, Name và Est dùng text/number input; các field còn lại dùng dropdown. |
 | P2-BL-FR-007 | Column header có sort icon; click để sort theo column. |
@@ -85,19 +85,19 @@ Nghiệp vụ chính:
 | P2-BL-FR-010 | User có quyền edit có thể inline edit Defect Priority; Story không có priority editable trong Backlog. |
 | P2-BL-FR-011 | User có quyền edit có thể inline edit Plan Estimate. |
 | P2-BL-FR-012 | User có quyền edit có thể inline edit Owner. |
+| P2-BL-FR-012A | User có quyền edit có thể inline edit optional Dev Owner. Owner và Dev Owner dùng cùng candidate source nhưng persist độc lập. |
 | P2-BL-FR-013 | User có quyền edit có thể inline edit Schedule State; Schedule State và Flow State cùng dùng catalog `Idea/Defined/In-Progress/Completed/Accepted/Release` và mirror hai chiều. |
 | P2-BL-FR-014 | User có quyền edit có thể inline edit Release. |
 | P2-BL-FR-014A | User có quyền edit có thể inline edit Iteration. |
-| P2-BL-FR-014B | Iteration inline selector includes eligible completed Iterations in the same Project/Team scope; elapsed end date or completed status does not lock assignment. |
 | P2-BL-FR-015 | User có quyền edit có thể bulk assign Release cho selected items. |
 | P2-BL-FR-015A | User có quyền edit có thể bulk assign Iteration cho selected items. |
-| P2-BL-FR-015B | Bulk Iteration assignment follows the same completed-Iteration eligibility and Project/Team scope rules as inline assignment. |
 | P2-BL-FR-016 | User có quyền manage backlog có thể reorder backlog; production cập nhật `rank`. |
 | P2-BL-FR-017 | Admin được chỉnh Backlog trong assigned Project; Editor được chỉnh trong assigned Teams; user không được gán Project không thấy Project và direct access bị từ chối. |
 | P2-BL-FR-018 | Sprint summary và Sprint planning không xuất hiện trong Backlog P2.1; Iteration assignment chỉ là field của Work Item. |
 | P2-BL-FR-019 | KPI/metric summary strip không hiển thị trong Backlog; pattern này giữ lại cho Iteration Status, Dashboard hoặc Reports. |
 | P2-BL-FR-020 | Manage Filters nằm bên trái trong filter banner; user chọn nhiều column bằng checkbox và Apply để combine filter. |
 | P2-BL-FR-021 | Header title của các cột và text record trong list dùng typography đồng đều 11px. |
+| P2-BL-FR-022 | Authorized user can delete a Defect from Backlog after confirmation. Delete is soft delete; `Closed`/`Closed Declined` remain separate lifecycle choices and are not prerequisites. |
 
 ## 5. Screen Mapping với Mockup
 
@@ -107,19 +107,21 @@ Nghiệp vụ chính:
 | Search | Search work input | Quick search by ID/title |
 | Manage filters | Left-side popover with checkbox column selection | User chooses visible filter fields |
 | Text filters | ID, Name, Est controls | Search-style input |
-| Dropdown filters | Type, Priority, Owner, Schedule State, Release, Iteration | Select values from allowed options |
+| Dropdown filters | Type, Priority, Owner, Dev Owner, Schedule State, Release, Iteration | Select values from allowed options |
 | Sort icons | Header buttons on visible columns including Rank | Server-side sort in production; local sort in mockup |
 | Table typography | 11px header title and record text | Consistent dense backlog list |
 | Inline title | Input trong Name column | PATCH title |
 | Inline priority | Select trong Priority column | PATCH priority cho Defect |
 | Inline estimate | Number input trong Est column | PATCH story points/plan estimate |
 | Inline owner | Owner select | PATCH assignee |
+| Inline Dev Owner | Dev Owner select | PATCH dedicated nullable Dev Owner reference; never overwrite assignee |
 | Inline status | Schedule State six-box control and Flow State dropdown | PATCH Schedule/Flow atomically; không nhận Code Review, Testing hoặc Released |
 | Inline release | Release select | PATCH release |
 | Inline iteration | Iteration select | PATCH iteration assignment |
 | Bulk release | Selected bar release select | Bulk mutation |
 | Bulk iteration | Selected bar iteration select | Bulk mutation |
 | Reorder | Move up/down controls | Production có thể dùng drag/drop; API dùng rank |
+| Delete Defect | Row/detail action with confirmation | Calls the shared soft-delete contract; cancel makes no change |
 
 ## 6. DB ↔ UI Field Mapping
 
@@ -130,7 +132,8 @@ Nghiệp vụ chính:
 | Title | `title` | `work_items.title` | Required; trim; max theo Phase 1 |
 | Defect Priority | `priority` | `work_items.priority` | Chỉ Defect; Story hiển thị `-` |
 | Plan Estimate | `planEstimate` | `work_items.story_points` | Numeric >= 0; nullable theo DB nhưng UI nên default empty/0 |
-| Owner | `owner` | `work_items.assignee_id -> users` | Nullable -> Unassigned |
+| Owner | `owner` | `work_items.assignee_id -> users` | Nullable -> Unassigned/No Entry; shared Project/Team candidate rule |
+| Dev Owner | `devOwner` | Dedicated nullable user reference, e.g. `work_items.dev_owner_id -> users` | Nullable -> No Entry; same candidates as Owner; must not reuse `assignee_id`; schema migration required |
 | Schedule State | `scheduleState` | `work_items.schedule_state` hoặc `status_id` tùy implementation hiện tại | Required; default Idea; mirrors Flow State |
 | Flow State | `flowState` | `work_items.flow_state` | Required; default Idea; mirrors Schedule State; Defect State remains independent |
 | Release | `release` | `work_items.release_id -> releases` | Nullable -> Unscheduled |
@@ -156,11 +159,12 @@ Query params:
 | `scheduleState` | enum | No | Filter schedule state |
 | `priority` | enum | No | Chỉ áp dụng Defect |
 | `ownerId` | UUID | No | Filter assignee |
+| `devOwnerId` | UUID | No | Filter Dev Owner |
 | `releaseId` | UUID | No | Filter release |
 | `iterationId` | UUID/string | No | Filter iteration; special value may represent Unscheduled |
 | `pageSize` | 10/25/50/100 | Yes | Default 25 |
 | `cursor` hoặc `page` | string/number | Yes | Theo pagination standard |
-| `sortBy` | enum | No | `rank`,`type`,`itemKey`,`title`,`priority`,`storyPoints`,`assignee`,`scheduleState`,`release`,`iteration` |
+| `sortBy` | enum | No | `rank`,`type`,`itemKey`,`title`,`priority`,`storyPoints`,`assignee`,`devOwner`,`scheduleState`,`release`,`iteration` |
 | `sortDirection` | `asc`,`desc` | No | Default rank order if omitted |
 
 Response:
@@ -177,6 +181,7 @@ Response:
       "scheduleState": "in_progress",
       "planEstimate": 8,
       "owner": { "id": "uuid", "fullName": "Marcus Webb", "initials": "MW" },
+      "devOwner": { "id": "uuid", "fullName": "Nghia Van Trong", "initials": "NV" },
       "release": { "id": "uuid", "name": "Q4 2024" },
       "iteration": { "id": "uuid", "name": "Sprint 24.3" },
       "isBlocked": false,
@@ -203,10 +208,26 @@ Allowed fields from Backlog:
 | `title` | Required after trim |
 | `priority` | Defect only |
 | `storyPoints` | Number >= 0 |
-| `assigneeId` | User must be active and able to work in the target Project/Team: Workspace Admin is excluded; `Admin` access is valid for all Teams; Editor must belong to the target Team |
+| `assigneeId` | Independently nullable. With a selected Team: active Project Admin, active Editor assigned to that Team, or active WA member of that Team. With blank Team: active Project Admin only; Editor/WA Team members are not offered. Team Lead has no bypass. |
+| `devOwnerId` | Independently nullable; uses the same candidate and validation rule as `assigneeId`; never changes `assigneeId` |
 | `scheduleState` or `statusId` | Must be valid project workflow/status |
 | `releaseId` | Release must belong to same project |
 | `iterationId` | Iteration must belong to same project/team context; nullable/unassigned allowed |
+
+### 7.2A Delete Defect
+
+```text
+DELETE /api/v1/work-items/:id
+```
+
+Rules:
+
+- The target must be an active Work Item with `type='defect'` in the caller's allowed Project/Team scope.
+- Caller must have `work_item.delete`.
+- The operation sets `deleted_at`; it never physically deletes the Work Item or its child Tasks, attachments, comments and relations.
+- The deleted Defect and its dependent display are excluded from active Backlog, Quality, Iteration Status and report queries.
+- A confirmation is required in the UI and a successful delete writes an activity/audit event with the actor and Defect ID.
+- `Closed` and `Closed Declined` are alternative lifecycle outcomes, not prerequisites for delete.
 
 ### 7.3 Bulk Assign Release
 
@@ -302,7 +323,8 @@ Access baseline:
 - Title cannot be empty after trim.
 - Plan Estimate must be numeric and >= 0.
 - Priority update is rejected for Story unless product later allows story priority.
-- Owner must be `Unassigned` or an active member of the Work Item Team; a `No team` Work Item allows only `Unassigned`.
+- Owner and Dev Owner are independently nullable and use the same candidate rule: active Project Admin; active Editor only in the selected assigned Team; active WA only as an active member of the selected Team. With blank Team, Editor/WA Team members are not candidates. Team Lead has no bypass.
+- Changing Team refreshes both candidate lists and the API rejects a named Owner or Dev Owner that is no longer eligible.
 - Release must belong to the same project.
 - Iteration must belong to the same project/team context.
 - Reorder neighbors must belong to the same project/backlog scope.
@@ -323,28 +345,30 @@ Access baseline:
 1. Backlog P2.1 only displays Story and Defect.
 2. Backlog list respects the active workspace selector Project and optional Team context.
 3. Changing workspace selector Project/Team refreshes Backlog records.
-4. Create Work Item auto-fills a read-only Project from the active Project context; Team remains optional and may default from a specific Team context.
-5. Project cannot be changed inside Work Item create/edit; changing Project requires changing the global Project context first. Any selected Team must belong to that fixed Project.
+4. Create Work Item auto-fills Project and Team from the active workspace selector context.
+5. Workspace Admin can override Project/Team in create/edit where enabled, but selected Team must belong to selected Project when supplied.
 6. Quick search `Search work...` remains visible in the toolbar and searches ID/title.
 7. Manage Filters allows selecting multiple columns and combines active filters after Apply.
 8. ID/Name/Est filters use text or number input; other supported fields use dropdown values.
-9. Owner and Release filters narrow the result correctly.
+9. Owner, Dev Owner and Release filters narrow the result correctly.
 10. KPI/metric summary strip is not shown in Backlog P2.1.
 11. Header sort icon changes order by the selected column, including Rank.
 12. Header title and record text render consistently at 11px.
 13. Inline title edit persists and is visible after refresh.
 14. Inline Defect Priority edit persists; Story priority remains unavailable.
 15. Inline Plan Estimate rejects negative values.
-16. Inline Owner offers `Unassigned` plus active members of the Work Item Team; `No team` offers only `Unassigned`. User không được gán Project và Workspace Admin không phải delivery owner hợp lệ.
-17. Inline Release validates same-project release.
-18. Inline Iteration validates same-project/team iteration and updates `iterationId`.
-19. Work Item Detail right panel shows Iteration and allows the same assignment rule.
-20. Bulk assign Release updates all selected valid items or fails all.
-21. Bulk assign Iteration updates all selected valid items or fails all.
-21a. Inline and bulk Iteration selectors allow eligible completed Iterations in the same Project/Team scope; assigning one does not change Work Item Schedule State or Flow State.
-22. Reorder updates item rank and preserves order after refresh.
-23. User không được gán Project không thể edit inline, bulk assign hoặc reorder.
-24. Sprint summary and Sprint planning are not present in Backlog P2.1.
+16. Inline Owner validates the shared candidate rule; active WA is eligible only when it is an active member of the selected Team.
+17. Inline Dev Owner uses the same candidate list, allows No Entry, persists separately and never overwrites Owner.
+18. Inline Release validates same-project release.
+19. Inline Iteration validates same-project/team iteration and updates `iterationId`.
+20. Work Item Detail right panel shows Iteration and allows the same assignment rule.
+21. Bulk assign Release updates all selected valid items or fails all.
+22. Bulk assign Iteration updates all selected valid items or fails all.
+23. Reorder updates item rank and preserves order after refresh.
+24. User không được gán Project không thể edit inline, bulk assign hoặc reorder.
+25. Sprint summary and Sprint planning are not present in Backlog P2.1.
+26. Authorized Delete Defect requires confirmation, soft-deletes the item, removes it from active views and preserves related data for audit/recovery.
+27. Canceling Delete makes no change; `Closed` and `Closed Declined` remain available without deleting the Defect.
 
 ## 12. Test Scenarios
 
@@ -358,7 +382,7 @@ Access baseline:
 | P2-BL-TS-006 | Try edit Story priority | UI unavailable or API rejects |
 | P2-BL-TS-007 | Switch workspace selector from Core Platform team to Identity & Access team | Backlog reloads and shows only Story/Defect records for Identity & Access |
 | P2-BL-TS-008 | Create Work Item after selecting Core Platform team | Project and Team fields default to Nexus Platform 2025 / Core Platform |
-| P2-BL-TS-009 | Workspace Admin opens create form in one Project, then tries to use another Project/invalid Team | Project remains read-only; invalid Team is absent or rejected |
+| P2-BL-TS-009 | Workspace Admin changes Team in create form to a team outside selected Project | Validation rejects invalid Project/Team pair |
 | P2-BL-TS-010 | Bulk assign selected to Q1 2025 | All selected valid items move to release |
 | P2-BL-TS-011 | Move item down then refresh | Order remains changed |
 | P2-BL-TS-012 | Unassigned user opens Backlog/direct item URL | Project/item is hidden or access is denied safely |

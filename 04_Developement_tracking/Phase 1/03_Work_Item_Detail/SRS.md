@@ -6,6 +6,7 @@
 |---|---|
 | Module ID | `P1-WI-DETAIL` |
 | Trạng thái | Draft for Development |
+| Ngày cập nhật | 2026-08-22 |
 | Phạm vi | Full page detail cho Story/Defect |
 | Ưu tiên | P1 — bắt buộc |
 | Phụ thuộc | Work Item List/Create, Content, Activity Log |
@@ -13,7 +14,7 @@
 
 ## 1. Mục tiêu
 
-Work Item Detail là nơi user xem/sửa dữ liệu nghiệp vụ của Story/Defect. UI gồm banner, tab Details/Tasks/Connections/Revision History, vùng nội dung trái và field sidebar phải.
+Work Item Detail là nơi user xem/sửa dữ liệu nghiệp vụ của Story/Defect. UI gồm banner, tab Details/Tasks/Revision History, vùng nội dung trái và field sidebar phải.
 
 ## 1.1 DevInt Audit Reconciliation - 2026-07-24
 
@@ -24,7 +25,6 @@ BA confirmed the current Detail state display contract:
 - Both fields use the same six-value catalog and mirror in both directions.
 - Team is optional: blank Team means Project backlog; selected Team means Team backlog.
 - Tasks under the Work Item use only one Task State and do not expose Schedule/Flow State.
-- BA retest confirmation 2026-08-17 accepts the DevInt extensions: `Connections` tab, `Linked Items` and `Comments` are part of Work Item Detail scope.
 
 ## 2. Tài liệu tham chiếu
 
@@ -42,23 +42,22 @@ BA confirmed the current Detail state display contract:
 | WID-FR-001 | Click item ID từ Backlog mở full Work Item Detail. |
 | WID-FR-002 | Header hiển thị Type, Item Key, Title. |
 | WID-FR-003 | Có icon collapse để thu về summary panel. |
-| WID-FR-004 | Tab Details hiển thị Description, Attachments, Linked Items, Notes, Release Notes và Comments. |
+| WID-FR-004 | Tab Details hiển thị Description, Attachments, Notes, Release Notes. |
 | WID-FR-005 | Tab Tasks hiển thị task list full width. |
 | WID-FR-006 | Tab Revision History hiển thị basic activity log. |
-| WID-FR-007 | Sidebar hiển thị Owner, Project, Team, Schedule State, Flow State, Plan Estimate, Release, Milestones, Iteration. Nếu Work Item là Defect thì hiển thị thêm Priority. |
+| WID-FR-007 | Sidebar hiển thị Owner, optional Dev Owner, Project, Team, Schedule State, Flow State, Plan Estimate, Release, Milestones, Iteration. Nếu Work Item là Defect thì hiển thị thêm Priority và optional Parent User Story. |
 | WID-FR-008 | Field update phải persist DB và ghi activity log. |
-| WID-FR-009 | Team/status/release/iteration dropdown chỉ hiển thị option hợp lệ. Project is read-only and is not a dropdown. |
+| WID-FR-009 | Project/team/status/release/iteration dropdown chỉ hiển thị option hợp lệ. |
 | WID-FR-010 | User không có Admin/Editor assignment trong Project không thấy item và direct URL phải bị từ chối an toàn. |
 | WID-FR-011 | Refresh/direct URL detail phải load đúng item. |
 | WID-FR-012 | Schedule State và Flow State dùng cùng catalog `Idea/Defined/In-Progress/Completed/Accepted/Release`; đổi một field phải phản ánh field còn lại trong MVP. |
 | WID-FR-012A | UI rendering: Schedule State uses the six-box control; Flow State uses a dropdown. |
 | WID-FR-013 | Rule Schedule/Flow áp dụng cho Story/Defect; child Task tiếp tục chỉ dùng `Defined/In-Progress/Completed`. |
 | WID-FR-014 | Work Item có zero/one Release và zero/many Milestones. Milestone selector luôn giữ visible các giá trị đã chọn; đổi Release không tự thêm/xóa Milestone. Nếu đã có Release, chỉ option thêm mới bị lọc theo Milestone liên kết Release đó. |
-| WID-FR-015 | Gán Work Item vào Iteration chỉ thay đổi membership; không tự chuyển Iteration sang Committed và không khóa scope. Iteration selector phải cho phép chọn Iteration hợp lệ trong cùng Project/Team scope kể cả Iteration đã hoàn thành; end date hoặc Iteration status không khóa reassignment. Lifecycle Iteration tham chiếu Phase 2. |
-| WID-FR-016 | Owner selector phải đồng nhất Quick Create: `Unassigned` luôn có; Work Item có Team thì chỉ thêm active members của Team đó; Work Item `No team` chỉ cho `Unassigned`. |
-| WID-FR-017 | Project is inherited from the active Project context at creation and remains read-only in Work Item Detail. Moving a Work Item between Projects is not supported. |
-| WID-FR-018 | Tab Connections hiển thị các connection của Work Item và empty state khi chưa có connection. |
-| WID-FR-019 | Linked Items cho phép liên kết item; Comments hiển thị thread và cho phép gửi comment theo quyền hiện hành. |
+| WID-FR-015 | Gán Work Item vào Iteration chỉ thay đổi membership; không tự chuyển Iteration sang Committed và không khóa scope. Lifecycle Iteration tham chiếu Phase 2. |
+| WID-FR-016 | Owner và Dev Owner là hai trách nhiệm độc lập. Cả hai dùng cùng candidate source theo Project/Team; đổi Dev Owner không được ghi đè Owner. `Unassigned`/`No Entry` luôn hợp lệ. |
+| WID-FR-017 | Khi Team được chọn, candidate gồm active Admin của Project, active Editor thuộc Team và active WA là member của Team. Khi Team trống, không offer Editor/WA Team members. Team Lead không có bypass riêng. |
+| WID-FR-018 | Parent User Story của Defect là optional, chỉ chọn active Story cùng Project và phải persist/reload nhất quán. |
 
 ## 4. Screen Mapping với Mockup
 
@@ -68,9 +67,6 @@ BA confirmed the current Detail state display contract:
 | Collapse icon | `onMinimize` | Trở về Backlog + summary panel selected |
 | Details tab | `RichTextEditor`, `AttachmentBlock` | Persist rich fields/attachments |
 | Tasks tab | `TASKS` table | Query child tasks |
-| Connections tab | DevInt Work Item connection view | Query/display Work Item connections; empty state when none |
-| Linked Items | DevInt linked-item block | Display and add linked items |
-| Comments | DevInt comment thread | Display and submit comments |
 | Revision tab | `RevisionHistoryPanel` | Query `activity_logs` |
 | Sidebar | `Field` controls | Patch field-level updates |
 
@@ -85,8 +81,9 @@ BA confirmed the current Detail state display contract:
 | Attachments | `attachments[]` | `attachments.work_item_id` | Files linked to item | Empty list if none |
 | Notes | `notes` | `work_items.notes` | Internal notes | Nullable; requires Phase 1 migration |
 | Release Notes | `releaseNotes` | `work_items.release_notes` | Technical writer content | Nullable; requires Phase 1 migration |
-| Owner | `assignee` | `work_items.assignee_id → users` | Responsible person | Nullable → Unassigned |
-| Project | `project` | `work_items.project_id → projects` | Scope | Required and read-only; fixed from the active Project context used at creation |
+| Owner | `assignee` | `work_items.assignee_id → users` | Primary responsible person | Nullable → Unassigned/No Entry; validate shared Project/Team candidate rule |
+| Dev Owner | `devOwner` / `devOwnerId` | Dedicated nullable user reference, e.g. `work_items.dev_owner_id → users` | Secondary delivery responsibility | Must not reuse or overwrite `assignee_id`; schema migration required; same candidate rule as Owner |
+| Project | `project` | `work_items.project_id → projects` | Scope | Required; changing project is advanced, may be disabled |
 | Team | `team` | `work_items.team_id → teams` | Team scope | Nullable; blank = Project backlog; if selected, validate `project_teams` |
 | Schedule State | `scheduleState` | `work_items.schedule_state` | Trạng thái lập lịch/độ chín nghiệp vụ | Required; enum `Idea/Defined/In-Progress/Completed/Accepted/Release`; default Idea; mirror Flow State trong MVP |
 | Flow State | `flowState` | `work_items.flow_state` | Trạng thái luồng thực thi | Required; cùng enum/default với Schedule State; mirror Schedule State trong MVP |
@@ -95,6 +92,7 @@ BA confirmed the current Detail state display contract:
 | Release | `release` | `work_items.release_id → releases` | Release target | Nullable → Unscheduled |
 | Milestones | `milestoneIds[]` | Work Item–Milestone relation | Zero/many Milestone targets | Selected values persist; add-new options filter by current Release relation |
 | Iteration | `iteration` | `work_items.sprint_id → sprints` | Sprint/iteration assignment | Nullable → Unscheduled |
+| Parent User Story (Defect only) | `userStory` / `userStoryId` | Dedicated Defect-to-Story relation or nullable FK | Optional owning Story | Target must be active `story` in the same Project; do not overload a hierarchy field if that would replace another required parent relation |
 | Created/Updated | `audit` | `created_at`, `updated_at`, `created_by`, `updated_by` | Audit/debug | Not necessarily visible in Phase 1 |
 
 ## 6. API Contracts
@@ -113,6 +111,7 @@ Patch request supports partial update:
   "notes": "<p>...</p>",
   "releaseNotes": "<p>...</p>",
   "assigneeId": "uuid",
+  "devOwnerId": "uuid",
   "teamId": "uuid",
   "scheduleState": "In-Progress",
   "flowState": "In-Progress",
@@ -120,7 +119,8 @@ Patch request supports partial update:
   "storyPoint": 8,
   "releaseId": "uuid",
   "milestoneIds": ["uuid"],
-  "sprintId": "uuid"
+  "sprintId": "uuid",
+  "userStoryId": "uuid"
 }
 ```
 
@@ -129,13 +129,15 @@ Patch request supports partial update:
 - `title` required, max 500.
 - `storyPoint >= 0`.
 - `teamId` must be active team linked to project.
-- `assigneeId` is nullable. A named Owner must be an active member of the selected Team; if `teamId` is null, `assigneeId` must also be null/Unassigned.
+- `assigneeId` and `devOwnerId` are independently nullable and must satisfy the same active Project/Team candidate rule. Changing Team must invalidate or clear any named value that is no longer eligible; it must never silently keep an invalid user.
+- An active Team Lead is eligible only through normal Team membership; the lead label is not a bypass.
 - `scheduleState` and `flowState` must be one of `Idea`, `Defined`, `In-Progress`, `Completed`, `Accepted`, `Release`.
 - Story/Defect update của một trong hai field phải lưu cùng giá trị cho field còn lại trong MVP; không dùng legacy `Code Review`, `Testing` hoặc spelling `Released`.
 - `priority` is accepted only for Defect and must be one of `Low`, `Normal`, `High`, `Urgent`, `None`.
 - `releaseId` and `sprintId` must belong to same project.
 - `milestoneIds[]` accepts zero or more valid Milestones. Changing `releaseId` never removes existing values; it limits only the option set for adding another Milestone.
 - Assigning `sprintId` does not auto-commit the Iteration or lock scope.
+- `userStoryId` is accepted only for Defect and must reference an active Story in the same Project.
 - Rich text must be sanitized.
 - Cannot patch soft-deleted item.
 
@@ -154,17 +156,15 @@ Patch request supports partial update:
 ## 9. Acceptance Criteria
 
 1. Direct open `/work-items/:itemKey` loads correct Story/Defect.
-2. Details tab render Description, Attachments, Linked Items, Notes, Release Notes and Comments.
+2. Details tab render Description/Attachments/Notes/Release Notes.
 3. Sidebar updates persist after refresh.
 4. Invalid team/release/iteration from another project is rejected.
 5. User không có Project assignment không thấy item và direct URL bị từ chối an toàn.
 6. Every update writes activity log with old/new value.
 7. Collapse icon returns user to summary panel state without losing selected item.
-8. Owner dropdown shows `Unassigned` plus active members of the Work Item Team; no Team shows only `Unassigned`.
-9. Project is displayed read-only and cannot be changed from Work Item Detail.
-10. Connections tab is available and shows either linked connections or an explicit empty state.
-11. Linked Items and Comments are available in Details and respect the current Work Item access permissions.
-12. Iteration field can assign or reassign the Work Item to an eligible completed Iteration in the same Project/Team scope without changing Schedule State or Flow State.
+8. Owner and Dev Owner selectors show the same eligible Project/Team candidates, allow No Entry and persist independently after refresh.
+9. Changing Team refreshes both candidate lists and prevents saving an ineligible Owner or Dev Owner.
+10. Defect Parent User Story lists only active Stories from the same Project and the saved relation reloads in detail.
 
 ## 10. Implementation Breakdown
 

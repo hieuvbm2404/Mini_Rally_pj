@@ -6,7 +6,7 @@
 |---|---|
 | Module ID | `P2-ITERATION-STATUS` |
 | Status | Ready for Development |
-| Updated date | 2026-08-17 |
+| Updated date | 2026-08-22 |
 | Scope | Track > Iteration Status |
 | Priority | P2.3 - required |
 | Depends on | Phase 1 Work Item base, Phase 2.1 Backlog Enhancement, Phase 2.2 Timeboxes > Iterations |
@@ -78,7 +78,7 @@ Nghiệp vụ chính:
 - Iteration selector only lists Iterations that belong to the selected Project and optional Team context.
 - Iteration Status only shows records related to the selected Iteration. If the Iteration is Project-level, Work Items without Team are valid. If the Iteration is Team-scoped, Work Items must match that Team.
 - Add Item modal auto-fills Project from the selected Iteration and allows Team to remain blank when the Iteration is Project-level / Project backlog.
-- Project is inherited from the active Project/selected Iteration context and is read-only in Add Item/create/detail. Team remains optional only for a Project-level Iteration; a Team-scoped Iteration pre-fills and constrains Team to that Iteration scope.
+- Account hiện tại trong mockup là Workspace Admin, nên vẫn có quyền đổi Project/Team where the form allows it; however Project and optional Team scope must remain consistent with the selected Iteration.
 - Iteration Status only shows items whose `iterationId` matches the selected Iteration.
 - The list still shows the `Iteration` column so user can confirm or move an item to another Iteration without opening Backlog.
 - If user changes Iteration from this list, the item leaves the current selected Iteration result after refresh/re-query.
@@ -110,16 +110,16 @@ Nghiệp vụ chính:
 | P2-IS-FR-016 | Tasks metric keeps the `N active` display and counts child Tasks with State other than `Completed` under current Iteration Story/Defect items. |
 | P2-IS-FR-016A | Task is never assigned to Iteration independently; it inherits Iteration through its parent Story/Defect. |
 | P2-IS-FR-016B | A `Totals` row appears immediately below the list column header and shows total Plan Est, Task Est and To Do. |
-| P2-IS-FR-016C | Plan Est total sums scoped Story/Defect Plan Estimates; Task Est total sums the independent child Task Estimate field; To Do total independently sums child Task To Do for the same scoped parents. |
+| P2-IS-FR-016C | Plan Est total sums scoped Story/Defect Plan Estimates; Task Est total sums child Task `To Do + Actual`; To Do total sums child Task `To Do` for the same scoped parents. |
 | P2-IS-FR-017 | Iteration Status list displays only Story/Defect items assigned to the selected Iteration. Child Tasks are not independent rows. |
 | P2-IS-FR-017A | Iteration Status list is sourced from Backlog/work_items where `iterationId` equals the selected Iteration. |
-| P2-IS-FR-018 | List columns are: selection checkbox, rank, ID, Name, Schedule State, Flow State, Iteration, Blocked, Plan Est, Task Est, To Do, Owner. There is no dedicated Type column; Story/Defect type is conveyed by the required `US`/`DE` formatted-ID prefix and type glyph in the identity cell. |
+| P2-IS-FR-018 | List columns are: selection checkbox, rank, ID, Name, Schedule State, Flow State, Iteration, Blocked, Plan Est, Task Est, To Do, Owner and optional Dev Owner. There is no dedicated Type column; Story/Defect type is conveyed by the required `US`/`DE` formatted-ID prefix and type glyph in the identity cell. |
 | P2-IS-FR-019 | The list must not include a per-row `Defects` column. |
 | P2-IS-FR-020 | Quick search `Filter items...` remains outside Manage Filters. |
 | P2-IS-FR-021 | User can open Show/Hide filter banner. |
 | P2-IS-FR-022 | User can use Manage Filters to select multiple columns and combine filters. |
 | P2-IS-FR-023 | Text-style filters are used for ID, Name, Plan Est, Task Est and To Do. |
-| P2-IS-FR-024 | Dropdown-style filters are used for Type, Schedule State, Flow State, Iteration, Blocked and Owner. |
+| P2-IS-FR-024 | Dropdown-style filters are used for Type, Schedule State, Flow State, Iteration, Blocked, Owner and Dev Owner. |
 | P2-IS-FR-025 | Column headers show sort affordance. |
 | P2-IS-FR-026 | Text columns sort A-Z/Z-A; numeric columns sort smallest-largest/largest-smallest; rank sorts by rank order. |
 | P2-IS-FR-027 | User can resize list columns. |
@@ -129,10 +129,8 @@ Nghiệp vụ chính:
 | P2-IS-FR-030A | User with edit permission can inline edit Flow State with a dropdown. Updating either Schedule State or Flow State mirrors the same confirmed Work Item status value. |
 | P2-IS-FR-031 | User with edit permission can inline edit Plan Est. |
 | P2-IS-FR-032 | User with edit permission can inline edit Owner. |
+| P2-IS-FR-032B | User with edit permission can inline edit optional Dev Owner. Owner and Dev Owner use the same candidate source and persist independently. |
 | P2-IS-FR-032A | User with edit permission can inline edit Iteration. |
-| P2-IS-FR-032B | User with edit permission can inline edit Dev Owner where the column is available. |
-| P2-IS-FR-032C | A successful Owner or Dev Owner inline update must persist and remain unchanged after list refresh or page reload. |
-| P2-IS-FR-032D | Work Item Iteration assignment options include eligible completed Iterations in the same Project/Team scope; elapsed end date or completed status does not lock reassignment. Changing Iteration does not change Schedule State or Flow State. |
 | P2-IS-FR-033 | Work item Schedule State options in Iteration Status are exactly: Idea, Defined, In-Progress, Completed, Accepted, Release. |
 | P2-IS-FR-034 | Legacy `Code Review`, `Testing` or `Released` values must be reconciled before display; the UI must not silently normalize a value only for this screen. |
 | P2-IS-FR-035 | User can select rows and see selected-row actions consistent with Backlog list behavior where supported. |
@@ -147,7 +145,7 @@ Nghiệp vụ chính:
 | P2-IS-FR-043 | Add Item modal does not show `Choose existing backlog item`. Existing assignment is handled through the Work Item `Iteration` field in Backlog list and Work Item Detail. |
 | P2-IS-FR-044 | Add Item modal fields are Type, Project, optional Team, Iteration, Title, Owner, and Plan Estimate. |
 | P2-IS-FR-044A | Add Item modal defaults Project from the selected Iteration and allows Team to stay blank for Project backlog scope. |
-| P2-IS-FR-044B | Project is inherited and read-only. Team may remain blank only for Project-level Iterations; otherwise it must match the selected Team-scoped Iteration. Workspace Admin does not override Project inside this flow. |
+| P2-IS-FR-044B | Workspace Admin may change Project/Team where enabled, but the final Project/Team scope must match the selected Iteration. |
 | P2-IS-FR-045 | Iteration field in Add Item modal is read-only and prefilled with the selected Iteration name/date range. |
 | P2-IS-FR-046 | Schedule State is not shown in Add Item modal; backend default is used on create. |
 | P2-IS-FR-047 | Title is required for Add Item. |
@@ -171,7 +169,7 @@ Nghiệp vụ chính:
 | Manage filters | Multi-column filter chooser | Same behavior pattern as Backlog |
 | Add Item | Button beside filter controls | Opens Add Item to Iteration modal |
 | List / Board toggle | List only in Phase 0-4 | Board view/toggle is Future Backlog and must not appear as active scope |
-| Work item list | Dense editable table | Assigned Story/Defect items for selected Iteration, including Owner/Dev Owner inline assignment, Iteration column and Totals row |
+| Work item list | Dense editable table | Assigned Story/Defect items for selected Iteration, including Iteration column and Totals row |
 | Row click | Work item row | Opens full Work Item Detail page |
 | Work Item Detail right panel | Shared Backlog detail panel | Shows Iteration field and allows same assignment behavior |
 | Add Item modal | Create new work item only | Story/Defect, preselected Iteration |
@@ -205,7 +203,7 @@ Nghiệp vụ chính:
 | Task Est | `taskEstimate` | Rollup from child tasks | Read-only |
 | To Do | `toDo` | Rollup from tasks | Read-only |
 | Owner | `ownerId` | `work_items.assignee_id` | Editable; nullable if unassigned is supported |
-| Dev Owner | UI/service assignment field | Current Work Item assignment source | Editable where displayed; a successful selection must persist after refresh/reload |
+| Dev Owner | `devOwnerId` | Dedicated nullable user reference, e.g. `work_items.dev_owner_id` | Editable; nullable -> No Entry; must not reuse/overwrite `assignee_id`; schema migration required |
 
 ### 7.3 Schedule State / Flow State Values
 
@@ -285,7 +283,7 @@ Query params:
 | `filters` | object/string | No | Dynamic filters from Manage Filters |
 | `pageSize` | 10/25/50/100 | Yes | Default 25 |
 | `page` or `cursor` | number/string | Yes | Follow standard pagination |
-| `sortBy` | enum | No | `rank`,`itemKey`,`title`,`scheduleState`,`flowState`,`iteration`,`blocked`,`planEstimate`,`taskEstimate`,`toDo`,`owner` |
+| `sortBy` | enum | No | `rank`,`itemKey`,`title`,`scheduleState`,`flowState`,`iteration`,`blocked`,`planEstimate`,`taskEstimate`,`toDo`,`owner`,`devOwner` |
 | `sortDirection` | `asc`,`desc` | No | Default rank asc |
 
 Response:
@@ -330,6 +328,11 @@ Response:
         "fullName": "Marcus Webb",
         "initials": "MW"
       },
+      "devOwner": {
+        "id": "uuid",
+        "fullName": "Nghia Van Trong",
+        "initials": "NV"
+      },
       "rank": "0|hzzzzz:"
     }
   ],
@@ -357,7 +360,7 @@ Allowed fields from Iteration Status:
 | `iterationId` | Target Iteration must belong to same Project and matching optional Team scope; nullable means Unscheduled |
 | `planEstimate` | Number >= 0 |
 | `ownerId` | User must be active and assignable in project/team |
-| Dev Owner assignment | User must be active and assignable in project/team; successful update must persist after refresh/reload |
+| `devOwnerId` | Independently nullable; same active Project/Team candidate and validation rule as `ownerId`; never changes `ownerId` |
 
 Rules:
 
@@ -437,7 +440,8 @@ Workspace Admin/Admin may update in Project scope; Editor may update in assigned
 - Iteration must belong to selected project/workspace scope.
 - Title cannot be empty after trim.
 - Plan Estimate must be numeric and >= 0.
-- Owner must be `Unassigned` or an active member of the Work Item Team; a `No team` Work Item allows only `Unassigned`.
+- Owner and Dev Owner are independently nullable. With a selected Team, candidates are active Project Admins, active Editors assigned to that Team and active WA members of that Team. With blank Team, Editor/WA Team members are not offered. Team Lead has no bypass.
+- Changing Team refreshes both candidate lists and invalid named assignments cannot be saved.
 - Schedule State and Flow State must be one of: Idea, Defined, In-Progress, Completed, Accepted, Release.
 - Iteration update must target an Iteration in the same Project and matching Team scope, or `Unscheduled` if unassignment is allowed.
 - Type in Add Item modal must be Story or Defect.
@@ -483,10 +487,9 @@ Workspace Admin/Admin may update in Project scope; Editor may update in assigned
 - [ ] Show Filter / Manage Filters supports multi-column combined filters.
 - [ ] Sort icons exist on sortable headers.
 - [ ] Column resize works.
-- [ ] Inline edit works for Name, Schedule State, Flow State, Plan Est, Owner and Dev Owner where displayed.
-- [ ] Owner and Dev Owner values remain persisted after refresh/reload.
+- [ ] Inline edit works for Name, Schedule State, Flow State, Plan Est, Owner and Dev Owner.
+- [ ] Owner and Dev Owner show the same eligible candidates, allow No Entry, persist independently and refresh after Team change.
 - [ ] Inline edit works for Iteration and moves the item to the selected target Iteration after refresh/re-query.
-- [ ] Eligible completed Iterations remain selectable for Work Item assignment in the same Project/Team scope; reassignment does not change Work Item state.
 - [ ] Schedule State and Flow State options are exactly Idea, Defined, In-Progress, Completed, Accepted, Release.
 - [ ] Iteration Status displays List only; Board view/toggle remains Future Backlog.
 - [ ] Row click opens full Work Item Detail.
@@ -510,12 +513,12 @@ Workspace Admin/Admin may update in Project scope; Editor may update in assigned
 | P2-IS-02 | Backend | Implement Iteration selector source | Timeboxes Iteration records sorted by date | P2.2 Iteration backend | 0.75h |
 | P2-IS-03 | Backend | Implement Iteration Status metrics | Planned velocity, end days, accepted, defects, tasks | Work item iteration assignment | 1.25h |
 | P2-IS-04 | Backend | Implement Iteration work item list | Search/filter/sort/pagination by selected Iteration, including Iteration field | P2.1 list patterns | 1.5h |
-| P2-IS-05 | Backend | Support inline update fields | PATCH title/status/iteration/estimate/owner with permission | Work item update API | 1.0h |
+| P2-IS-05 | Backend | Support inline update fields | PATCH title/status/iteration/estimate/owner/dev owner with permission and dedicated persistence | Work item update API | 1.0h |
 | P2-IS-06 | Backend | Create Story/Defect into Iteration | POST selected Iteration work item endpoint | Work item create API | 1.0h |
 | P2-IS-07 | Frontend | Build Track > Iteration Status route/header | Track dropdown, title, selector, no old context bar | App shell | 1.0h |
 | P2-IS-08 | Frontend | Build metrics strip | Metrics cards and loading/empty states | P2-IS-03 | 0.75h |
 | P2-IS-09 | Frontend | Build enhanced Iteration list | Backlog-style search/filter/sort/resize/pagination, including Iteration column | P2-IS-04 | 1.75h |
-| P2-IS-10 | Frontend | Implement inline editing | Name/status/iteration/estimate/owner update flow | P2-IS-05 | 1.25h |
+| P2-IS-10 | Frontend | Implement inline editing | Name/status/iteration/estimate/owner/dev owner update flow | P2-IS-05 | 1.25h |
 | P2-IS-11 | Frontend | Implement Add Item modal | Story/Defect create and create-with-details flow | P2-IS-06 | 1.25h |
 | P2-IS-12 | Frontend | Work Item Detail right-panel Iteration field | Detail opened from Iteration Status shows editable Iteration | P2-BL detail field | 0.5h |
 | P2-IS-13 | Verification | Unit/contract/e2e tests | Selector, metrics, filters, iteration column, create, detail route | P2-IS-01..12 | 1.0h |
