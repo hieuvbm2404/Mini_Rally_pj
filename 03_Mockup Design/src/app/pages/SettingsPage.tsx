@@ -436,7 +436,7 @@ function UserDetailModal({ user, projectTeamsByProject, isInvite = false, onClos
   );
 }
 
-export function SettingsPage({ role, projectReadOnly = false, initialTab = "profile" }: { role: Role; projectReadOnly?: boolean; initialTab?: string }) {
+export function SettingsPage({ role, projectReadOnly = false, initialTab = "profile", projectTestCaseTypes, onAddProjectTestCaseType, onRemoveProjectTestCaseType }: { role: Role; projectReadOnly?: boolean; initialTab?: string; projectTestCaseTypes: Record<string, string[]>; onAddProjectTestCaseType: (projectKey: string, name: string) => void; onRemoveProjectTestCaseType: (projectKey: string, name: string) => void }) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [settingsUsers, setSettingsUsers] = useState<SettingsUser[]>(SETTINGS_USERS);
   const [workspaceProjectTeams, setWorkspaceProjectTeams] = useState<Record<string, string[]>>(() => Object.fromEntries(SCOPE_PROJECTS.map(project => [project.key, project.teams])));
@@ -754,7 +754,7 @@ export function SettingsPage({ role, projectReadOnly = false, initialTab = "prof
         <div className="flex-1 overflow-auto p-6 bg-white">
           <h2 className="text-[14px] font-semibold mb-4" style={{ color: "#1a2234" }}>{sections.flatMap(s => s.items).find(i => i.key === visibleActiveTab)?.label || "Settings"}</h2>
           <div style={{ display: visibleActiveTab === "workspaceProjects" ? "contents" : "none" }}>
-            <WorkspaceProjectsPanel role={role} workspaceUsers={settingsUsers} onChangeProjectAccess={changeProjectAccess} onAddProjectTeam={addProjectTeam} />
+            <WorkspaceProjectsPanel role={role} workspaceUsers={settingsUsers} projectTestCaseTypes={projectTestCaseTypes} onAddProjectTestCaseType={onAddProjectTestCaseType} onRemoveProjectTestCaseType={onRemoveProjectTestCaseType} onChangeProjectAccess={changeProjectAccess} onAddProjectTeam={addProjectTeam} />
           </div>
           {visibleActiveTab !== "workspaceProjects" && (content[visibleActiveTab] || <p className="text-[12px]" style={{ color: "#5c6478" }}>Select a section from the left menu.</p>)}
         </div>

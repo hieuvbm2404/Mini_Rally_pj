@@ -1,7 +1,7 @@
 ﻿import { useState } from "react";
 import { TopNav, ContextBar } from "./components/layout";
 import { useEffect } from "react";
-import { type CapacityPlan, type Epic, type Feature, type IterationItem, type MilestoneItem, type NewCapacityPlanInput, type NewEpicInput, type NewFeatureInput, type NewIterationInput, type NewMilestoneInput, type NewReleaseInput, type NewTaskInput, type NewWorkItemInput, type Page, type ReleaseItem, type Role, type ScopeProject, type TaskItem, type WorkItem, toDateInputValue, CAPACITY_PLANS_DATA, EPICS, FEATURES, ITERATIONS_DATA, MILESTONES_DATA, NOTIFICATIONS, OWNERS, RELEASES_DATA, ROLE_SCOPE, SCOPE_PROJECTS, TASKS_DATA, WORK_ITEMS } from "./model";
+import { type CapacityPlan, type Epic, type Feature, type IterationItem, type MilestoneItem, type NewCapacityPlanInput, type NewEpicInput, type NewFeatureInput, type NewIterationInput, type NewMilestoneInput, type NewReleaseInput, type NewTaskInput, type NewTestCaseInput, type NewTestCaseResultInput, type NewWorkItemInput, type Page, type ReleaseItem, type Role, type ScopeProject, type TaskItem, type TestCaseItem, type TestCaseResultItem, type WorkItem, toDateInputValue, CAPACITY_PLANS_DATA, DEFAULT_TEST_CASE_TYPES, EPICS, FEATURES, ITERATIONS_DATA, MILESTONES_DATA, NOTIFICATIONS, OWNERS, RELEASES_DATA, ROLE_SCOPE, SCOPE_PROJECTS, TASKS_DATA, TEST_CASES_DATA, TEST_CASE_RESULTS_DATA, WORK_ITEMS } from "./model";
 import { HomePage } from "./pages/HomePage";
 import { TrackPage } from "./pages/IterationStatusPage";
 import { TeamBoardPage } from "./pages/TeamBoardPage";
@@ -43,6 +43,9 @@ export default function App() {
     return { ...item, releaseId, release: releaseName || item.release, team: item.team || inheritedTeam || "Core Platform" };
   }));
   const [tasks, setTasks] = useState<TaskItem[]>(TASKS_DATA);
+  const [testCases, setTestCases] = useState<TestCaseItem[]>(TEST_CASES_DATA);
+  const [testCaseResults, setTestCaseResults] = useState<TestCaseResultItem[]>(TEST_CASE_RESULTS_DATA);
+  const [projectTestCaseTypes, setProjectTestCaseTypes] = useState<Record<string, string[]>>(() => Object.fromEntries(SCOPE_PROJECTS.map(project => [project.key, [...DEFAULT_TEST_CASE_TYPES]])));
   const [iterations, setIterations] = useState<IterationItem[]>(ITERATIONS_DATA);
   const [releases, setReleases] = useState<ReleaseItem[]>(RELEASES_DATA);
   const [milestones, setMilestones] = useState<MilestoneItem[]>(MILESTONES_DATA);
@@ -141,6 +144,74 @@ export default function App() {
     setTasks(nextTasks);
     syncTaskRollup(parent.id, nextTasks);
     return task;
+  }
+  function createTestCase(parent: WorkItem, input: NewTestCaseInput): TestCaseItem {
+    const siblings = testCases.filter(testCase => testCase.parentWorkItemId === parent.id);
+    const nextNumber = Math.max(0, ...testCases.map(testCase => Number(testCase.id.replace(/\D/g, "")) || 0)) + 1;
+    const testCase: TestCaseItem = {
+      id: `TC-${nextNumber}`,
+      parentWorkItemId: parent.id,
+      rank: siblings.length + 1,
+      name: input.name,
+      description: "",
+      objective: "",
+      preconditions: "",
+      validationInput: "",
+      validationExpectedResult: "",
+      postconditions: "",
+      notes: "",
+      attachments: [],
+      project: parent.project || currentProject.key,
+      team: parent.team || "Project backlog",
+      type: input.type,
+      method: input.method,
+      priority: input.priority,
+      owner: input.owner,
+      assignedTo: OWNERS[5],
+      lastVerdict: "Not Run",
+    };
+    setTestCases(previous => [...previous, testCase]);
+    return testCase;
+  }
+  function updateTestCase(id: string, patch: Partial<TestCaseItem>) {
+    setTestCases(previous => previous.map(testCase => testCase.id === id ? { ...testCase, ...patch } : testCase));
+  }
+  function syncLatestTestCaseResult(testCaseId: string, results: TestCaseResultItem[]) {
+    const latest = results.filter(result => result.testCaseId === testCaseId).sort((a, b) => `${b.date}|${b.createdAt}`.localeCompare(`${a.date}|${a.createdAt}`))[0];
+    setTestCases(previous => previous.map(testCase => testCase.id === testCaseId ? { ...testCase, lastVerdict: latest?.verdict || "Not Run", lastRun: latest?.date } : testCase));
+  }
+  function createTestCaseResult(testCase: TestCaseItem, input: NewTestCaseResultInput): TestCaseResultItem {
+    const nextNumber = Math.max(0, ...testCaseResults.map(result => Number(result.id.replace(/\D/g, "")) || 0)) + 1;
+    const result: TestCaseResultItem = {
+      id: `TR-${nextNumber}`,
+      testCaseId: testCase.id,
+      workProductId: testCase.parentWorkItemId,
+      build: input.build,
+      date: input.date,
+      verdict: input.verdict,
+      duration: input.duration,
+      tester: input.tester,
+      notes: input.notes,
+      attachments: [],
+      createdAt: new Date().toISOString(),
+    };
+    const nextResults = [...testCaseResults, result];
+    setTestCaseResults(nextResults);
+    syncLatestTestCaseResult(testCase.id, nextResults);
+    return result;
+  }
+  function updateTestCaseResult(id: string, patch: Partial<TestCaseResultItem>) {
+    const nextResults = testCaseResults.map(result => result.id === id ? { ...result, ...patch } : result);
+    setTestCaseResults(nextResults);
+    const updated = nextResults.find(result => result.id === id);
+    if (!updated) return;
+    syncLatestTestCaseResult(updated.testCaseId, nextResults);
+  }
+  function addProjectTestCaseType(projectKey: string, name: string) {
+    setProjectTestCaseTypes(previous => ({ ...previous, [projectKey]: [...(previous[projectKey] || DEFAULT_TEST_CASE_TYPES), name] }));
+  }
+  function removeProjectTestCaseType(projectKey: string, name: string) {
+    setProjectTestCaseTypes(previous => ({ ...previous, [projectKey]: [...(previous[projectKey] || DEFAULT_TEST_CASE_TYPES)].filter(value => value !== name) }));
   }
   function updateIteration(id: string, patch: Partial<IterationItem>) {
     setIterations(previous => previous.map(iteration => iteration.id === id ? { ...iteration, ...patch } : iteration));
@@ -432,7 +503,7 @@ export default function App() {
     const projectReadOnly = currentRole === "Admin" && !ROLE_SCOPE.adminProjectKeys.includes(currentProject.key as typeof ROLE_SCOPE.adminProjectKeys[number]);
     switch (currentPage) {
       case "home": return <HomePage role={currentRole} onNavigate={navigateTo} />;
-      case "projects": return <SettingsPage role={currentRole} projectReadOnly={projectReadOnly} initialTab="workspaceProjects" />;
+      case "projects": return <SettingsPage role={currentRole} projectReadOnly={projectReadOnly} initialTab="workspaceProjects" projectTestCaseTypes={projectTestCaseTypes} onAddProjectTestCaseType={addProjectTestCaseType} onRemoveProjectTestCaseType={removeProjectTestCaseType} />;
       case "backlog": return <BacklogPage role={currentRole} project={currentProject} team={currentTeam} iterations={iterations} releases={releases} features={features} items={workItems} onCreateItem={createWorkItem} onUpdateItem={updateWorkItem} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
       case "iterations": return <IterationsPage role={currentRole} readOnly={projectReadOnly} iterations={iterations} releases={releases} milestones={milestones} workItems={workItems} onCreateIteration={createIteration} onUpdateIteration={updateIteration} onCreateRelease={createRelease} onUpdateRelease={updateRelease} onCreateMilestone={createMilestone} onUpdateMilestone={updateMilestone} onUpdateWorkItem={updateWorkItem} />;
       case "track": return <TrackPage key="track" title="Iteration" role={currentRole} readOnly={projectReadOnly} projectKey={currentProject.key} iterations={iterations} onCreateItem={createWorkItem} onUpdateIteration={updateIteration} items={workItems} tasks={tasks} onUpdateItem={updateWorkItem} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
@@ -446,7 +517,7 @@ export default function App() {
       case "releases": return <ReleasesPage role={currentRole} readOnly={projectReadOnly} />;
       case "reports": return <ReportsPage role={currentRole} readOnly={projectReadOnly} projectKey={currentProject.key} team={currentTeam} iterations={iterations} items={workItems} tasks={tasks} />;
       case "notifications": return <NotificationsPage onOpenWorkItem={openNotificationWorkItem} />;
-      case "settings": return <SettingsPage role={currentRole} projectReadOnly={projectReadOnly} />;
+      case "settings": return <SettingsPage role={currentRole} projectReadOnly={projectReadOnly} projectTestCaseTypes={projectTestCaseTypes} onAddProjectTestCaseType={addProjectTestCaseType} onRemoveProjectTestCaseType={removeProjectTestCaseType} />;
     }
   }
 
@@ -460,7 +531,7 @@ export default function App() {
         {accessState
           ? <AccessStatePage variant={accessState} onBack={() => { setAccessState(null); setCurrentPage("backlog"); }} />
           : showFullDetail && fullDetailItem
-            ? <WorkItemDetailPage item={fullDetailItem} role={currentRole} readOnly={currentRole === "Admin" && !ROLE_SCOPE.adminProjectKeys.includes((fullDetailItem.project ?? "") as typeof ROLE_SCOPE.adminProjectKeys[number])} project={currentProject} team={currentTeam} iterations={iterations} releases={releases} milestones={milestones} features={features} tasks={tasks.filter(task => task.parentWorkItemId === fullDetailItem.id)} onCreateTask={createTask} onUpdateTask={updateTask} onUpdateItem={updateWorkItem} onBack={closeFullDetail} onMinimize={minimizeFullDetail} />
+            ? <WorkItemDetailPage item={fullDetailItem} role={currentRole} readOnly={currentRole === "Admin" && !ROLE_SCOPE.adminProjectKeys.includes((fullDetailItem.project ?? "") as typeof ROLE_SCOPE.adminProjectKeys[number])} project={currentProject} team={currentTeam} iterations={iterations} releases={releases} milestones={milestones} features={features} tasks={tasks.filter(task => task.parentWorkItemId === fullDetailItem.id)} testCases={testCases.filter(testCase => testCase.parentWorkItemId === fullDetailItem.id)} testCaseResults={testCaseResults.filter(result => testCases.some(testCase => testCase.id === result.testCaseId && testCase.parentWorkItemId === fullDetailItem.id))} testCaseTypes={projectTestCaseTypes[fullDetailItem.project || currentProject.key] || [...DEFAULT_TEST_CASE_TYPES]} onCreateTask={createTask} onCreateTestCase={createTestCase} onCreateTestCaseResult={createTestCaseResult} onUpdateTask={updateTask} onUpdateTestCase={updateTestCase} onUpdateTestCaseResult={updateTestCaseResult} onUpdateItem={updateWorkItem} onBack={closeFullDetail} onMinimize={minimizeFullDetail} />
             : renderPage()}
       </div>
     </div>

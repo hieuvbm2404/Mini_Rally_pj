@@ -33,6 +33,47 @@ export interface TaskItem {
   estimate: number; todo: number; actuals: number;
   description: string; notes: string; attachments: string[];
 }
+export type TestCaseMethod = "Manual" | "Automated";
+export type TestCaseType = string;
+export const DEFAULT_TEST_CASE_TYPES = ["Acceptance", "Functional", "Regression", "Performance", "Usability"] as const;
+export type TestCasePriority = "Low" | "Normal" | "High" | "Urgent";
+export type TestCaseVerdict = "Pass" | "Fail" | "Blocked" | "Error" | "Inconclusive" | "Not Run";
+export interface TestCaseItem {
+  id: string;
+  parentWorkItemId: string;
+  rank: number;
+  name: string;
+  description: string;
+  objective: string;
+  preconditions: string;
+  validationInput: string;
+  validationExpectedResult: string;
+  postconditions: string;
+  notes: string;
+  attachments: string[];
+  project: string;
+  team: string;
+  type: TestCaseType;
+  method: TestCaseMethod;
+  priority: TestCasePriority;
+  owner: Owner;
+  assignedTo: Owner;
+  lastVerdict: TestCaseVerdict;
+  lastRun?: string;
+}
+export interface TestCaseResultItem {
+  id: string;
+  testCaseId: string;
+  workProductId: string;
+  build: string;
+  date: string;
+  verdict: Exclude<TestCaseVerdict, "Not Run">;
+  duration: number;
+  tester: Owner;
+  notes: string;
+  attachments: string[];
+  createdAt: string;
+}
 export interface NewWorkItemInput {
   type: "Story" | "Defect";
   title: string;
@@ -103,6 +144,21 @@ export interface NewTaskInput {
   todo: number;
   actuals: number;
   estimate: number;
+}
+export interface NewTestCaseInput {
+  name: string;
+  type: TestCaseType;
+  method: TestCaseMethod;
+  priority: TestCasePriority;
+  owner: Owner;
+}
+export interface NewTestCaseResultInput {
+  build: string;
+  date: string;
+  verdict: Exclude<TestCaseVerdict, "Not Run">;
+  duration: number;
+  tester: Owner;
+  notes: string;
 }
 export interface NewIterationInput {
   name: string;
@@ -256,6 +312,13 @@ export const OWNERS: Owner[] = [
   { name: "Tom Brennan", initials: "TB", color: "#7a6a2d" },
   { name: "Unassigned", initials: "—", color: "#8c94a6" },
 ];
+
+export const PROJECT_MEMBER_OWNERS: Record<string, Owner[]> = {
+  NXP: [OWNERS[0], OWNERS[1], OWNERS[2], OWNERS[3]],
+  MOB: [OWNERS[3], OWNERS[4]],
+  INF: [OWNERS[2]],
+  REP: [OWNERS[1], OWNERS[2]],
+};
 
 export const DEMO_ACCESS_PROFILES: Record<Role, { name: string; email: string; owner: Owner; label: "Workspace Admin" | "Admin" | "Editor"; scope: string }> = {
   "Workspace Admin": { name: "Marcus Webb", email: "marcus.webb@acme.com", owner: OWNERS[0], label: "Workspace Admin", scope: "All workspace" },
@@ -546,6 +609,61 @@ export const VELOCITY_DATA: VelocityIterationData[] = [
   { projectKey: "NXP", team: "Core Platform", sprint: "25.3", endDate: "2025-02-14", hasScheduledItems: true, acceptedDuring: 34, acceptedAfter: 4, notAccepted: 6 },
   { projectKey: "NXP", team: "Identity & Access", sprint: "24.5", endDate: "2024-11-26", hasScheduledItems: true, acceptedDuring: 36, acceptedAfter: 0, notAccepted: 0 },
   { projectKey: "NXP", team: "Data & Reporting", sprint: "25.1", endDate: "2025-01-17", hasScheduledItems: true, acceptedDuring: 42, acceptedAfter: 2, notAccepted: 0 },
+];
+
+export const TEST_CASES_DATA: TestCaseItem[] = [
+  {
+    id: "TC-482101",
+    parentWorkItemId: "US-4821",
+    rank: 1,
+    name: "Authenticate with valid SAML metadata",
+    description: "Verify that a tenant can authenticate successfully when valid SAML 2.0 identity provider metadata and mapped user attributes are supplied.",
+    objective: "Confirm that valid enterprise SAML metadata enables a secure sign-in flow for the intended tenant.",
+    preconditions: "The tenant is active, SAML SSO is enabled, and the tester has valid IdP metadata and mapped user attributes.",
+    validationInput: "Valid IdP metadata XML, tenant identifier, and a user account containing the required mapped attributes.",
+    validationExpectedResult: "Metadata is accepted, the user is redirected to the configured IdP, and a session is created for the correct tenant.",
+    postconditions: "The authenticated session is active and the tenant SSO configuration remains available for later sign-ins.",
+    notes: "Use a non-production tenant and remove the test session after validation.",
+    attachments: ["valid-saml-metadata.xml"],
+    project: "NXP",
+    team: "Project backlog",
+    type: "Acceptance",
+    method: "Manual",
+    priority: "High",
+    owner: OWNERS[1],
+    assignedTo: OWNERS[1],
+    lastVerdict: "Pass",
+    lastRun: "Oct 21, 2024",
+  },
+  {
+    id: "TC-482102",
+    parentWorkItemId: "US-4821",
+    rank: 2,
+    name: "Reject invalid or unsigned SAML response",
+    description: "Verify that Mini Rally rejects a SAML response whose signature is missing or invalid and does not create an application session.",
+    objective: "Confirm that invalid or unsigned SAML responses are rejected safely.",
+    preconditions: "The tenant has SAML SSO enabled and a valid baseline configuration exists.",
+    validationInput: "A SAML response with a missing or invalid signature.",
+    validationExpectedResult: "Access is denied, no application session is created, and the rejection is logged without exposing sensitive data.",
+    postconditions: "No authenticated session exists and the valid tenant configuration is unchanged.",
+    notes: "Run against the isolated security test tenant.",
+    attachments: [],
+    project: "NXP",
+    team: "Project backlog",
+    type: "Functional",
+    method: "Automated",
+    priority: "Urgent",
+    owner: OWNERS[3],
+    assignedTo: OWNERS[3],
+    lastVerdict: "Fail",
+    lastRun: "Oct 22, 2024",
+  },
+];
+
+export const TEST_CASE_RESULTS_DATA: TestCaseResultItem[] = [
+  { id: "TR-48210101", testCaseId: "TC-482101", workProductId: "US-4821", build: "2024.10.21.1", date: "2024-10-21", verdict: "Pass", duration: 18, tester: OWNERS[1], notes: "Validated against the enterprise SSO test tenant.", attachments: ["saml-run-2024-10-21.txt"], createdAt: "2024-10-21T10:15:00Z" },
+  { id: "TR-48210100", testCaseId: "TC-482101", workProductId: "US-4821", build: "2024.10.18.3", date: "2024-10-18", verdict: "Fail", duration: 22, tester: OWNERS[3], notes: "Initial run failed because the attribute mapping was incomplete.", attachments: [], createdAt: "2024-10-18T15:20:00Z" },
+  { id: "TR-48210201", testCaseId: "TC-482102", workProductId: "US-4821", build: "2024.10.22.2", date: "2024-10-22", verdict: "Fail", duration: 9, tester: OWNERS[3], notes: "Invalid signature was rejected, but the audit message did not include the expected correlation ID.", attachments: ["security-run-log.txt"], createdAt: "2024-10-22T09:45:00Z" },
 ];
 
 export const BURNDOWN_DATA = [

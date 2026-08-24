@@ -92,6 +92,42 @@ function IconButton({ label, onClick, danger = false, children }: { label: strin
   return <button aria-label={label} title={label} onClick={onClick} className="flex h-7 w-7 items-center justify-center rounded border bg-white" style={{ color: danger ? "#b91c1c" : "#5c6478", borderColor: danger ? "#f0c7c1" : "#d9dee7" }}>{children}</button>;
 }
 
+function TestCaseTypeSettings({ values, canEdit, onAdd, onRemove }: { values: string[]; canEdit: boolean; onAdd: (name: string) => void; onRemove: (name: string) => void }) {
+  const [addOpen, setAddOpen] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState("");
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const name = draft.trim();
+    if (!name) return setError("Type name is required.");
+    if (name.length > 60) return setError("Type name must be 60 characters or fewer.");
+    if (values.some(value => value.toLowerCase() === name.toLowerCase())) return setError("This Type already exists in the Project catalog.");
+    onAdd(name);
+    setDraft("");
+    setError("");
+    setAddOpen(false);
+  }
+
+  return (
+    <div className="space-y-3 pt-4" style={{ borderTop: "1px solid #e2e6eb" }}>
+      <div className="flex items-center justify-between gap-3">
+        <div><p className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: "#8c94a6" }}>Test Case Type</p><p className="mt-1 text-[10px]" style={{ color: "#5c6478" }}>Every new Project starts with the five default Types. Changes apply only to this Project.</p></div>
+        {canEdit && <button onClick={() => { setDraft(""); setError(""); setAddOpen(true); }} className="flex shrink-0 items-center gap-1.5 rounded px-3 py-1.5 text-[10px] font-semibold text-white" style={{ backgroundColor: "#1d3f73" }}><Plus size={11} /> Add New</button>}
+      </div>
+      <div>
+        <div className="flex flex-wrap gap-2">
+          {values.map(value => <span key={value} className="inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[10px]" style={{ color: "#1d3f73", backgroundColor: "#edf2fb", borderColor: "#bdd0ea" }}><span>{value}</span>{canEdit && <button aria-label={`Remove ${value} Test Case Type`} title={`Remove ${value}`} onClick={() => setRemoveTarget(value)} className="rounded-sm p-0.5" style={{ color: "#64748b" }}><X size={10} /></button>}</span>)}
+          {values.length === 0 && <p className="text-[10px]" style={{ color: "#8c94a6" }}>No selectable Test Case Types in this Project.</p>}
+        </div>
+      </div>
+      {addOpen && <div className="fixed inset-0 z-50 flex items-center justify-center"><button aria-label="Close add Test Case Type" className="absolute inset-0" style={{ backgroundColor: "rgba(15,23,42,.34)" }} onClick={() => setAddOpen(false)} /><form onSubmit={submit} className="relative w-[440px] overflow-hidden rounded-md bg-white shadow-xl" style={{ border: "1px solid #d9dee7" }}><div className="flex items-center justify-between px-5 py-3.5" style={{ backgroundColor: "#f7f8fa", borderBottom: "1px solid #e2e6eb" }}><div><h3 className="text-[13px] font-semibold" style={{ color: "#1a2234" }}>Add Test Case Type</h3><p className="text-[10px]" style={{ color: "#8c94a6" }}>Add a selectable Type to this Project.</p></div><button type="button" onClick={() => setAddOpen(false)} aria-label="Close"><X size={15} style={{ color: "#8c94a6" }} /></button></div><div className="p-5"><Field label="Name"><input autoFocus aria-label="Test Case Type Name" value={draft} onChange={event => { setDraft(event.target.value); setError(""); }} className="admin-input" /></Field>{error && <p className="mt-1.5 text-[10px]" style={{ color: "#b91c1c" }}>{error}</p>}</div><div className="flex justify-end gap-2 px-5 py-3" style={{ backgroundColor: "#f7f8fa", borderTop: "1px solid #e2e6eb" }}><button type="button" onClick={() => setAddOpen(false)} className="rounded border px-3 py-1.5 text-[11px]" style={{ borderColor: "#d9dee7", color: "#5c6478" }}>Cancel</button><button type="submit" className="rounded px-4 py-1.5 text-[11px] font-semibold text-white" style={{ backgroundColor: "#1d3f73" }}>Save</button></div></form></div>}
+      {removeTarget && <ConfirmDialog title={`Remove ${removeTarget} Test Case Type?`} body="This Type will no longer be available for new Test Cases in this Project. Existing Test Cases keep their historical Type value." action="Remove Type" onClose={() => setRemoveTarget(null)} onConfirm={() => { onRemove(removeTarget); setRemoveTarget(null); }} />}
+    </div>
+  );
+}
+
 function ConfirmDialog({ title, body, action, requiredText, onClose, onConfirm }: { title: string; body: string; action: string; requiredText?: string; onClose: () => void; onConfirm: () => void }) {
   const [typed, setTyped] = useState("");
   const ready = !requiredText || typed === requiredText;
@@ -262,7 +298,7 @@ function AddExistingUserModal({ project, projectTeams, users, onClose, onAdd }: 
   );
 }
 
-export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAccess, onAddProjectTeam }: { role: Role; workspaceUsers: SharedWorkspaceUser[]; onChangeProjectAccess: (email: string, projectKey: string, permission: ProjectPermission | undefined, teamNames: string[]) => void; onAddProjectTeam: (projectKey: string, teamName: string) => void }) {
+export function WorkspaceProjectsPanel({ role, workspaceUsers, projectTestCaseTypes, onAddProjectTestCaseType, onRemoveProjectTestCaseType, onChangeProjectAccess, onAddProjectTeam }: { role: Role; workspaceUsers: SharedWorkspaceUser[]; projectTestCaseTypes: Record<string, string[]>; onAddProjectTestCaseType: (projectKey: string, name: string) => void; onRemoveProjectTestCaseType: (projectKey: string, name: string) => void; onChangeProjectAccess: (email: string, projectKey: string, permission: ProjectPermission | undefined, teamNames: string[]) => void; onAddProjectTeam: (projectKey: string, teamName: string) => void }) {
   const [projects, setProjects] = useState(INITIAL_PROJECTS);
   const [teams, setTeams] = useState(INITIAL_TEAMS);
   const [selected, setSelected] = useState<SelectedNode>({ type: "project", key: "NXP" });
@@ -443,6 +479,7 @@ export function WorkspaceProjectsPanel({ role, workspaceUsers, onChangeProjectAc
                 </div>
                 <div><p className="text-[10px] font-semibold" style={{ color: "#5c6478" }}>Point Conversion</p><p className="mt-1 text-[12px] font-medium" style={{ color: "#1a2234" }}>1 point = {selectedProject.hoursPerPoint} hours</p></div>
               </div>
+              <TestCaseTypeSettings values={projectTestCaseTypes[selectedProject.key] || []} canEdit={canManageProjectDetails} onAdd={name => onAddProjectTestCaseType(selectedProject.key, name)} onRemove={name => onRemoveProjectTestCaseType(selectedProject.key, name)} />
             </div>
           )}
 
