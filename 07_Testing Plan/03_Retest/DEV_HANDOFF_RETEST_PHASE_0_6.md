@@ -1,3 +1,17 @@
+# DEV handoff Phase 0–6 — điểm vào hiện hành
+
+**Baseline review:** 2026-09-05. Không có lần chạy test mới trong đợt này.
+
+- [Chi tiết hành động DEV từ lần xác nhận 2026-08-17](DEV_HANDOFF_CONFIRMED_FAILURES_2026-08-17.md): giữ nguyên báo cáo đã lưu trên Git; đọc expected behavior cùng nguồn chuẩn nghiệp vụ bên dưới.
+- [Master workbook](../PHASE_0_6_AUDIT_TRACKER.xlsx): nguồn trạng thái của các lần chạy được lưu, nguyên bản Git `b26a94b8`.
+- [Nguồn chuẩn nghiệp vụ](../../04_Developement_tracking/RECONCILED_SOURCE_OF_TRUTH.md): nguồn expected behavior hiện hành.
+
+Không lấy tổng Fail/Partial của báo cáo 2026-08-15 phía dưới làm số liệu hiện tại. Không dùng default Owner Unassigned trong báo cáo cũ để thay thế C10. Giữ báo cáo nguyên nội dung để truy vết.
+
+---
+
+## Báo cáo lịch sử ngày 2026-08-15
+
 # DEV Handoff — Phase 0–6 Retest Fail & Partial
 
 **Status date:** 2026-08-15
@@ -9,7 +23,7 @@
 **Scope:** FE and approved business behavior only. Schema, database and infrastructure are out of scope.
 **Supersedes:** All older DEV handoff summaries under `01_test_phase_1_to_4` and `02_test_phase_5_6`.
 
-## 1. Current result
+## 1. Result recorded on 2026-08-15
 
 - Total workbook scenarios: **191**.
 - **20 Fail** — DEV correction required.

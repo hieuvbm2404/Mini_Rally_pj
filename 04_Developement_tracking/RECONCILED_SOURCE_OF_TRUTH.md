@@ -1,7 +1,7 @@
 # Mini Rally — Reconciled BA/FE Source of Truth
 
-**Effective date:** 2026-07-28
-**Applies to:** Phase 0–5 BA documents, test pack and frontend mockup.
+**Baseline review date:** 2026-09-05. This is a document reconciliation date, not a new BA approval or test run.
+**Applies to:** Active Phase 0–6 BA documents, test pack and frontend mockup; Phase 7 Test Case/Results is a separate After-MVP mockup baseline.
 **Scope:** business behavior, screen behavior and session-level FE mock state only. Database, API, infrastructure and persistence after browser refresh remain outside this source.
 
 **Phase 6 addendum (2026-07-31):** Reports are BA/mockup confirmed under `Phase 6/PHASE6_REPORTS_BUSINESS_AND_DATA_CONTRACT.md`. Portfolio Release Tracking is BA/mockup approved and closed for DEV handoff under `Phase 6/01_Release_Tracking/SRS.md`. These Phase 6 contracts supersede the earlier Future Backlog wording for these items only; the closed Phase 0–5 baseline remains unchanged.
@@ -18,7 +18,22 @@
 
 **Team key, context switch and Defect deletion addendum (confirmed 2026-08-22):** When creating a Team, Team Key is generated automatically from Team Name using the product's current generation rule. The generated value remains editable until the first successful save, must pass the final format/uniqueness validation and becomes immutable after creation. Selecting another Project or Team from the workspace context selector navigates to that context's Home screen and invalidates/refetches all Project/Team-scoped data; stale data from the previous context must not remain visible. An authorized user may delete a Defect through a confirmation flow. Deletion is soft delete using the Work Item lifecycle (`deleted_at`), removes the Defect and its dependent display from active Backlog/Quality/Iteration/report results, retains child Tasks, attachments, comments and relations for audit/recovery, and records the actor/action. `Closed` and `Closed Declined` remain normal lifecycle choices when the Defect should be retained; neither state is a prerequisite for deletion. Hard delete is not part of the current scope.
 
+**Phase 7 Test Case and Results addendum (confirmed 2026-08-24):** Canonical detail is `Phase 7 (After MVP)/Test Case/SRS.md`. Story/Defect Detail contains Test Cases immediately after Tasks. Add New creates a blank Test Case and inherits Work Product, Project and actual Team from the parent; `All Teams` is only a viewing scope and is never stored as a Team. Owner defaults to the eligible current user; Assigned To defaults to Unassigned. Test Case Detail contains the confirmed content fields and Project-scoped assignment metadata; no repeatable Test Steps exist in Phase 7. Results sits next to Details. Add Result persists one execution output with Build, Date, Verdict, Duration, Tester and Notes. Results list shows Build, Date, Work Product, Verdict, Duration and Tester; click Build opens two-column Result Detail. Test Case Last Verdict and Last Run are read-only rollups from the newest Result. A run is the action that produces one Result; Phase 7 has no separate Test Run entity. Test Set, batch execution and scheduling remain Future Backlog.
+
 ## 1. Use this document
+
+The repository entry point is [README](../README.md). [Baseline reconciliation](reconciliation/BASELINE_RECONCILIATION_2026-09-05.md) records the Git/local comparison and original user confirmations.
+
+### Confirmed corrections restored in this baseline
+
+- **BL-01, confirmed 2026-08-14:** Task Estimate, To Do and Actual are independent after create. Copy Estimate to a blank To Do once on create only. Completed/reopen never changes any hour value. The former equality formula and Completed-to-zero rule are superseded.
+- **BL-02, accepted 2026-08-14:** Project Key allows 1–10 uppercase alphanumeric characters after normalization, caps input at 10, remains unique and immutable after creation. Team Key keeps its own SRS validation; the Project decision does not change Team Key.
+- **BL-03, C10 confirmed 2026-08-06:** A new Story/Defect defaults Owner to the authenticated current user when eligible in the current Project/Team; the user can explicitly choose Unassigned. The later discussion about available options did not approve a universal Unassigned default. Fallback when the current user is ineligible remains unconfirmed; do not invent a fallback or assign an ineligible user. Task and Test Case defaults use their own SRS.
+- Phase 4 Roles & Permissions is the current access authority. Team Status is hidden for Editor, while the Work Item Detail Tasks tab follows the Editor's normal Team-scoped Task permission.
+- The C1–C10 paragraph above preserves the 2026-08-06 decision context. Its older User-list column wording is superseded by the current Settings SRS and the 2026-08-17 retest: Name, Email, Phone Number, Status and Last Login. This does not supersede the independently confirmed C10 Owner default.
+- Capacity Feature Estimated and blank-allocation defaults follow the current Phase 5 SRS: allocated Team totals take precedence; Refined/Preliminary are forecasts/default suggestions before allocation. Committed Team demand remains the saved manual allocation and is not automatically recalculated when those forecasts change.
+
+These corrections take precedence over older summaries and historical test expected results. Keep the original results as dated evidence; no new Pass/Fail is inferred from this update.
 
 This is the current entry point for BA, FE development and QA. It consolidates the BA-confirmed reconciliation decisions C01–C07, mockup checkpoints M1–M5.3 and the closed Phase 5 `P5-GOV v4` baseline. If an older phase document conflicts with this file, update that document before implementation; do not create a new behavior from the older wording.
 
@@ -49,13 +64,14 @@ Release <-> Milestone
 5. New Iteration defaults to `Planning`. Assigning a US/DE does not change it. An authorized user manually changes it to `Committed` when the scope is committed. `Committed` never locks scope.
 6. Plan > Backlog shows only Story/Defect items whose Iteration is `Unscheduled`. Assigning a Story/Defect to an Iteration removes it from Backlog and makes it visible in that Iteration's execution/status views; moving it back to `Unscheduled` returns it to Backlog.
 7. Task is always a child of Story/Defect, inherits its parent Work Item context and never appears as a standalone Backlog/Iteration Status row.
-8. Task `Estimate`, `To Do` and `Actual` are independent hour fields. If the Owner enters Estimate first, the system copies that same value to To Do once; after that, the fields are manually editable independently. Marking a Task `Completed` sets To Do to 0; reopening does not auto-restore To Do.
+8. Task `Estimate`, `To Do` and `Actual` are independent hour fields. On create only, an entered Estimate is copied once to a blank To Do; an explicitly entered To Do is preserved. Subsequent edits, completing and reopening a Task never recalculate or reset any of the three fields.
 9. All child Tasks `Completed` auto-change the parent US/DE to `Completed`. Reopening any Task auto-changes the parent to `In-Progress`. Manual parent status changes remain available.
 10. When an Iteration is non-empty and all assigned US/DE are `Accepted`, it auto-changes to `Accepted`. Manual Iteration status changes remain available; the system does not auto-reverse it.
 11. Portfolio Items use `Epic -> Feature -> Story/Defect -> Task`. Rally's `Initiative` concept is labelled `Epic` in Mini Rally. Epic is Project-level and has no Team or Release assignment. Feature is the lowest Portfolio Item type and the only Portfolio Item type that attaches directly to Story/Defect. A Feature has zero or one Epic; a Story/Defect has zero or one Feature. The Portfolio header Type selector has only `Epic` and `Feature`: Epic renders only in `All Teams`; specific Team + Epic shows `Filter not show item`; specific Team + Feature shows only that Team's Features.
 12. Feature has no Plan Estimate field. Capacity Planning stores committed demand as plan-specific manual `allocation.value`, while Feature progress bars show Story/Defect rollups. The `Percent Done by...` bars and left-side `Total Accepted Children` Points/Count meter use live child totals as denominator; the `Estimated Progress by...` bars use Feature top-down refined denominators (`refinedEstimate`, `refinedWorkItemCountEstimate`) or Preliminary Estimate fallback. Epic has the same four progress bars, but rolls up leaf Story/Defect through child Features and uses Epic-owned top-down denominators, not summed child Feature estimates. These Portfolio progress denominators do not drive Capacity demand. Deferred BA note 2026-07-27: the Preliminary Estimate fallback scale/mapping must become user-configurable from `Settings gear > Workspace > Project Management`; the current mock mapping is not a hard-coded final product rule.
 13. Capacity Planning uses the Mini Rally hierarchy `Workspace -> Project -> Team`. Rally child Project/Scrum Team rows are represented as Team rows under the selected Project.
 14. A Capacity Plan is unique per `Project + Release`, starts as `Draft`, and can be `Published`. Draft allocation rows are plan-specific and may split one Feature across multiple Teams. `Publish Without Updating Fields` changes visibility/status only; `Publish` also writes Release and planned dates to allocated Features without overwriting Feature Project/Team and without cascading to child Story/Defect.
+15. A Story/Defect can own zero/many Test Cases through `work_product_id`. A Test Case has one direct Work Product, the confirmed validation fields and zero/many Test Results. Each Result is one saved execution output; repeatable Steps and a separate Test Run entity are not in Phase 7.
 
 ## 3. Status contracts
 
@@ -73,7 +89,7 @@ Release <-> Milestone
 
 ## 4. Screen and navigation boundaries
 
-| Area | Current Phase 0–5 behavior |
+| Area | Current scope (Phase 7 is After MVP) |
 |---|---|
 | Plan | Backlog (Unscheduled Story/Defect only) and Timeboxes |
 | Track | Iteration Status (List-only) and Team Status |
@@ -81,18 +97,20 @@ Release <-> Milestone
 | Portfolio > Portfolio Items | **P5.1 closed for BA/mockup scope 2026-07-28.** Accepted `Epic -> Feature` hierarchy; Type filter, search/show-fields toolbar, root checkbox bulk actions, type-specific inline edit, Epic list/create/detail/children, Feature parent-Epic assignment and four progress bars. Epic has no Team or Release assignment. |
 | Portfolio > Capacity Planning | **P5.2 closed for BA/mockup scope 2026-07-28.** Single-Release Plan list/detail; Team selection from Project Breakdown; Plan-level and Team-level Feature add; one-Team assignment and multi-Team allocation; manual/forecast Capacity; live Complete/Rollup; fixed planning Estimated; advisory exceed warnings; Publish variants and Revert to Draft |
 | Portfolio > Release Tracking | **Not included in closed Phase 5. Phase 6 BA/mockup approved and closed for DEV handoff.** Dedicated surface governed by `Phase 6/01_Release_Tracking/SRS.md`; it is the final item in the Portfolio menu. |
+| Reports | Phase 6: Iteration Burndown, Velocity and Team Capacity only; current Project/Team scope and historical/live semantics follow the Phase 6 report contract. |
 | Portfolio > Release Planning | Future Backlog; not active in Phase 5 MVP |
 | Team Board / Iteration Board | Future Backlog; absent from active navigation |
+| Story/Defect Detail > Test Cases | Phase 7 After MVP: linked collection, create/detail, Project Type catalog, Results history/Add Result/Result Detail; no repeatable Steps or separate Test Run entity |
 | Settings gear > Workspaces & Projects | Single Workspace -> Project -> Team administration tree. Workspace Admin alone performs Project/Team CRUD and manages Project access; Admin/Editor see only their assigned read-only structure. Project-specific Preliminary Estimate points and Hours per point are configurable by Workspace Admin. |
 | Settings gear | Personal: Profile & Account, My Permissions. Administration: Workspace Settings, Users, Workspaces & Projects, Permission Model and Audit Log, filtered by effective access. |
 | Settings > Users | WA-only company directory. List columns are Name, Email, Phone Number, Status and Last Login. User Details separates General from Project Access; normal users may have different Access Levels per Project. |
 | Settings > Permission Model | Read-only explanation of Workspace Admin plus per-Project Admin and Editor. No custom E/R/D/H matrix editing in this MVP. |
 
-Iteration Status shows current-context Story/Defect rows assigned to the selected Iteration only. `Tasks — N active` counts all persisted child Tasks under the scoped US/DE. The Totals row derives Plan Estimate from scoped US/DE and Task Estimate/To Do from their child Tasks; Task Estimate is the explicit Task Estimate field, not `To Do + Actual`.
+Iteration Status shows current-context Story/Defect rows assigned to the selected Iteration only. `Tasks — N active` counts non-deleted child Tasks with State other than `Completed` under the scoped US/DE, per the Iteration Status SRS. The Work Item Detail child-task count includes all non-deleted child Tasks, including Completed. Totals derive Plan Estimate from scoped US/DE and Task Estimate/To Do from all their non-deleted child Tasks; Task Estimate is the explicit Task Estimate field, not `To Do + Actual`.
 
 ## 5. Identity and mock-state contract
 
-The frontend mockup uses shared, session-level collections for Features, Work Items, Tasks, Iterations, Releases and Milestones. Create creates one record; Cancel creates none. Changes made in Portfolio, Backlog, Work Item Detail, Iteration Status, Team Status, Quality and Timeboxes must show the same ID and business values in the related screens during the session.
+The frontend mockup uses shared, session-level collections for Features, Work Items, Tasks, Test Cases, Iterations, Releases and Milestones. Create creates one record; Cancel creates none. Changes made in Portfolio, Backlog, Work Item Detail, Iteration Status, Team Status, Quality and Timeboxes must show the same ID and business values in the related screens during the session.
 
 This does **not** claim persistence after refresh, API behavior or database behavior.
 
@@ -124,4 +142,4 @@ The detailed fixed capability baseline and synchronized User/Project/Team access
 
 ## 8. Required acceptance reference
 
-Before accepting production FE work, run `../07_Testing Plan/01_test_phase_1_to_4/specs/E2E_AGILE_LIFECYCLE_RECONCILIATION.md` together with the relevant scenario pack under `../07_Testing Plan/`. Phase 5-6 production checks are tracked under `../07_Testing Plan/02_test_phase_5_6/`. Phase 5 is closed at BA/mockup scope and its remaining Not Run/Partial scenarios are carried into `Phase 5/PHASE5_DEV_HANDOFF.md` as required DEV/QA acceptance coverage. Production acceptance still requires shared identity, persistence, project scope, authorization, status/roll-up behavior and metrics to agree across screens.
+Before accepting production FE work, use `../07_Testing Plan/README.md`, the master `../07_Testing Plan/PHASE_0_6_AUDIT_TRACKER.xlsx` and the relevant current scenarios, including `../07_Testing Plan/01_test_phase_1_to_4/specs/E2E_AGILE_LIFECYCLE_RECONCILIATION.md`. Dated logs remain evidence of their own run and may need retest after a rule changes. Phase 5 is closed at BA/mockup scope; its handoff is not production sign-off. Production acceptance requires shared identity, persistence, project scope, authorization, status/roll-up behavior and metrics to agree across screens. Phase 7 acceptance is separate from the Phase 0–6 master.

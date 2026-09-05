@@ -4,7 +4,13 @@
 
 > Cập nhật file này ở cuối mỗi plan trước khi gửi review. Không bắt đầu plan tiếp theo nếu plan hiện tại chưa được bạn xác nhận.
 
-## Current status
+## Current routing — reviewed 2026-09-05
+
+- Local records show P0–P7 approved on 2026-07-21 and the P8 Portfolio/Capacity delta confirmed on 2026-07-29. No conversion plan is currently active in these records.
+- Read `P7_Future_QA_and_Handoff/RELEASE_NOTES.md` for the original delivery and `P8_Phase_5_Portfolio_and_Capacity/P8_QA_AND_HANDOFF.md` for the delta. New work reopens only the affected scope.
+- Current product rules come from the SRS. This documentation review did not verify live Figma state or production behavior.
+
+## Historical P0–P7 closure — 2026-07-21
 
 - Current plan: `PLAN 7 — QA, Dev Mode and handoff` — **PROJECT COMPLETE**
 - Active plan folder: `P7_Future_QA_and_Handoff`
@@ -17,12 +23,12 @@
 
 ## P8 Phase 5 delta
 
-- Current active delta: `PLAN 8 — Phase 5 Portfolio and Capacity`.
+- Completed delta: `PLAN 8 — Phase 5 Portfolio and Capacity`.
 - Status: `COMPLETE — Plan 8 confirmed 2026-07-29. Portfolio and Capacity Planning Figma delta is Figma/BA/dev-handoff ready; production persistence, API authorization and deployment remain out of scope.`
 - Scope: P5.1 Portfolio Items (`Epic → Feature`) and P5.2 Capacity Planning only.
 - Excluded: Release Planning, Release Tracking, Reports, multi-release/plan-of-plans, deeper hierarchy and estimate-scale configuration.
 - Folder: `P8_Phase_5_Portfolio_and_Capacity`.
-- Previous P0–P7 approvals remain valid. P8 supersedes the old future/reference Portfolio screen only after P8 review.
+- Previous P0–P7 approvals remain valid. The recorded P8 confirmation supersedes the old future/reference Portfolio screen for the Portfolio/Capacity scope only.
 
 ## Gate log
 
@@ -45,7 +51,9 @@
 - `Out of scope`: không chuyển trong v1, có lý do.
 - `Needs decision`: mâu thuẫn BA/mockup/Figma hoặc thiếu business rule.
 
-## Screen coverage matrix
+## Historical P0–P7 screen coverage matrix
+
+Portfolio/Capacity coverage is superseded by the completed P8 handoff above. Other rows retain their original conversion findings.
 
 | Source mockup page | Phase / domain | Status | Figma page/link | Notes |
 |---|---|---|---|---|

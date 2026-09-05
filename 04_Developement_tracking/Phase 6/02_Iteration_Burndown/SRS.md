@@ -29,7 +29,7 @@ remainingToDo(d) = SUM(task.todo at end of day d)
 
 - Unit: hours, left axis.
 - Source: end-of-day snapshot, not today's live Task values.
-- Completed Tasks normally have `todo = 0` under the shared Task rules and therefore contribute zero.
+- Completed does not reset To Do. Every in-scope Task contributes its actual end-of-day To Do value, including a Completed Task with non-zero To Do. Only an explicitly stored zero contributes zero; do not infer it from State.
 - Editing Task ToDo later must not rewrite a past value.
 
 ### IB-BR-02 - Accepted Points

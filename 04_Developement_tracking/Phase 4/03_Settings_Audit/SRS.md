@@ -6,7 +6,7 @@
 |---|---|
 | Module ID | `P4-SETTINGS-AUDIT` |
 | Status | BA/Mockup Ready |
-| Updated date | 2026-08-17 |
+| Updated date | 2026-08-21 |
 | Scope | Workspace settings, Users, Workspaces & Projects, Permission Model, Audit Log and destructive confirmations |
 | Priority | P4.3 - required for Governance |
 | Depends on | P4.2 Project Access & Permissions |
@@ -163,7 +163,7 @@ Rules:
 - The same Project cannot be added twice for one user.
 - Saving must update `Workspaces & Projects > Project > Users & Permissions` in the same session.
 
-Workspace Admin detail instead displays `No Project Membership` because its authority is workspace-level.
+Workspace Admin detail has no editable Admin/Editor Project Access rows because its authority is workspace-level. It may show a read-only Team Membership summary for Teams where the WA was manually added; membership changes are made from the owning Team. Independently, every Project `Users & Permissions` list always shows the WA as a read-only system row with fixed `Workspace Admin` badge and no Project-access action.
 
 ### 6.4 Invite User
 
@@ -266,7 +266,7 @@ High-risk rules:
 3. Workspace Settings is WA-only and the Workspace Admin field is read-only.
 4. Users list does not imply one global Project role.
 5. User Details separates General and Project Access.
-6. Workspace Admin User Details is fully read-only and has no Project membership.
+6. Workspace Admin authority/account fields and Project Access are read-only; a read-only Team Membership summary may be shown without creating Admin/Editor Project Access, while every Project Users & Permissions list always includes the WA system row.
 7. A normal user can hold different access levels in different Projects.
 8. Project access changed in Users is synchronized with Workspaces & Projects.
 9. Permission Model is explanatory and read-only.

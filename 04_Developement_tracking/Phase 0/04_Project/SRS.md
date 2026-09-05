@@ -31,9 +31,17 @@ Permission rules in this addendum supersede older persona and project-role wordi
 - Admin has full delivery authority in an assigned Project but Project/Team/access structure is read-only.
 - Editor is limited to assigned Teams and approved delivery work.
 - A user without an Admin/Editor assignment has no Project Access row; the Project is hidden and direct access is denied.
-- Project owner is business metadata and does not grant access automatically.
+- Project owner is business metadata and does not grant access automatically; an active Workspace Admin is eligible.
 - Detailed access rules are governed by `Phase 4/02_Roles_Permissions/SRS.md`.
 - API/database sections in this Phase 0 draft must implement these effective rules even where legacy field names still say role/member.
+
+## 0.3 Workspace Admin Team Membership Reconciliation - 2026-08-19
+
+- An active Workspace Admin may be manually added to or removed from active Teams as an operational member.
+- WA Team membership uses `team_members`; it does not create a `project_members` row or change Workspace authority.
+- An active WA may be Project Owner. It may be Team Lead or Work Item Owner only for a Team where it is an active member.
+- Removing WA from a Team removes only that Team membership and preserves Workspace access.
+- Every Project Users & Permissions list always displays the active WA as a read-only system row, independent of Team membership and without creating `project_members`.
 
 ## 1. Mục tiêu và khái niệm
 
@@ -104,8 +112,8 @@ project.team.manage
 | PRJ-FR-003 | Create atomically tạo Project và settings mặc định; Project owner không tự động nhận Project Access. |
 | PRJ-FR-004 | Project key unique trong workspace; UI normalize lowercase thành uppercase, loại ký tự không hợp lệ, cho phép 1-10 ký tự A-Z/0-9 và cap input vượt 10 ký tự. |
 | PRJ-FR-005 | Project key immutable sau khi đã sinh Work Item; MVP có thể immutable ngay từ create. |
-| PRJ-FR-006 | Project owner phải là active company user; đây là business metadata, không tự cấp Project Access. |
-| PRJ-FR-007 | Chỉ company user hợp lệ mới được gán Project Access. Workspace Admin không được thêm như Project user. |
+| PRJ-FR-006 | Project owner phải là active company user, bao gồm Workspace Admin; đây là business metadata, không tự cấp Project Access. |
+| PRJ-FR-007 | Chỉ company user hợp lệ mới được gán Project Access. Workspace Admin không được gán Admin/Editor Project Access. |
 | PRJ-FR-008 | Mỗi user có tối đa một Access Level đang hiệu lực trong một Project: Admin hoặc Editor. Không có assignment nghĩa là user không truy cập Project. |
 | PRJ-FR-009 | Remove member không xóa authored/assigned/history data. |
 | PRJ-FR-010 | Archive là soft state; project trở thành read-only và ẩn mặc định khỏi active list. |
@@ -117,6 +125,9 @@ project.team.manage
 | PRJ-FR-016 | Team thuộc một parent Project trong MVP; Editor Team membership là dependency của Project context. |
 | PRJ-FR-017 | Dropdown chỉ hiển thị Project/Team user được phép truy cập; Editor không có All Teams. |
 | PRJ-FR-018 | Work Item/Sprint có `team_id` chỉ khi cặp `(project_id, team_id)` đang hoặc từng có mapping hợp lệ theo history policy. |
+| PRJ-FR-019 | Active Workspace Admin có thể được add/remove thủ công trong active Team qua `team_members`; không tạo `project_members` row và không tự add vào mọi Team. |
+| PRJ-FR-020 | WA có thể là Team Lead hoặc Work Item Owner chỉ khi là active member của Team tương ứng; remove Team membership không làm mất Workspace authority. |
+| PRJ-FR-021 | Mọi Project Users & Permissions luôn hiển thị WA dưới dạng system-generated read-only row với badge `Workspace Admin`; không dropdown/Remove, không tạo `project_members` và không tính vào Project-member metrics. |
 
 ## 5. Core Use Cases
 
@@ -217,7 +228,7 @@ created_at TIMESTAMP
 updated_at TIMESTAMP
 ```
 
-`default_assignee_id` nếu có phải là active user có `Admin` access hoặc `Editor` access trong ít nhất một Team của Project; Workspace Admin và user chưa được gán Project không hợp lệ.
+`default_assignee_id` nếu có phải là active user có `Admin` access, `Editor` access trong ít nhất một Team của Project, hoặc active Workspace Admin đang là active member của ít nhất một Team trong Project. WA không cần và không được tạo `project_members` row cho điều kiện này.
 
 ### 7.4 Workflow dependency
 
@@ -272,7 +283,7 @@ Project List phải lấy dữ liệu từ DB/API; không dùng mảng `PROJECTS
 | Owner | `items[].owner` | `projects.owner_id → users(id,full_name,avatar_url)` | Người chịu trách nhiệm | Required active company member |
 | Teams | `items[].teams[]` | `project_teams → teams` | Hiển thị Team đang link | Chỉ active links; sort team name |
 | Team count | `items[].teamCount` | `COUNT(project_teams WHERE status=active)` | Summary/+N badge | Derived, không lưu column |
-| Members | `items[].memberCount` | `COUNT(project_members WHERE status=active)` | Quy mô project | Derived |
+| Members | `items[].memberCount` | Distinct `user_id` từ active `project_members`, hợp với active WA `team_members` của các Team trong Project | Quy mô project | Derived count; WA system row mặc định không được tính, WA chỉ được tính khi có active Team membership và chỉ một lần |
 | Start Date | `items[].startDate` | `projects.start_date` | Timeline project | Nullable → “Not set” |
 | End Date | `items[].endDate` | `projects.end_date` | Timeline/validation | Nullable; chưa hiện trong list mockup |
 | Updated | `items[].updatedAt` | `projects.updated_at` | Cho biết thay đổi gần nhất | Sort DESC mặc định; render relative time |
@@ -343,13 +354,15 @@ Các field UI-only như modal open, selected Team checkbox, submit loading và v
 | UI column/field | DB source/target | Mục đích | Rule |
 |---|---|---|---|
 | Membership ID | `project_members.id` | Action key | Hidden |
-| User | `project_members.user_id → users` | Name/email/avatar | Chỉ active company user; loại Workspace Admin |
+| User | `project_members.user_id → users` | Name/email/avatar | Project Access row chỉ dành cho active normal user; loại Workspace Admin |
 | Access Level | Project access assignment | Authorization trong Project | Admin hoặc Editor; removed row = không còn Project assignment |
 | Status | `project_members.status` | Active/removed badge | Filter |
 | Joined At | `project_members.joined_at` | Audit | Nullable |
 | Add Member userId | Insert `project_members.user_id` | Thêm user | Không gửi name/email làm FK |
 | Change Access Level | Update Project access | Đổi quyền | Có hiệu lực ở next sign-in |
 | Remove | Update status/soft remove | Mất project access | Không xóa authored/history |
+
+Workspace Admin không có `project_members` row. API/UI phải luôn derive một system row read-only từ active Workspace Admin authority và Project context, hiển thị badge `Workspace Admin` mà không cần Team membership; không cung cấp Admin/Editor dropdown hoặc Project removal action. Team membership của WA vẫn derive riêng từ `project_teams -> team_members` cho operational scope và member metrics.
 
 ### 7.10 Team/Project link mapping
 
@@ -364,6 +377,15 @@ Các field UI-only như modal open, selected Team checkbox, submit loading và v
 | Team member count | `COUNT(team_members WHERE status=active)` | Team summary | Derived |
 | Link action | Insert/reactivate `project_teams` | Gắn Team | Validate same Workspace |
 | Unlink action | Set removed/unlinked_at | Gỡ Team | Không xóa Team/history |
+
+### 7.10A Workspace Admin Team member mapping
+
+| Nghiệp vụ | DB source/target | Rule |
+|---|---|---|
+| Add WA vào Team | Insert/reactivate `team_members(team_id, user_id, status)` | User phải active, có Workspace Admin authority và Team phải active/cùng Workspace |
+| Hiển thị WA trong Project | Derive từ active Workspace Admin authority + Project context | Luôn có read-only badge `Workspace Admin`; không cần Team membership và không tạo `project_members` row |
+| Chọn WA làm Team Lead/Work Item Owner | `teams.lead_id` hoặc owner field tham chiếu `users.id` | WA phải là active member của Team tương ứng |
+| Remove WA khỏi Team | Soft remove/deactivate `team_members` row | Chỉ mất membership của Team đó; Workspace authority và session grant không đổi |
 
 ### 7.11 Archive/Restore mapping
 
@@ -449,6 +471,7 @@ Create request example:
 - Project archived không create/update Work Item/Sprint/Release.
 - Project owner là business metadata, không phải Access Level và không tự cấp quyền.
 - Project access phải scope theo đúng Project; Editor còn phải scope theo Team được gán.
+- WA Team membership là operational scope, không phải Project authorization; add/remove không tạo hoặc xóa Workspace authority.
 - Chỉ Workspace Admin tạo, chỉnh, archive, restore hoặc delete Project.
 - Status transition project: active → completed/archived; restore archived → active nếu workspace active.
 
@@ -486,18 +509,23 @@ Create request example:
 2. Duplicate key trong cùng workspace bị từ chối; cùng key ở workspace khác được phép.
 3. Create transaction tạo settings nhưng không tự cấp Project Access theo owner.
 4. User chỉ thấy project được phép truy cập.
-5. Add Project user chỉ chọn eligible company user, loại Workspace Admin và disabled user.
+5. Add Project Access chỉ chọn eligible normal company user, loại Workspace Admin và disabled user.
 6. Archive giữ nguyên dữ liệu và chặn mutation.
 7. Restore hoạt động đúng permission.
 8. Project selector đổi URL/context và không lộ cache cũ.
 9. Project key bất biến và sequence contract concurrency-safe.
+10. Active WA có thể được add/remove trong active Team mà không phát sinh Admin/Editor Project Access; WA chỉ được chọn làm Team Lead/Work Item Owner khi là active Team member.
+11. Mọi Project Users & Permissions luôn hiển thị WA system row read-only kể cả khi không có normal Project member; row này không tính vào Project-member metrics.
 
 ## 14. Test Scenarios
 
 - Key lowercase/invalid/reserved/duplicate.
 - Create với owner không thuộc workspace.
 - Admin/Editor không thấy Project Create/Edit/Archive/Delete actions.
-- Add duplicate/non-company/disabled user hoặc Workspace Admin.
+- Add duplicate/non-company/disabled user hoặc Workspace Admin vào Project Access.
+- Add/remove active WA trong Team; xác nhận không có `project_members` row và Workspace authority không đổi.
+- Chọn WA làm Team Lead/Work Item Owner khi chưa thuộc Team phải bị chặn hoặc yêu cầu add membership trong cùng save.
+- Project không có normal member vẫn phải hiển thị WA system row trong Users & Permissions, không hiển thị full-list empty state.
 - Remove Project access của user đang có assigned work; dữ liệu lịch sử phải được giữ nguyên.
 - Archive/restore với active sprint/release (policy phải xác định).
 - Cross-workspace project ID attack.

@@ -1,6 +1,6 @@
 # Historical DevInt Audit Evidence — Phase 0 to Phase 4
 
-> **Current source:** The active tracker is `07_Testing Plan/PHASE_0_6_AUDIT_TRACKER.xlsx`; the only current DEV handoff is `07_Testing Plan/03_Retest/DEV_HANDOFF_RETEST_PHASE_0_6.md`. This folder now retains detailed notes and screenshots only.
+> **Current source:** The active tracker is `07_Testing Plan/PHASE_0_6_AUDIT_TRACKER.xlsx`; the only current DEV handoff is `07_Testing Plan/03_Retest/DEV_HANDOFF_RETEST_PHASE_0_6.md`. This folder retains historical trackers, detailed notes and screenshots; none is the active tracker. Superseded summary handoffs, completed plan wrappers and generated workbook inspection files were removed on 2026-09-05.
 
 > **Access-model update:** Current acceptance uses Workspace Admin plus per-Project `Admin`/`Editor`. A user without a Project assignment may be described as No Access, but Viewer and selectable No Access permissions are not in the current scope.
 
@@ -39,13 +39,13 @@ Out of scope unless BA explicitly expands it: Phase 4 Workflow Status, Labels an
 
 ## Tracker
 
-The historical Phase 0–4 trackers and completed run plans were removed after consolidation into `07_Testing Plan/PHASE_0_6_AUDIT_TRACKER.xlsx`.
+The historical Phase 0–4 trackers are retained locally for provenance. Their replacement is [the master workbook](<../07_Testing Plan/PHASE_0_6_AUDIT_TRACKER.xlsx>); do not use the older files as current status.
 
 ## Dev handoff
 
-Use only `07_Testing Plan/03_Retest/DEV_HANDOFF_RETEST_PHASE_0_6.md`. Older Phase 0–4 handoff files were deleted to avoid conflicting status counts.
+Use only [the current retest handoff](<../07_Testing Plan/03_Retest/DEV_HANDOFF_RETEST_PHASE_0_6.md>). Older Phase 0–4 summary handoffs were removed; historical results remain in the trackers, notes and screenshots.
 
-## Current full regression — 2026-07-24
+## Historical full regression — 2026-07-24
 
 - Scope: all 82 Phase 0–3 gap records.
 - Result: 27 Passed, 11 Partial, 33 Still Open and 11 Not Required.

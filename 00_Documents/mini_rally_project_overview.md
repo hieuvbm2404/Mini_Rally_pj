@@ -4,7 +4,21 @@
 
 > **Current Mini Rally authorization/navigation (2026-08-14):** The BA/mockup scope uses one Company/Workspace, one global Workspace Admin and per-Project `Admin`/`Editor`. A user without a Project assignment cannot see or directly access it. Viewer/selectable No Access are Future Backlog. PM/BA/Developer/QA are personas, not permission roles. Project/user/team administration is centralized at top-right Settings.
 
-## Current MVP/Phase Baseline — 2026-06-24
+## Phạm vi tài liệu hiện hành — rà soát 2026-09-05
+
+Điểm bắt đầu là [README dự án](../README.md) và [nguồn chuẩn nghiệp vụ](../04_Developement_tracking/RECONCILED_SOURCE_OF_TRUTH.md).
+
+- Phase 0–4: nền tảng, Work Item/Task, Iteration, Release/Milestone, Quality và governance; đọc SRS hiện hành cùng kết quả từng lần chạy trong master test.
+- Phase 5: Portfolio Items và Capacity Planning, BA/mockup closed ngày 2026-07-28.
+- Phase 6: Reports và Portfolio > Release Tracking, BA/mockup approved; không còn là Future Backlog.
+- Phase 7: Test Case và Test Results, After MVP, mockup approved ngày 2026-08-24.
+- Project/Team management nằm ở Settings góc phải; SRS Phase 1.8 mô tả luồng hiện hành. Không còn dùng quy tắc cũ “Team CRUD ngoài Phase 1”.
+
+Trạng thái triển khai production phải dựa vào evidence theo build/môi trường. Phần đề xuất sản phẩm, stack và roadmap gốc phía dưới là ngữ cảnh lịch sử; không ghi đè scope/SRS hiện hành.
+
+## Kế hoạch lịch sử — 2026-06-24
+
+> Phần này giữ lại để truy vết giai đoạn đầu, không phải trạng thái hiện tại.
 
 Phase 0 đã pass acceptance. Phase đang chuẩn bị dev là **Phase 1 — Core Work Item Management**.
 

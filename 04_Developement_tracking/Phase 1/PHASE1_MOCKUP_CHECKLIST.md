@@ -1,6 +1,6 @@
 # Phase 1 — Mockup Coverage Checklist
 
-Ngày đồng bộ: 2026-06-28
+Ngày đồng bộ: 2026-08-24
 
 ## 1. Phase scope đã chốt
 
@@ -19,7 +19,8 @@ Không nằm trong Phase 1:
 
 - Sprint planning đầy đủ.
 - Board/Kanban execution.
-- Quality/Test Case management.
+- Quality Test Set/regression scheduling và Test Run management đầy đủ.
+- Test Case và Test Results; mockup discovery đã chuyển sang Phase 7 (After MVP).
 - Portfolio hierarchy.
 - Release planning đầy đủ.
 - Report/analytics nâng cao.
@@ -42,7 +43,7 @@ Không nằm trong Phase 1:
 | Create Work Item | Buttons Cancel/Create/Create with details | ✅ | `BacklogPage.tsx` | Create with details đang là mock action |
 | Create Work Item | Full create-with-details flow | 🟡 | `BacklogPage.tsx`, `WorkItemDetailPage.tsx` | Chưa có screen create-detail riêng; production có thể create rồi redirect detail |
 | Work Item Detail | Header Story/ID/Name | ✅ | `WorkItemDetailPage.tsx` | Có collapse icon và back |
-| Work Item Detail | Tabs Details/Tasks/Revision History | ✅ | `WorkItemDetailPage.tsx` | Đúng scope Phase 1 |
+| Work Item Detail | Tabs Details/Tasks/Test Cases/Revision History | ✅ | `WorkItemDetailPage.tsx` | Test Cases nằm ngay sau Tasks, theo Work Product collection của Rally |
 | Work Item Detail | Details left/right layout | ✅ | `WorkItemDetailPage.tsx` | Left content, right field panel, scroll riêng |
 | Work Item Detail | Description rich editor | ✅ | `WorkItemDetailPage.tsx` | Toolbar mockup đầy đủ |
 | Work Item Detail | Attachments | ✅ | `WorkItemDetailPage.tsx` | Drag/click area |
@@ -59,6 +60,13 @@ Không nằm trong Phase 1:
 | Task Detail | Right fields Task State/Owner/Project/Team/Work Product/Estimate/To Do/Actual | ✅ | Task State chỉ Defined/In-Progress/Completed; ba hour fields độc lập sau create |
 | Activity Log | Work Item Revision History | ✅ | `WorkItemDetailPage.tsx` | Basic activity log table |
 | Activity Log | Task Revision History | ✅ | `WorkItemDetailPage.tsx` | Basic activity log theo task |
+| Test Case Collection | List linked Test Cases | ✅ | `WorkItemDetailPage.tsx`, `model.ts`, `App.tsx` | Rank, ID, Name, Type, Method, Priority, Owner, Last Verdict, Last Run; không show Steps trên list |
+| Test Case Create | Add New blank Test Case | ✅ | `WorkItemDetailPage.tsx`, `App.tsx` | Name required; Work Product tự fill bằng Story/Defect hiện tại; không copy Title/Description |
+| Test Case Detail | Click ID opens two-column detail | ✅ | `WorkItemDetailPage.tsx`, `App.tsx`, `model.ts` | Left Description, Objective, conditions, validation fields, Notes, Attachments; right Owner, Project, Team, Assigned To and test metadata; bỏ Rank |
+| Test Case Assignment | Project-scoped Owner/Assigned To | ✅ | `WorkItemDetailPage.tsx`, `model.ts` | Hai field độc lập, chỉ chọn active Project members; Project/Team auto-fill read-only |
+| Test Case Results | Results list/Add Result/Result Detail | ✅ | `WorkItemDetailPage.tsx`, `model.ts`, `App.tsx` | Mockup Phase 7; Result là output của một lần chạy, không có Test Run entity riêng |
+| Test Case Type Configuration | Project catalog | ✅ | `WorkspaceProjectsPanel.tsx`, `App.tsx`, `model.ts` | Project mới có 5 defaults; Add New modal; dấu × deactivate khỏi list chọn mới; không có Workspace-level config |
+| Test Case Type Configuration | Confirm removal | ✅ | `WorkspaceProjectsPanel.tsx` | Click × mở confirm; Cancel giữ Type; Confirm mới deactivate; lịch sử giữ nguyên |
 | Manage | Workspace menu mở Manage page | ✅ | `ProjectsPage.tsx`, `layout.tsx` | Breadcrumb hiển thị `ACME Space Inc. > Manage` |
 | Manage Projects | Projects tab giữ list/create/edit/archive project | ✅ | `ProjectsPage.tsx` | Đã có từ trước, đưa vào Manage tab |
 | Settings Teams | Settings gear > Teams list/filter/create/edit/deactive team | ✅ | `SettingsPage.tsx`, `ProjectsPage.tsx` | Manage Projects không còn Teams tab; list không có Members/Capacity/Velocity columns |
@@ -78,6 +86,8 @@ Không nằm trong Phase 1:
 | Schedule State / Flow State | `work_items.schedule_state`, `work_items.flow_state` | ✅ M1/M3/M5.1 confirmed | Cùng 6 options; Detail mirror hai chiều; create default Idea; shared Work Item state reflects cross-screen for the current mockup session. Refresh/API persistence remains DevInt scope. |
 | Owner | `work_items.assignee_id` | ✅ | Join `users` |
 | Plan Estimate | `work_items.story_point` | ✅ | Mapping tên UI `Plan Estimate` → DB `story_point` |
+| Test Case collection | `test_cases.work_product_id`, `test_case_results.test_case_id` | 🟡 | Phase 7 After MVP; DEV cần migration/API/persistence theo Phase 7 Test Case SRS |
+| Test Case Type catalog | `test_case_types.workspace_id`, required `project_id` | 🟡 | Mockup/session state đã có; DEV cần seed 5 defaults per Project, scope validation và soft remove |
 | Task Estimate | `estimate_hours` | ✅ | Editable độc lập; create-time copy Estimate -> To Do một lần khi To Do blank |
 | To Do | DB design đã bổ sung `todo_hours` | ✅ | Production migration cần implement |
 | Actual | DB design đã bổ sung `actual_hours` | ✅ | Phase 1 chốt nhập tay |

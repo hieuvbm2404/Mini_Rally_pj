@@ -1,13 +1,13 @@
 # Machine Handoff — Mini Rally Convert to Figma
 
-> **Permission update (2026-08-10):** Plan 6 role-matrix nodes remain historical Figma assets. Current product truth is the updated Phase 4 SRS/mockup: Workspace Admin plus per-Project `Admin`/`Editor`/`Viewer`/`No Access`, with a read-only Permission Model.
+> **Routing update (2026-09-05):** P0–P7 is the original conversion; P8 Portfolio/Capacity was subsequently confirmed on 2026-07-29 according to the local handoff records. Node inventories below describe their original conversion dates. Current product permissions come from Phase 4 SRS: Workspace Admin plus per-Project `Admin`/`Editor`; no Project assignment means no access, not a selectable permission. Viewer/selectable No Access remain Future Backlog. This document review did not inspect or modify the live Figma file.
 
 ## Resume source of truth
 
 1. Read `AI_EXECUTION_WORKFLOW.md`.
 2. Read `CONVERSION_PROGRESS.md`.
-3. Read `P2_Core_Component_Library/PLAN.md`, `P2_PROGRESS.md`, `P2_FIGMA_STATE_LEDGER.json`, `P2_COMPONENT_CATALOG.md` and `P2_VALIDATION.md`.
-4. **All 8 plans (0 through 7) are approved. The Mini Rally mockup-to-Figma conversion project is complete.** `CONFIRM PLAN 7` was received on 2026-07-21. There is no Plan 8 — do not start new screen work speculatively. Any future session against this file should be a maintenance/change-request against a finished deliverable ("reopen Plan N for the affected item," per `AI_EXECUTION_WORKFLOW.md` rule 3), not a continuation of the plan checklist. Read `P7_Future_QA_and_Handoff/RELEASE_NOTES.md` first — it is the single authoritative summary of everything built, found and still open across all 8 plans.
+3. Read `P7_Future_QA_and_Handoff/RELEASE_NOTES.md` for the original P0–P7 delivery, then `P8_Phase_5_Portfolio_and_Capacity/P8_QA_AND_HANDOFF.md` and `P8_FIGMA_STATE_LEDGER.json` in that same P8 folder for Portfolio/Capacity.
+4. The local records show P0–P7 approved on 2026-07-21 and the P8 delta confirmed on 2026-07-29. Treat new work as a requested change to the affected plan. Read that plan's scope and ledger before acting; P2 component references are needed only when the affected work depends on the core component library.
 
 ## Target Figma file
 
@@ -16,7 +16,7 @@
 - Required skills for every Figma write: `figma-use`, `figma-generate-library`.
 - Figma mutations must run sequentially. Return every mutated/created node ID. Use `setSharedPluginData('dsb', ...)` and the ledger.
 
-## Current status: PROJECT COMPLETE — all 8 plans approved
+## Historical P0–P7 delivery — approved 2026-07-21
 
 Plan 7 closed out the whole conversion: 4 new Future/Reference screens (`SCR-14`-`17`, page `Screens — Phase 4`, deliberately lower fidelity per D-002), naming/token/accessibility audits (`P7_ACCESSIBILITY_AND_RESPONSIVE_AUDIT.md`), a real token-binding defect found and fixed (`font/size/base`/`lg`/`xl` never existed — see point 9 below), Dev Mode + Code Connect backlog docs (`P7_DEV_MODE_GUIDE.md`, `P7_CODE_CONNECT_BACKLOG.md`), and a dev-handoff walkthrough that found and fixed a real gap in the Plan 3 pilot (Contract 5/Destructive delete had zero persisted Figma evidence — added pilot frame 6, `183:2802`). **`P7_Future_QA_and_Handoff/RELEASE_NOTES.md` is now the single authoritative project summary** — read it first, not this section, for anything beyond "what to do next."
 
@@ -56,9 +56,9 @@ Completed and QA-passed native component sets:
 
 Reusable local icons: ChevronRight `11:6`, Plus `11:9`, X `11:12`, MoreHorizontal `23:6`, ChevronDown `40:2`, Check `41:2`, AlertCircle `54:2`, InfoCircle `54:6`.
 
-## Exact resume point
+## Historical P0–P7 resume notes
 
-**All 8 plans are confirmed. The project is done.** A future session opened against this file should read `RELEASE_NOTES.md` first, then treat any request as a maintenance/change-request against a finished deliverable — reopen the specific plan folder whose screen/component is affected, don't restart the checklist.
+The following node inventory records the P0–P7 delivery. Use the resume sources above for current routing, including the P8 delta. Historical gaps below are not a fresh assessment against the September business baseline.
 
 Plan 7 Figma additions (page `Screens — Phase 4`, same page as Plan 6): `SCR-14 Release Planning (Placeholder, Future)` `174:1737`; `SCR-15 Portfolio (Future)` `175:1713`; `SCR-16 Team Board (Future)` `176:1930`; `SCR-17 Reports (Future)` `177:2156`. Plus pilot frame `6 — Destructive delete confirmation (Contract 5)` `183:2802` added to `Pilot — Backlog to Detail` (`96:12`) to close a real gap (see point 9 below and `P7_DEV_HANDOFF_WALKTHROUGH.md`). New tokens: `font/size/base`/`lg`/`xl` (aliases to `body`/`label`/`page` — see point 9). All four P7.a screens use a one-off `future-reference-banner` marker frame, not a component (deliberately not reusable — see `P7_PROGRESS.md`).
 
@@ -97,5 +97,5 @@ Plan 4 Figma page: `Screens — Phase 0–1` (`104:2300`). Key screens: `SCR-00 
 ## Copy-paste prompt for the new machine
 
 ```text
-Open D:\Mini_Rally_pj\08_Convert to figma. All 8 plans (0 through 7) are approved — the Mini Rally mockup-to-Figma conversion project is complete. Read MACHINE_HANDOFF.md and P7_Future_QA_and_Handoff/RELEASE_NOTES.md (the authoritative project summary: final coverage, every found-and-fixed defect, the full Q-01–Q-16 open-question ledger, recommended implementation order). Treat any new request as a maintenance/change-request against a finished deliverable — reopen the specific plan folder whose screen or component is affected, don't restart the plan checklist.
+Open D:\Mini_Rally_pj\08_Convert to figma. Read MACHINE_HANDOFF.md and CONVERSION_PROGRESS.md, then P7_Future_QA_and_Handoff/RELEASE_NOTES.md for the original conversion and P8_Phase_5_Portfolio_and_Capacity/P8_QA_AND_HANDOFF.md for the Portfolio/Capacity delta. The local records show P0–P8 confirmed; verify live file state and current SRS before a requested change. Reopen only the affected plan. Do not infer production readiness from conversion completion.
 ```

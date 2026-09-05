@@ -6,15 +6,17 @@
 |---|---|
 | Module ID | `P1-WI-DETAIL` |
 | Trạng thái | Draft for Development |
-| Ngày cập nhật | 2026-08-22 |
-| Phạm vi | Full page detail cho Story/Defect |
+| Ngày cập nhật | 2026-08-24 |
+| Phạm vi | Full page detail cho Story/Defect, gồm child Tasks và Test Cases |
 | Ưu tiên | P1 — bắt buộc |
 | Phụ thuộc | Work Item List/Create, Content, Activity Log |
-| Không bao gồm | Custom workflow designer, test cases, child stories |
+| Không bao gồm | Custom workflow designer, Test Set/regression scheduling, child stories |
+
+> **Phase ownership update 2026-08-24:** Test Case and Test Results are moved to `Phase 7 (After MVP)/Test Case/SRS.md`. That SRS is canonical; the Test Case notes retained here are only Work Item integration context.
 
 ## 1. Mục tiêu
 
-Work Item Detail là nơi user xem/sửa dữ liệu nghiệp vụ của Story/Defect. UI gồm banner, tab Details/Tasks/Revision History, vùng nội dung trái và field sidebar phải.
+Work Item Detail là nơi user xem/sửa dữ liệu nghiệp vụ của Story/Defect. UI gồm banner, tab Details/Tasks/Test Cases/Revision History, vùng nội dung trái và field sidebar phải.
 
 ## 1.1 DevInt Audit Reconciliation - 2026-07-24
 
@@ -58,6 +60,18 @@ BA confirmed the current Detail state display contract:
 | WID-FR-016 | Owner và Dev Owner là hai trách nhiệm độc lập. Cả hai dùng cùng candidate source theo Project/Team; đổi Dev Owner không được ghi đè Owner. `Unassigned`/`No Entry` luôn hợp lệ. |
 | WID-FR-017 | Khi Team được chọn, candidate gồm active Admin của Project, active Editor thuộc Team và active WA là member của Team. Khi Team trống, không offer Editor/WA Team members. Team Lead không có bypass riêng. |
 | WID-FR-018 | Parent User Story của Defect là optional, chỉ chọn active Story cùng Project và phải persist/reload nhất quán. |
+| WID-FR-019 | Story và Defect có tab `Test Cases` nằm ngay sau `Tasks`; tab hiển thị số Test Case liên kết trực tiếp với Work Item. |
+| WID-FR-020 | Test Cases tab là collection full-width, hiển thị Rank, ID, Name, Type, Method, Priority, Owner, Last Verdict và Last Run. Không hiển thị Steps trên list view. |
+| WID-FR-021 | `Add New` mở modal Test Case trống, yêu cầu Name và cho chọn Type, Method, Priority, Owner. Khi tạo từ tab này, hệ thống tự điền Work Product bằng chính Story/Defect đang mở; không yêu cầu user chọn lại và không tự sao chép Title/Description. |
+| WID-FR-022 | Một Test Case chỉ có một Work Product trực tiếp tại một thời điểm. Work Product hợp lệ là active Story hoặc Defect cùng Project. |
+| WID-FR-023 | Phase 7 không có repeatable Test Steps. Test Case dùng một Validation Input và một Validation Expected Result theo SRS Phase 7. |
+| WID-FR-024 | Test Set và lịch chạy regression không nằm trong tab Test Cases của Work Item; đó là scope Quality riêng. |
+| WID-FR-025 | Mỗi Project mới tự sinh 5 Test Case Type: `Acceptance`, `Functional`, `Regression`, `Performance`, `Usability`. Không có cấu hình Test Case Type ở tầng Workspace. |
+| WID-FR-026 | Workspace Admin quản lý danh mục riêng của từng Project: `Add New` mở modal Name, Save thêm Type vào list; click dấu `×` phải mở confirm dialog. Cancel giữ nguyên; xác nhận mới loại Type khỏi danh sách chọn mới của Project. |
+| WID-FR-027 | Type name required, trim khoảng trắng, tối đa 60 ký tự và unique không phân biệt hoa/thường trong Project. Xóa Type đã được dùng không được sửa/xóa giá trị lịch sử trên Test Case cũ. |
+| WID-FR-028 | Click Test Case ID từ collection mở Test Case Detail. Detail dùng layout hai cột đồng nhất Work Item Detail. Bên trái có Description, Objective, Pre-conditions, Validation Input, Validation Expected Result, Post-conditions, Notes và Attachments. |
+| WID-FR-029 | Sidebar Test Case Detail bỏ Rank và hiển thị Owner, Project, Team, Assigned To, Type, Method, Priority, Last Verdict, Last Run, Work Product. Project/Team kế thừa Work Product; `All Teams` không được lưu thành Team. Last Verdict/Last Run/Work Product là read-only. |
+| WID-FR-030 | Owner và Assigned To là hai trách nhiệm độc lập. Cả hai selector chỉ hiển thị active users đã là member của Project chứa Test Case; thay đổi một field không ghi đè field còn lại. |
 
 ## 4. Screen Mapping với Mockup
 
@@ -67,6 +81,8 @@ BA confirmed the current Detail state display contract:
 | Collapse icon | `onMinimize` | Trở về Backlog + summary panel selected |
 | Details tab | `RichTextEditor`, `AttachmentBlock` | Persist rich fields/attachments |
 | Tasks tab | `TASKS` table | Query child tasks |
+| Test Cases tab | `TestCasesView`, `AddTestCaseModal` | Query/create Test Cases qua Work Product relation |
+| Test Case Detail | `TestCaseDetailView` | Click Test Case ID; load/patch Test Case và giữ Work Product hiện tại |
 | Revision tab | `RevisionHistoryPanel` | Query `activity_logs` |
 | Sidebar | `Field` controls | Patch field-level updates |
 
@@ -93,6 +109,11 @@ BA confirmed the current Detail state display contract:
 | Milestones | `milestoneIds[]` | Work Item–Milestone relation | Zero/many Milestone targets | Selected values persist; add-new options filter by current Release relation |
 | Iteration | `iteration` | `work_items.sprint_id → sprints` | Sprint/iteration assignment | Nullable → Unscheduled |
 | Parent User Story (Defect only) | `userStory` / `userStoryId` | Dedicated Defect-to-Story relation or nullable FK | Optional owning Story | Target must be active `story` in the same Project; do not overload a hierarchy field if that would replace another required parent relation |
+| Test Cases | `testCases[]` | `test_cases.work_product_id → work_items.id` | Collection kiểm thử trực tiếp của Story/Defect | Một Test Case có đúng một Work Product; chỉ active Story/Defect cùng Project |
+| Test Case content | `description/objective/preconditions/validationInput/validationExpectedResult/postconditions/notes` | Các cột tương ứng trên `test_cases` | Nội dung kiểm thử ở cột trái Test Case Detail | Nullable; rich text sanitized |
+| Test Case Detail fields | `owner/project/team/assignedTo/type/method/priority/lastVerdict/lastRun` | Các cột/FK tương ứng trên `test_cases` | Metadata ở sidebar phải | Owner/Assigned To validate Project membership; Project/Team/Last Run read-only; Type cũ vẫn render nếu catalog đã deactivate |
+| Test Case Attachments | `attachments[]` | `attachments.test_case_id → test_cases.id` | File đính kèm Test Case | Mỗi attachment có đúng một parent target; giữ tenant/project scope |
+| Test Results | `results[]` | `test_case_results.test_case_id → test_cases.id` | Lịch sử output của các lần thực thi | SRS Phase 7 là canonical; không có bảng Test Run riêng |
 | Created/Updated | `audit` | `created_at`, `updated_at`, `created_by`, `updated_by` | Audit/debug | Not necessarily visible in Phase 1 |
 
 ## 6. API Contracts
@@ -100,6 +121,10 @@ BA confirmed the current Detail state display contract:
 ```text
 GET   /api/v1/work-items/:itemKey
 PATCH /api/v1/work-items/:id
+GET   /api/v1/work-items/:id/test-cases
+POST  /api/v1/work-items/:id/test-cases
+GET   /api/v1/test-cases/:id
+PATCH /api/v1/test-cases/:id
 ```
 
 Patch request supports partial update:
@@ -138,6 +163,11 @@ Patch request supports partial update:
 - `milestoneIds[]` accepts zero or more valid Milestones. Changing `releaseId` never removes existing values; it limits only the option set for adding another Milestone.
 - Assigning `sprintId` does not auto-commit the Iteration or lock scope.
 - `userStoryId` is accepted only for Defect and must reference an active Story in the same Project.
+- Test Case `name` required; `workProductId` phải là active Story/Defect cùng Project và một Test Case chỉ giữ một Work Product trực tiếp.
+- Test Case không có repeatable Test Steps trong Phase 7; Validation Input/Expected Result là hai field trực tiếp trên Test Case.
+- Test Case `typeId` phải trỏ đến active Type của chính Project chứa Work Product.
+- Khi thêm Type, API phải từ chối tên trùng không phân biệt hoa/thường trong Project.
+- Remove trên UI phải qua confirm dialog rồi mới deactivate/soft remove khỏi catalog chọn mới; Cancel không thay đổi catalog. Test Case cũ vẫn đọc được Type đã lưu.
 - Rich text must be sanitized.
 - Cannot patch soft-deleted item.
 
@@ -152,6 +182,9 @@ Patch request supports partial update:
 | Change release/iteration | `work_item.schedule.update` |
 | Upload attachment | `work_item.attachment.upload` |
 | View activity | `work_item.activity.view` |
+| View Test Cases | `test_case.view` trong Project của Work Item |
+| Add/edit Test Case | `test_case.create` / `test_case.update` trong Project của Work Item |
+| Add/remove Project Test Case Type | Workspace Admin tại `Workspaces & Projects`; Admin/Editor chỉ đọc catalog |
 
 ## 9. Acceptance Criteria
 
@@ -165,6 +198,20 @@ Patch request supports partial update:
 8. Owner and Dev Owner selectors show the same eligible Project/Team candidates, allow No Entry and persist independently after refresh.
 9. Changing Team refreshes both candidate lists and prevents saving an ineligible Owner or Dev Owner.
 10. Defect Parent User Story lists only active Stories from the same Project and the saved relation reloads in detail.
+11. Story/Defect detail shows `Test Cases` immediately after `Tasks`, with the current linked count and collection columns.
+12. `Add New` creates one blank-template Test Case linked to the current Work Item; Cancel creates none.
+13. A newly created Test Case shows `Not Run`, has no Last Run, and remains visible after reload when persistence is implemented.
+14. API rejects linking a Test Case to a deleted Work Item, a Work Item in another Project, or more than one direct Work Product.
+15. Every newly created Project starts with exactly five seeded default Types.
+16. `Add New` opens a Name modal; Save adds the value only to the selected Project and Cancel creates none.
+17. Duplicate Type names, including case-only differences, are rejected within the Project.
+18. Clicking `×` removes the Type from new-Test-Case options but existing Test Cases retain the historical value.
+19. Clicking `×` first opens a confirmation dialog; Cancel keeps the Type and Confirm deactivates it.
+20. Clicking a Test Case ID opens its detail with Description on the left and list metadata on the right; Back returns to the same Test Cases collection.
+21. A deactivated historical Type remains visible on Test Case Detail and is not offered for newly created Test Cases.
+22. Test Case Detail shows all confirmed content sections and Attachments on the left; Rank is not shown in the sidebar.
+23. Project and Team are auto-filled from the current creation context and cannot be changed directly on Test Case Detail.
+24. Owner and Assigned To list only active Project members, persist independently and reject a user outside the Project.
 
 ## 10. Implementation Breakdown
 
@@ -177,4 +224,8 @@ WID-T05 Rich content persistence hooks
 WID-T06 Collapse/summary behavior
 WID-T07 Permission/read-only states
 WID-T08 Tests
+WID-T09 Test Case collection GET/create API + Work Product validation
+WID-T10 Test Case tab/Add New integration
+WID-T11 Phase 7 Test Case detail and Results handoff
+WID-T12 Project Test Case Type catalog + seed/add/deactivate API
 ```

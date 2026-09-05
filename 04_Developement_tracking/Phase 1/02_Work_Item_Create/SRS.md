@@ -43,7 +43,7 @@ BA confirmed Work Item create team policy:
 | WIC-FR-003 | Field `Title/Name` là required. |
 | WIC-FR-004 | Project required, default current project. |
 | WIC-FR-005 | Team optional; default blank/Project backlog unless current Team context is explicitly selected and valid for the Project. |
-| WIC-FR-006 | Owner defaults to the authenticated current user only when that user is eligible in the selected Project/Team. Otherwise it defaults to `Unassigned`. User can always explicitly choose `Unassigned`/`No Entry`. |
+| WIC-FR-006 | Owner defaults to the authenticated current user only when that user is eligible in the selected Project/Team. User can always explicitly choose `Unassigned`/`No Entry`. The automatic fallback when the current user is ineligible is not confirmed; do not assign an ineligible user or silently infer a fallback policy. |
 | WIC-FR-006A | Named Owner candidates use the shared assignment rule: active Admin in the selected Project; active Editor only when assigned to the selected active Team; active WA only when it is an active member of the selected Team. With blank Team, Editor/WA Team members are not offered. Team Lead has no bypass. |
 | WIC-FR-007 | Plan Estimate nullable, không âm. |
 | WIC-FR-008 | `Create` tạo item và quay lại Backlog/list refresh. |
@@ -146,7 +146,7 @@ Response:
 7. Activity log có `work_item.created`.
 8. Creating without Team succeeds and places the item in the Project backlog.
 9. Creating with a Team validates that Team belongs to the selected Project.
-10. Owner defaults to the authenticated current user only when eligible; otherwise it defaults to `Unassigned`. Membership or Team changes refresh the available named Owner options.
+10. Given an eligible authenticated current user, Owner defaults to that user; an explicit Unassigned choice is preserved. Membership or Team changes refresh the available named Owner options. The ineligible-current-user fallback is an open BA branch, not a confirmed Unassigned default.
 11. With a selected Team, Admin, assigned Editor and active WA Team member are offered according to the shared rule; with blank Team, Editor/WA Team members are not offered and Team Lead has no special bypass.
 
 ## 10. Implementation Breakdown

@@ -167,7 +167,7 @@ P1-01 DB migration
 
 ### Time / Content / Attachments / Activity
 
-- [ ] To Do/Actual persist đúng và không âm; Estimate read-only luôn bằng To Do + Actual.
+- [ ] Estimate/To Do/Actual persist đúng, không âm và độc lập sau create; chỉ copy Estimate sang To Do một lần khi To Do chưa được nhập; Completed/reopen không đổi ba trường.
 - [ ] Rich text được sanitize trước khi lưu/hiển thị.
 - [ ] Attachment upload lưu metadata và object storage key.
 - [ ] Mọi create/update/Schedule State/Flow State/Defect Priority/owner/time/attachment action ghi `activity_logs`.

@@ -20,7 +20,10 @@ Thư mục này là workspace điều phối chuyển `03_Mockup Design` thành 
 | `P5_Screens_Phase_2_3/` | Screen conversion Phase 2–3 |
 | `P6_Screens_Phase_4/` | Governance screens Phase 4 |
 | `P7_Future_QA_and_Handoff/` | Future/reference code, QA, Dev Mode, Code Connect, final handoff |
+| `P8_Phase_5_Portfolio_and_Capacity/` | Delta Portfolio và Capacity Planning; hồ sơ ghi nhận confirmed ngày 2026-07-29 |
 | `CONVERSION_PROGRESS.md` | Source of truth cho trạng thái workflow |
 
 Không tạo/sửa Figma ngoài plan đang active. Không chuyển Plan N+1 nếu gate Plan N chưa có xác nhận rõ ràng của user.
+
+P0–P7 là bộ conversion ban đầu; P8 là delta đã hoàn tất theo hồ sơ. Đọc `P8_Phase_5_Portfolio_and_Capacity/P8_QA_AND_HANDOFF.md` cho Portfolio/Capacity. Những cập nhật nghiệp vụ sau conversion dùng SRS hiện hành; rà soát tài liệu ngày 2026-09-05 không xác minh lại hoặc sửa file Figma.
 

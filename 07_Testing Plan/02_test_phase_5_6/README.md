@@ -9,6 +9,6 @@
 - `../03_Retest/DEV_HANDOFF_RETEST_PHASE_0_6.md`: the only current DEV handoff.
 - `evidence/`: scenario evidence folders.
 
-Current workbook baseline: 61 carried Phase 0-4 rows, 78 Phase 5 scenarios and 53 Phase 6 scenarios. All previous mockup passes are scheduled for deployed-product re-verification unless the scenario is superseded or explicitly Future Backlog.
+The earlier workbook in this folder had 61 carried Phase 0–4 rows, 78 Phase 5 scenarios and 53 Phase 6 scenarios. It is retained unchanged locally as historical evidence and is excluded from the baseline commit; the master at the parent folder may have additional/reclassified scenarios. All previous mockup passes are scheduled for deployed-product re-verification unless the scenario is superseded or explicitly Future Backlog.
 
 The BA/user is the primary tester. To ask Codex for a re-test, provide an exact ID such as `P6-VEL-010`; Codex must limit its work to that case and record evidence without advancing other cases.

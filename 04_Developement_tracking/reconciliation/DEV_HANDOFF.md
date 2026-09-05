@@ -1,6 +1,6 @@
 # Mini Rally — Reconciliation DEV Handoff
 
-**Effective date:** 2026-08-14
+**Business handoff baseline:** 2026-08-14, reconciled 2026-09-05 against Git `b26a94b8` and original BA confirmations. No new production test result is asserted.
 **Status:** Active cross-phase Phase 0–6 business and DevInt handoff. Phase-specific SRS remains the implementation detail authority.
 **Scope:** Phase 0–6 frontend behavior, business rules, DevInt verification and UAT. Database, schema and infrastructure remain outside this handoff.
 
@@ -10,10 +10,12 @@
 2. `../Mini_Rally_Product_Plan.xlsx` — product roadmap, BA tasks, DEV tasks and dependencies.
 3. `../Phase 5/PHASE5_DEV_HANDOFF.md` — closed Phase 5 implementation authority.
 4. Relevant `../Phase */.../SRS.md` and phase mockup checklist.
-5. `../../07_Testing Plan/03_Retest/DEV_HANDOFF_RETEST_PHASE_0_6.md` — current consolidated DevInt Fail/Partial gaps and DEV actions.
+5. `../../07_Testing Plan/03_Retest/DEV_HANDOFF_CONFIRMED_FAILURES_2026-08-17.md` — latest dated DEV action detail in the imported baseline; the master workbook remains authoritative for recorded result status.
 6. `../../07_Testing Plan/01_test_phase_1_to_4/specs/` and `../../07_Testing Plan/02_test_phase_5_6/` — Phase 0–6 business acceptance and retest evidence.
 
-If wording conflicts, use the source-of-truth document and raise the mismatch to BA before implementing a new interpretation.
+Use `BASELINE_RECONCILIATION_2026-09-05.md` for restored BA confirmations. Confirmed corrections in the business source of truth supersede older expected results. If a remaining rule has no confirmed resolution, record the conflict before implementing an interpretation.
+
+Phase 7 is After MVP and uses `../Phase 7 (After MVP)/Test Case/SRS.md`; its approved mockup is not part of the Phase 0–6 production result claim.
 
 ## 2. Confirmed implementation changes
 
@@ -35,10 +37,10 @@ If wording conflicts, use the source-of-truth document and raise the mismatch to
 - Defect keeps a separate Defect State in addition to Schedule/Flow State.
 - Task State uses `Defined`, `In-Progress`, `Completed` and Task is always a child of Story/Defect.
 - Task `Estimate`, `To Do` and `Actual` are independent hour fields. On Task creation only, copy entered Estimate once to a blank To Do. After creation, editing one field or changing Task State never changes the others.
-- Work Item and Task Owner default to `Unassigned`. A selected Team allows `Unassigned` plus its active members; No Team allows only `Unassigned`.
+- Story/Defect Owner defaults to the authenticated current user when eligible in the current Project/Team (C10, confirmed 2026-08-06). Unassigned is always an explicit option. The ineligible-current-user fallback remains unconfirmed; do not interpret candidate-list confirmation as a universal Unassigned default. Named candidates use the shared Project/Team eligibility rule in the current Work Item SRS. Task and Test Case default rules are separate.
 - All child Tasks Completed auto-set the parent to Completed. Reopening any Task auto-sets the parent to In-Progress.
 - Automatic status changes are convenience behavior; an authorized user can still change the parent status manually.
-- Task Dashboard supports inline edit. Task count and iteration Task Active use all persisted child Tasks in scope.
+- Task Dashboard supports inline edit and counts all non-deleted child Tasks. Iteration Status `Tasks — N active` counts only non-Completed, non-deleted child Tasks in scope; Totals include all non-deleted child Task hours. Editor may edit Tasks through an authorized Work Item Detail; Team Status itself remains hidden for Editor under Phase 4.
 
 ### Iteration lifecycle
 
@@ -64,8 +66,8 @@ If wording conflicts, use the source-of-truth document and raise the mismatch to
 - Release Artifacts show directly assigned Story/Defect/Feature from existing Backlog/Work Item Detail/Portfolio assignment. Milestone Artifacts show direct Story/Defect/Feature/Epic and de-duplicated descendants inherited through Feature/Epic for the existing rollups. Artifact-origin `Add New Item` and its shared Work Item/Portfolio Item `Create with details` journey are Future Backlog by BA decision 2026-08-15.
 - Timeboxes > Release Detail contains no Task Roll-up, accepted-progress or burndown widgets; all Release progress belongs to `Portfolio > Release Tracking`.
 - Capacity Planning maps Rally child Project/Scrum Team rows to Mini Rally Teams under the selected Project, but Project scope only stores the plan; Teams are added through Project Breakdown.
-- A Capacity Plan is unique per `Project + Release`, starts as Draft, and can be Published. Draft allocation rows are plan-specific, may split one Feature across multiple Teams, and use fixed manual `allocation.value` entered in the Capacity Plan; Feature has no Plan Estimate and allocation must not derive from Preliminary Estimate mapping. `Publish Without Updating Fields` changes visibility only; `Publish` also writes Release and planned dates to allocated Features, never overwrites Feature Project/Team, and must not cascade Release or Team to child Story/Defect.
-- Feature Detail progress uses two denominator families: `Percent Done by...` and left-side `Total Accepted Children` Points/Count meter use live current child Story/Defect totals; `Estimated Progress by...` uses Feature top-down refined fields (`refinedEstimate`, `refinedWorkItemCountEstimate`) or Preliminary Estimate fallback. These refined fields are Feature progress inputs only, not Capacity allocation inputs.
+- A Capacity Plan is unique per `Project + Release`, starts as Draft, and can be Published. Draft allocation rows are plan-specific, may split one Feature across multiple Teams, and retain the planner's saved manual value. Feature has no Plan Estimate. Before allocation, Feature Estimated and the blank-dialog suggestion may use Refined/Preliminary forecasts per the current Phase 5 SRS; forecasts never automatically overwrite committed Team allocations. `Publish Without Updating Fields` changes visibility only; `Publish` also writes Release and planned dates to allocated Features, never overwrites Feature Project/Team, and must not cascade Release or Team to child Story/Defect.
+- Feature Detail progress uses two denominator families: `Percent Done by...` and left-side `Total Accepted Children` Points/Count meter use live current child Story/Defect totals; `Estimated Progress by...` uses Feature top-down refined fields (`refinedEstimate`, `refinedWorkItemCountEstimate`) or Preliminary Estimate fallback. Capacity uses those fields only for its explicitly defined forecast/default path; committed Team demand remains the saved Plan allocation.
 - Capacity `Planned Team Assignment`, `Teams by Total` and the Team Capacity rail use the same Plan allocation ledger. The inline selector supports zero/one-Team assign, change and Unassign; multi-Team split uses Allocate. Portfolio Feature owning Team remains separate.
 - Team Status shows only active members of its selected Team plus `Unassigned` for null-owner scoped Tasks; Team Capacity also attributes null-owner hours only to `Unassigned`.
 - Project Key is required, unique, immutable, normalized to uppercase alphanumeric, and limited to 1–10 characters.

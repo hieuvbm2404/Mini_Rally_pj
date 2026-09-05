@@ -107,7 +107,7 @@ Only Workspace Admin sees `Create Project`.
 | Field | Required | Rule |
 |---|---:|---|
 | Project name | Yes | Trimmed non-empty name |
-| Project key | Yes | 2-10 uppercase letters/numbers; immutable after creation |
+| Project key | Yes | 1–10 uppercase letters/numbers after normalization; unique, capped at 10 and immutable after creation (BA accepted 2026-08-14) |
 | Description | No | Short Project description |
 | Project owner | No | Business owner selected from existing company users |
 | Start date | No | Project start date |
