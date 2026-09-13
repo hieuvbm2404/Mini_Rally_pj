@@ -110,7 +110,7 @@ Nghiệp vụ chính:
 | P2-IS-FR-016 | Tasks metric keeps the `N active` display and counts child Tasks with State other than `Completed` under current Iteration Story/Defect items. |
 | P2-IS-FR-016A | Task is never assigned to Iteration independently; it inherits Iteration through its parent Story/Defect. |
 | P2-IS-FR-016B | A `Totals` row appears immediately below the list column header and shows total Plan Est, Task Est and To Do. |
-| P2-IS-FR-016C | Plan Est total sums scoped Story/Defect Plan Estimates; Task Est total sums child Task `To Do + Actual`; To Do total sums child Task `To Do` for the same scoped parents. |
+| P2-IS-FR-016C | Plan Est total sums scoped Story/Defect Plan Estimates; Task Est total sums the persisted `Estimate` field of child Tasks; To Do total independently sums the persisted `To Do` field of those Tasks. |
 | P2-IS-FR-017 | Iteration Status list displays only Story/Defect items assigned to the selected Iteration. Child Tasks are not independent rows. |
 | P2-IS-FR-017A | Iteration Status list is sourced from Backlog/work_items where `iterationId` equals the selected Iteration. |
 | P2-IS-FR-018 | List columns are: selection checkbox, rank, ID, Name, Schedule State, Flow State, Iteration, Blocked, Plan Est, Task Est, To Do, Owner and optional Dev Owner. There is no dedicated Type column; Story/Defect type is conveyed by the required `US`/`DE` formatted-ID prefix and type glyph in the identity cell. |
@@ -237,7 +237,7 @@ Current confirmed mirror rule:
 | Defects | Count of assigned work items where `type = Defect` |
 | Tasks | Count child Tasks with `state != Completed` under scoped Story/Defect parents |
 | Total Plan Est | Sum `planEstimate` for scoped Story/Defect rows |
-| Total Task Est | Sum child Task `toDo + actuals` for scoped Story/Defect parents |
+| Total Task Est | Sum the persisted child Task `estimate` field for scoped Story/Defect parents |
 | Total To Do | Sum child Task `toDo` for scoped Story/Defect parents |
 
 Rules:

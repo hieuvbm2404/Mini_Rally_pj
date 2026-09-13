@@ -6,6 +6,7 @@ import {
   ComposedChart,
   Legend,
   Line,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -19,6 +20,7 @@ import {
   ITERATION_DAILY_SNAPSHOTS,
   VELOCITY_DATA,
 } from "../model";
+import type { StorySplit } from "../splitStory";
 
 export function Widget({ title, span = 1, children }: { title: string; span?: number; children: React.ReactNode }) {
   return (
@@ -53,7 +55,7 @@ function daysBetween(start: string, end: string) {
   return Math.max(1, days);
 }
 
-function buildFallbackSnapshots(iteration: IterationItem, totalEstimateAtStart: number) {
+function buildFallbackSnapshots(iteration: IterationItem, openingToDo: number) {
   const start = new Date(dateInputValue(iteration.startDate));
   const end = new Date(dateInputValue(iteration.endDate));
   const count = Math.max(2, Math.min(11, Math.round((end.getTime() - start.getTime()) / 86400000) + 1));
@@ -62,13 +64,13 @@ function buildFallbackSnapshots(iteration: IterationItem, totalEstimateAtStart: 
     return {
       iterationId: iteration.id,
       date: date.toISOString().slice(0, 10),
-      remainingToDo: Math.max(0, Math.round(totalEstimateAtStart * (1 - index / (count - 1)))),
+      remainingToDo: Math.max(0, Math.round(openingToDo * (1 - index / (count - 1)))),
       acceptedPoints: Math.round((iteration.acceptedPoints * index) / (count - 1)),
     };
   });
 }
 
-function IterationBurndown({ projectKey, team, iterations, items, tasks, selectedIterationId, onIterationChange }: { projectKey: string; team: string; iterations: IterationItem[]; items: WorkItem[]; tasks: TaskItem[]; selectedIterationId: string; onIterationChange: (iterationId: string) => void }) {
+function IterationBurndown({ projectKey, team, iterations, items, tasks, storySplits, selectedIterationId, onIterationChange }: { projectKey: string; team: string; iterations: IterationItem[]; items: WorkItem[]; tasks: TaskItem[]; storySplits: StorySplit[]; selectedIterationId: string; onIterationChange: (iterationId: string) => void }) {
   const availableIterations = useMemo(() => iterations.filter(iteration => iteration.projectKey === projectKey && (team === "All Teams" || iteration.team === team)), [iterations, projectKey, team]);
   const defaultIteration = availableIterations.find(iteration => iteration.name === "Sprint 24.3") ?? availableIterations[0];
   const selectedIteration = availableIterations.find(iteration => iteration.id === selectedIterationId) ?? defaultIteration;
@@ -78,17 +80,25 @@ function IterationBurndown({ projectKey, team, iterations, items, tasks, selecte
   const selectedItems = items.filter(item => item.project === projectKey && (team === "All Teams" || item.team === team) && item.iteration === selectedIteration.name && (item.type === "Story" || item.type === "Defect"));
   const selectedItemIds = new Set(selectedItems.map(item => item.id));
   const totalEstimateAtStart = selectedIteration.totalTaskEstimateAtStart ?? tasks.filter(task => selectedItemIds.has(task.parentWorkItemId)).reduce((sum, task) => sum + task.estimate, 0);
+  const openingToDo = tasks.filter(task => selectedItemIds.has(task.parentWorkItemId)).reduce((sum, task) => sum + task.todo, 0);
   const storedSnapshots = ITERATION_DAILY_SNAPSHOTS.filter(snapshot => snapshot.iterationId === selectedIteration.id);
-  const snapshots = storedSnapshots.length > 0 ? storedSnapshots : buildFallbackSnapshots(selectedIteration, totalEstimateAtStart);
+  const snapshots = storedSnapshots.length > 0 ? storedSnapshots : buildFallbackSnapshots(selectedIteration, openingToDo);
   const totalDays = daysBetween(selectedIteration.startDate, selectedIteration.endDate);
+  const splitEvents = storySplits.filter(record => record.projectKey === projectKey && (team === "All Teams" || record.team === team) && (record.sourceIterationId === selectedIteration.id || record.targetIterationId === selectedIteration.id));
   const chartData = snapshots.map(snapshot => {
     const elapsedDays = Math.max(0, Math.round((new Date(snapshot.date).getTime() - new Date(dateInputValue(selectedIteration.startDate)).getTime()) / 86400000));
     const ideal = Math.max(0, totalEstimateAtStart * (1 - elapsedDays / totalDays));
-    return { ...snapshot, label: shortDate(snapshot.date), ideal: Number(ideal.toFixed(1)) };
+    const sourceAdjustment = splitEvents.filter(record => record.sourceIterationId === selectedIteration.id && snapshot.date >= record.sourceMarkerDate).reduce((sum, record) => sum + record.movedTodoHours, 0);
+    const targetAdjustment = storedSnapshots.length > 0 ? splitEvents.filter(record => record.targetIterationId === selectedIteration.id && snapshot.date >= record.targetMarkerDate).reduce((sum, record) => sum + record.movedTodoHours, 0) : 0;
+    return { ...snapshot, remainingToDo: Math.max(0, snapshot.remainingToDo - sourceAdjustment + targetAdjustment), label: shortDate(snapshot.date), ideal: Number(ideal.toFixed(1)) };
   });
   const latest = chartData[chartData.length - 1];
   const behindPlan = latest.remainingToDo > latest.ideal;
   const iterationIndex = availableIterations.findIndex(iteration => iteration.id === selectedIteration.id);
+  function closestMarkerLabel(record: StorySplit) {
+    const markerDate = record.sourceIterationId === selectedIteration.id ? record.sourceMarkerDate : record.targetMarkerDate;
+    return chartData.reduce((closest, row) => Math.abs(new Date(row.date).getTime() - new Date(markerDate).getTime()) < Math.abs(new Date(closest.date).getTime() - new Date(markerDate).getTime()) ? row : closest, chartData[0])?.label;
+  }
 
   return (
     <Widget title="Iteration Burndown" span={3}>
@@ -108,6 +118,25 @@ function IterationBurndown({ projectKey, team, iterations, items, tasks, selecte
         </span>
       </div>
       <div className="mb-3 text-center text-[13px] font-semibold" style={{ color: "#1a2234" }}>{selectedIteration.project} - {team}</div>
+      {splitEvents.length > 0 && <div className="mb-3 space-y-2">
+        {splitEvents.map(record => {
+          const isSource = record.sourceIterationId === selectedIteration.id;
+          return <div key={record.id} className="flex flex-wrap items-center gap-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-[10px] text-amber-950">
+            <span className="rounded bg-amber-200 px-2 py-0.5 font-semibold uppercase tracking-wide">{isSource ? "Split out" : "Carry in"}</span>
+            {isSource ? <>
+              <span className="rounded bg-white/70 px-2 py-0.5 font-semibold">{record.unfinishedId}</span>
+              <span>{record.unfinishedPlanEstimate} pts</span>
+              <span>-{record.movedTodoHours}h To Do</span>
+              <span>{record.actualHoursAtSplit}h Actual</span>
+            </> : <>
+              <span className="rounded bg-white/70 px-2 py-0.5 font-semibold">{record.continuedId}</span>
+              <span>{record.continuedPlanEstimate} pts</span>
+              <span>+{record.movedTodoHours}h To Do</span>
+              <span>0h Actual</span>
+            </>}
+          </div>;
+        })}
+      </div>}
       <div className="h-[360px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 12, right: 16, left: 4, bottom: 12 }}>
@@ -119,6 +148,7 @@ function IterationBurndown({ projectKey, team, iterations, items, tasks, selecte
             <Bar yAxisId="hours" dataKey="remainingToDo" name="Task To Do (Hours)" fill="#176f84" barSize={34} />
             <Line yAxisId="hours" type="linear" dataKey="ideal" name="Ideal" stroke="#566274" strokeWidth={2.5} dot={{ r: 3, fill: "#566274" }} />
             <Bar yAxisId="points" dataKey="acceptedPoints" name="Accepted (Points)" fill="#5dbb4f" barSize={18} />
+            {splitEvents.map(record => <ReferenceLine key={record.id} yAxisId="hours" x={closestMarkerLabel(record)} stroke="#d97706" strokeWidth={2} strokeDasharray="4 3" label={{ value: record.sourceIterationId === selectedIteration.id ? "SPLIT OUT" : "CARRY IN", position: "insideTopRight", fill: "#92400e", fontSize: 9 }} />)}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -135,21 +165,53 @@ function average(values: number[]) {
   return values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-function VelocityChart({ projectKey, team }: { projectKey: string; team: string }) {
+function VelocityChart({ projectKey, team, iterations, items, storySplits }: { projectKey: string; team: string; iterations: IterationItem[]; items: WorkItem[]; storySplits: StorySplit[] }) {
   const [velocityWindow, setVelocityWindow] = useState<5 | 10>(() => window.localStorage.getItem("mini-rally.velocity-window") === "5" ? 5 : 10);
   useEffect(() => {
     window.localStorage.setItem("mini-rally.velocity-window", String(velocityWindow));
   }, [velocityWindow]);
+  const visibleSplits = storySplits.filter(record => record.projectKey === projectKey && (team === "All Teams" || record.team === team));
   const completedIterations = useMemo(() => VELOCITY_DATA
     .filter(iteration => iteration.projectKey === projectKey && (team === "All Teams" || iteration.team === team) && iteration.hasScheduledItems && new Date(`${iteration.endDate}T23:59:59`).getTime() < Date.now())
-    .sort((left, right) => left.endDate.localeCompare(right.endDate)), [projectKey, team]);
+    .sort((left, right) => left.endDate.localeCompare(right.endDate))
+    .map(iteration => {
+      const iterationRecord = iterations.find(candidate => candidate.projectKey === iteration.projectKey && candidate.team === iteration.team && candidate.name === `Sprint ${iteration.sprint}`);
+      const sourceEvents = iterationRecord ? visibleSplits.filter(record => record.sourceIterationId === iterationRecord.id) : [];
+      const targetEvents = iterationRecord ? visibleSplits.filter(record => record.targetIterationId === iterationRecord.id) : [];
+      let acceptedDuring = iteration.acceptedDuring;
+      let acceptedAfter = iteration.acceptedAfter;
+      let notAccepted = iteration.notAccepted;
+      targetEvents.forEach(record => {
+        const continued = items.find(item => item.id === record.continuedId);
+        if (!continued || !["Accepted", "Release"].includes(continued.status) || !continued.acceptedDate) {
+          notAccepted += record.continuedPlanEstimate;
+          return;
+        }
+        const acceptedDate = continued.acceptedDate.slice(0, 10);
+        const iterationStart = iterationRecord!.startDate.slice(0, 10);
+        const iterationEnd = iterationRecord!.endDate.slice(0, 10);
+        if (acceptedDate >= iterationStart && acceptedDate <= iterationEnd) acceptedDuring += record.continuedPlanEstimate;
+        else acceptedAfter += record.continuedPlanEstimate;
+      });
+      return {
+        ...iteration,
+        iterationId: iterationRecord?.id,
+        acceptedDuring,
+        acceptedAfter,
+        notAccepted,
+        carryoverPoints: sourceEvents.reduce((sum, record) => sum + record.unfinishedPlanEstimate, 0),
+      };
+    }), [items, iterations, projectKey, storySplits, team]);
   const chartIterations = completedIterations.slice(-velocityWindow);
   const duringValues = chartIterations.map(iteration => iteration.acceptedDuring);
   const last3 = average(duringValues.slice(-3));
   const best3 = average([...duringValues].sort((left, right) => right - left).slice(0, 3));
   const worst3 = average([...duringValues].sort((left, right) => left - right).slice(0, 3));
   const trend = average(duringValues);
-  const chartData = chartIterations.map(iteration => ({ ...iteration, trend }));
+  const chartData = chartIterations.map(iteration => ({
+    ...iteration,
+    trend,
+  }));
 
   return (
     <>
@@ -184,6 +246,7 @@ function VelocityChart({ projectKey, team }: { projectKey: string; team: string 
           <Bar dataKey="acceptedDuring" stackId="velocity" name="Accepted During Iteration" fill="#3d8c56" barSize={52} />
           <Bar dataKey="acceptedAfter" stackId="velocity" name="Accepted After Iteration" fill="#83bd91" barSize={52} />
           <Bar dataKey="notAccepted" stackId="velocity" name="Not Accepted" fill="#ef6a67" barSize={52} radius={[2, 2, 0, 0]} />
+          <Bar dataKey="carryoverPoints" stackId="velocity" name="Split / Carryover (excluded)" fill="#d99a24" barSize={52} radius={[2, 2, 0, 0]} />
           <Line type="monotone" dataKey="trend" name={`Trend: ${trend.toFixed(2)}`} stroke="#247344" strokeWidth={2} dot={false} />
         </ComposedChart>
       </ResponsiveContainer> : <div className="flex h-[400px] items-center justify-center text-[11px] text-[#6f7787]">No completed iteration data for this project/team scope.</div>}
@@ -195,30 +258,48 @@ type CapacityMemberRow = { member: string; capacity: number; estimate: number; t
 type CapacityTeamRow = { team: string; capacity: number; estimate: number; todo: number; actuals: number; members: CapacityMemberRow[] };
 type ReportView = "burndown" | "velocity" | "capacity";
 
-function TeamCapacity({ projectKey, team, iterations, selectedIteration, items, tasks, onIterationChange }: { projectKey: string; team: string; iterations: IterationItem[]; selectedIteration?: IterationItem; items: WorkItem[]; tasks: TaskItem[]; onIterationChange: (iterationId: string) => void }) {
+function TeamCapacity({ projectKey, team, iterations, selectedIteration, items, tasks, storySplits, onIterationChange }: { projectKey: string; team: string; iterations: IterationItem[]; selectedIteration?: IterationItem; items: WorkItem[]; tasks: TaskItem[]; storySplits: StorySplit[]; onIterationChange: (iterationId: string) => void }) {
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set());
   const parentById = useMemo(() => new Map(items.map(item => [item.id, item])), [items]);
+  const selectedSplitEvents = selectedIteration ? storySplits.filter(record => record.projectKey === projectKey && (team === "All Teams" || record.team === team) && (record.sourceIterationId === selectedIteration.id || record.targetIterationId === selectedIteration.id)) : [];
   const teamRows = useMemo<CapacityTeamRow[]>(() => {
-    const baseRows = TEAM_CAPACITY_DATA.filter(row => row.projectKey === projectKey && (team === "All Teams" || row.team === team));
-    const scopedTasks = selectedIteration ? tasks.filter(task => {
+    const taskMetrics = selectedIteration ? tasks.flatMap(task => {
       const parent = parentById.get(task.parentWorkItemId);
-      return parent?.project === projectKey && parent.iteration === selectedIteration.name && (team === "All Teams" || task.team === team);
+      const currentScope = parent?.project === projectKey && parent.iteration === selectedIteration.name && (team === "All Teams" || task.team === team);
+      const event = [...selectedSplitEvents].reverse().find(record => record.taskSnapshots.some(snapshot => snapshot.id === task.id));
+      const snapshot = event?.taskSnapshots.find(row => row.id === task.id);
+      const sourceScope = !!event && event.sourceIterationId === selectedIteration.id;
+      const targetScope = !!event && event.targetIterationId === selectedIteration.id && snapshot?.splitSide === "continued";
+      if (!currentScope && !sourceScope && !targetScope) return [];
+      let actuals = currentScope ? task.actuals : 0;
+      let member = task.owner.name;
+      if (sourceScope && snapshot) {
+        actuals = snapshot.splitSide === "continued" ? snapshot.actuals : task.actuals;
+        member = snapshot.owner.name;
+      } else if (targetScope && snapshot) {
+        actuals = Math.max(0, task.actuals - snapshot.actuals);
+      }
+      return [{ task, member, estimate: currentScope ? task.estimate : 0, todo: currentScope ? task.todo : 0, actuals }];
     }) : [];
+    const baseRows = TEAM_CAPACITY_DATA.filter(row => row.projectKey === projectKey && (team === "All Teams" || row.team === team));
+    taskMetrics.forEach(metric => {
+      if (!baseRows.some(row => row.team === metric.task.team && row.member === metric.member)) baseRows.push({ projectKey, team: metric.task.team, member: metric.member, capacity: 0 });
+    });
     const byTeam = new Map<string, CapacityTeamRow>();
     baseRows.forEach(row => {
-      const memberTasks = scopedTasks.filter(task => task.team === row.team && task.owner.name === row.member);
+      const memberTasks = taskMetrics.filter(metric => metric.task.team === row.team && metric.member === row.member);
       const member = {
         member: row.member,
         capacity: row.capacity,
-        estimate: memberTasks.reduce((sum, task) => sum + task.estimate, 0),
-        todo: memberTasks.reduce((sum, task) => sum + task.todo, 0),
-        actuals: memberTasks.reduce((sum, task) => sum + task.actuals, 0),
+        estimate: memberTasks.reduce((sum, metric) => sum + metric.estimate, 0),
+        todo: memberTasks.reduce((sum, metric) => sum + metric.todo, 0),
+        actuals: memberTasks.reduce((sum, metric) => sum + metric.actuals, 0),
       };
       const existing = byTeam.get(row.team);
       byTeam.set(row.team, existing ? { ...existing, capacity: existing.capacity + member.capacity, estimate: existing.estimate + member.estimate, todo: existing.todo + member.todo, actuals: existing.actuals + member.actuals, members: [...existing.members, member] } : { team: row.team, capacity: member.capacity, estimate: member.estimate, todo: member.todo, actuals: member.actuals, members: [member] });
     });
     return [...byTeam.values()];
-  }, [parentById, projectKey, selectedIteration, tasks, team]);
+  }, [parentById, projectKey, selectedIteration, selectedSplitEvents, tasks, team]);
   const totals = teamRows.reduce((sum, row) => ({ capacity: sum.capacity + row.capacity, estimate: sum.estimate + row.estimate, todo: sum.todo + row.todo, actuals: sum.actuals + row.actuals }), { capacity: 0, estimate: 0, todo: 0, actuals: 0 });
   const columns = "minmax(220px, 1fr) 110px 110px 110px 110px";
   const selectedIterationIndex = iterations.findIndex(iteration => iteration.id === selectedIteration?.id);
@@ -252,6 +333,14 @@ function TeamCapacity({ projectKey, team, iterations, selectedIteration, items, 
           <div key={metric.label} className="rounded bg-[#f7f9fb] px-3 py-2" style={{ border: "1px solid #e5eaf0" }}><div className="text-[10px] text-[#6f7787]">{metric.label} Hours</div><div className="mt-1 text-xl font-semibold text-[#1d3f73]">{metric.value}h</div></div>
         ))}
       </div>
+      {selectedSplitEvents.length > 0 && <div className="mb-4 space-y-2">{selectedSplitEvents.map(record => {
+        const isSource = record.sourceIterationId === selectedIteration?.id;
+        return <div key={record.id} className="flex flex-wrap items-center gap-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-[10px] text-amber-950">
+          <strong>{isSource ? "SPLIT OUT" : "CARRY IN"}</strong>
+          <span>{isSource ? `-${record.movedTodoHours}h To Do` : `+${record.movedTodoHours}h To Do`}</span>
+          <span>{isSource ? `${record.actualHoursAtSplit}h Actual` : "0h Actual"}</span>
+        </div>;
+      })}</div>}
       <div className="overflow-hidden rounded" style={{ border: "1px solid #dce2ea" }}>
         <div className="grid h-8 items-center bg-[#f7f8fa] text-[10px] font-semibold text-[#6f7787]" style={{ gridTemplateColumns: columns }}>
           <span className="px-3">Team / Member</span><span className="px-3 text-right">Capacity</span><span className="px-3 text-right">Estimate</span><span className="px-3 text-right">ToDo</span><span className="px-3 text-right">Actual</span>
@@ -271,7 +360,7 @@ function TeamCapacity({ projectKey, team, iterations, selectedIteration, items, 
   );
 }
 
-export function ReportsPage({ role, readOnly = false, projectKey, team = "All Teams", iterations, items, tasks }: { role: Role; readOnly?: boolean; projectKey: string; team?: string; iterations: IterationItem[]; items: WorkItem[]; tasks: TaskItem[] }) {
+export function ReportsPage({ role, readOnly = false, projectKey, team = "All Teams", iterations, items, tasks, storySplits }: { role: Role; readOnly?: boolean; projectKey: string; team?: string; iterations: IterationItem[]; items: WorkItem[]; tasks: TaskItem[]; storySplits: StorySplit[] }) {
   const canExport = !readOnly && role !== "Editor";
   const [selectedReport, setSelectedReport] = useState<ReportView>("burndown");
   const availableIterations = useMemo(() => iterations.filter(iteration => iteration.projectKey === projectKey && (team === "All Teams" || iteration.team === team)), [iterations, projectKey, team]);
@@ -294,9 +383,9 @@ export function ReportsPage({ role, readOnly = false, projectKey, team = "All Te
         {canExport && <button className="flex items-center gap-1.5 rounded px-3 py-1.5 text-[11px] font-semibold text-white" style={{ backgroundColor: "#1d3f73" }}><Download size={12} /> Export Report</button>}
       </div>
       <div className="grid grid-cols-3 gap-3 p-4">
-        {selectedReport === "burndown" && <IterationBurndown projectKey={projectKey} team={team} iterations={iterations} items={items} tasks={tasks} selectedIterationId={selectedIteration?.id ?? ""} onIterationChange={setSelectedIterationId} />}
-        {selectedReport === "velocity" && <Widget title="Velocity - Accepted Iterations" span={3}><VelocityChart projectKey={projectKey} team={team} /></Widget>}
-        {selectedReport === "capacity" && <Widget title={`Team Capacity - ${team}`} span={3}><TeamCapacity projectKey={projectKey} team={team} iterations={availableIterations} selectedIteration={selectedIteration} items={items} tasks={tasks} onIterationChange={setSelectedIterationId} /></Widget>}
+        {selectedReport === "burndown" && <IterationBurndown projectKey={projectKey} team={team} iterations={iterations} items={items} tasks={tasks} storySplits={storySplits} selectedIterationId={selectedIteration?.id ?? ""} onIterationChange={setSelectedIterationId} />}
+        {selectedReport === "velocity" && <Widget title="Velocity - Accepted Iterations" span={3}><VelocityChart projectKey={projectKey} team={team} iterations={iterations} items={items} storySplits={storySplits} /></Widget>}
+        {selectedReport === "capacity" && <Widget title={`Team Capacity - ${team}`} span={3}><TeamCapacity projectKey={projectKey} team={team} iterations={availableIterations} selectedIteration={selectedIteration} items={items} tasks={tasks} storySplits={storySplits} onIterationChange={setSelectedIterationId} /></Widget>}
       </div>
     </div>
   );

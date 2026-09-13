@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { AlignLeft, AtSign, Bold, ChevronLeft, ClipboardCheck, Code2, FileText, FlaskConical, History, ImagePlus, Italic, Link2, List, ListChecks, ListOrdered, Maximize2, Minimize2, MoreHorizontal, Plus, Redo2, Strikethrough, Table2, Underline, Undo2 } from "lucide-react";
 import { type Feature, type IterationItem, type MilestoneItem, type NewTaskInput, type NewTestCaseInput, type NewTestCaseResultInput, type Owner, type ReleaseItem, type Role, type ScopeProject, type StatusType, type TaskItem, type TaskState, type TestCaseItem, type TestCaseMethod, type TestCasePriority, type TestCaseResultItem, type TestCaseType, type TestCaseVerdict, type WorkItem, DEMO_ACCESS_PROFILES, OWNERS, PROJECT_MEMBER_OWNERS, SCOPE_PROJECTS } from "../model";
 import { Avatar, TypeBadge, ScheduleStateBar } from "../components/shared";
+import { splitActionReason, type StorySplit } from "../splitStory";
 
 type DetailTab = "details" | "tasks" | "testCases" | "history";
 type TaskDetailTab = "details" | "history";
@@ -98,7 +99,15 @@ export function TaskStateBadge({ state }: { state: TaskState }) {
   );
 }
 
-function ActivityLogView() {
+function splitActivityDetail(record: StorySplit) {
+  return `${record.sourceIteration} → ${record.targetIteration}; ${record.taskSnapshots.length} Tasks, ${record.defectAssignments.length} Defects and ${record.testCaseAssignments.length} Test Cases redistributed.`;
+}
+
+function ActivityLogView({ item, storySplits }: { item: WorkItem; storySplits: StorySplit[] }) {
+  const splitRows = storySplits
+    .filter(record => record.unfinishedId === item.id || record.continuedId === item.id || record.defectAssignments.some(defect => defect.id === item.id))
+    .map(record => ({ id: `${record.id}-${item.id}`, at: new Date(record.at).toLocaleString(), actor: record.actor, action: "split Story", target: record.id, detail: splitActivityDetail(record) }));
+  const rows = [...splitRows, ...(item.id === "US-4821" ? ACTIVITY_ROWS : [])];
   return (
     <div className="w-full space-y-5">
       <div>
@@ -113,7 +122,7 @@ function ActivityLogView() {
           <span>Action</span>
           <span>Details</span>
         </div>
-        {ACTIVITY_ROWS.map(activity => (
+        {rows.map(activity => (
           <div key={activity.id} className="grid grid-cols-[150px_180px_150px_1fr] items-start px-4 py-3 text-[12px]" style={{ borderBottom: "1px solid #edf0f4", color: "#334155" }}>
             <span className="font-mono text-[11px]" style={{ color: "#64748b" }}>{activity.at}</span>
             <span className="flex items-center gap-2 min-w-0"><Avatar owner={activity.actor} size="xs" /><span className="truncate">{activity.actor.name}</span></span>
@@ -126,8 +135,12 @@ function ActivityLogView() {
   );
 }
 
-function TaskActivityLogView({ task }: { task: TaskItem }) {
-  const rows = [
+function TaskActivityLogView({ task, storySplits }: { task: TaskItem; storySplits: StorySplit[] }) {
+  const splitRows = storySplits.filter(record => record.taskSnapshots.some(snapshot => snapshot.id === task.id)).map(record => {
+    const snapshot = record.taskSnapshots.find(row => row.id === task.id)!;
+    return { id: `${record.id}-${task.id}`, at: new Date(record.at).toLocaleString(), actor: record.actor, action: "changed Work Product", target: task.id, detail: `${snapshot.splitSide === "unfinished" ? record.unfinishedId : record.continuedId} selected during ${record.id}` };
+  });
+  const rows = [...splitRows,
     { id: "TACT-3004", at: "Today, 10:18", actor: task.owner, action: "updated Actual", target: task.id, detail: `Actual time is now ${task.actuals}h` },
     { id: "TACT-3003", at: "Today, 09:55", actor: OWNERS[1], action: "changed State", target: task.id, detail: "In-Progress → Completed" },
     { id: "TACT-3002", at: "Yesterday, 16:40", actor: OWNERS[0], action: "added Attachment", target: task.id, detail: task.attachments[0] || "No attachment" },
@@ -349,8 +362,12 @@ function TestCasesView({ rows, readOnly, onAdd, onOpen }: { rows: TestCaseItem[]
   );
 }
 
-function TestCaseActivityLogView({ testCase }: { testCase: TestCaseItem }) {
-  const rows = [
+function TestCaseActivityLogView({ testCase, storySplits }: { testCase: TestCaseItem; storySplits: StorySplit[] }) {
+  const splitRows = storySplits.filter(record => record.testCaseAssignments.some(assignment => assignment.id === testCase.id)).map(record => {
+    const assignment = record.testCaseAssignments.find(row => row.id === testCase.id)!;
+    return { id: `${record.id}-${testCase.id}`, at: new Date(record.at).toLocaleString(), actor: record.actor, action: "changed Work Product", detail: `${assignment.splitSide === "unfinished" ? record.unfinishedId : record.continuedId} selected during ${record.id}` };
+  });
+  const rows = [...splitRows,
     { id: "TCACT-2002", at: testCase.lastRun || "Not run yet", actor: testCase.owner, action: "recorded Last Verdict", detail: testCase.lastVerdict },
     { id: "TCACT-2001", at: "Created", actor: testCase.owner, action: "created Test Case", detail: testCase.name },
   ];
@@ -436,7 +453,7 @@ function TestCaseResultsView({ rows, parentItem, readOnly, onAdd, onOpen }: { ro
               <div key={result.id} className="grid min-h-11 items-center text-[12px]" style={{ gridTemplateColumns: TEST_RESULT_GRID_COLUMNS, borderBottom: "1px solid #edf0f4", color: "#334155" }}>
                 <button onClick={() => onOpen(result)} className="truncate px-3 text-left font-medium underline-offset-2 hover:underline" style={{ color: "#2558a6" }}>{result.build}</button>
                 <span className="px-3 font-mono text-[11px]">{result.date}</span>
-                <span className="truncate px-3">{parentItem.id} · {parentItem.title}</span>
+                <span className="truncate px-3">{result.workProductId === parentItem.id ? `${parentItem.id} · ${parentItem.title}` : `${result.workProductId} · historical Work Product`}</span>
                 <span className="px-3"><VerdictBadge verdict={result.verdict} /></span>
                 <span className="px-3 text-right font-mono">{result.duration} min</span>
                 <span className="flex min-w-0 items-center gap-2 px-3"><Avatar owner={result.tester} size="xs" /><span className="truncate">{result.tester.name}</span></span>
@@ -460,14 +477,14 @@ function TestCaseResultDetailView({ result, testCase, parentItem, testerOptions,
       {activeTab === "history" ? <main className="flex-1 overflow-y-scroll p-6" style={{ backgroundColor: "#f3f5f8" }}><div className="space-y-5"><h2 className="text-[20px] font-semibold" style={{ color: "#273449" }}>Revision History</h2><section className="rounded bg-white p-4 text-[12px]" style={{ border: "1px solid #dde2ea", color: "#334155" }}><span className="font-semibold">{result.tester.name}</span> recorded <span className="font-mono">{result.verdict}</span> for build <span className="font-mono">{result.build}</span> on {result.date}.</section></div></main> : (
         <div className="flex flex-1 min-h-0 gap-2" style={{ backgroundColor: "#e7ebf0" }}>
           <main className="flex-1 overflow-y-scroll p-6" style={{ backgroundColor: "#f3f5f8", scrollbarGutter: "stable" }}><div className="space-y-5"><div><h2 className="text-[20px] font-semibold" style={{ color: "#273449" }}>Result Details</h2><p className="mt-1 text-[11px]" style={{ color: "#64748b" }}>{result.id} · execution output for {testCase.id}</p></div><section className="overflow-hidden rounded bg-white" style={{ border: "1px solid #dde2ea" }}><div className="px-4 py-2 text-[11px] font-semibold" style={{ color: "#475569", backgroundColor: "#f8fafc", borderBottom: "1px solid #dde2ea" }}>Build</div><div className="p-3"><input aria-label="Test result build" disabled={readOnly} value={result.build} onChange={event => onUpdate(result.id, { build: event.target.value })} className={fieldClass} style={fieldStyle} /></div></section><section className="overflow-hidden rounded bg-white" style={{ border: "1px solid #dde2ea" }}><div className="px-4 py-2 text-[11px] font-semibold" style={{ color: "#475569", backgroundColor: "#f8fafc", borderBottom: "1px solid #dde2ea" }}>Attachments</div><div className="space-y-2 p-3">{result.attachments.length ? result.attachments.map(fileName => <div key={fileName} className="rounded px-3 py-2 text-[12px]" style={{ border: "1px solid #e2e8f0", color: "#334155" }}>{fileName}</div>) : <p className="text-[12px]" style={{ color: "#64748b" }}>No attachments yet.</p>}{!readOnly && <button className="flex w-full items-center gap-1.5 rounded px-3 py-2 text-left text-[12px]" style={{ color: "#2563c5", border: "1px solid #b9c9df", backgroundColor: "#fbfdff" }}><Plus size={15} />Drag or click to add attachments</button>}</div></section><section className="overflow-hidden rounded bg-white" style={{ border: "1px solid #dde2ea" }}><div className="px-4 py-2 text-[11px] font-semibold" style={{ color: "#475569", backgroundColor: "#f8fafc", borderBottom: "1px solid #dde2ea" }}>Verdict</div><div className="p-3"><select aria-label="Test result verdict" disabled={readOnly} value={result.verdict} onChange={event => onUpdate(result.id, { verdict: event.target.value as Exclude<TestCaseVerdict, "Not Run"> })} className={fieldClass} style={fieldStyle}>{["Pass", "Fail", "Blocked", "Error", "Inconclusive"].map(value => <option key={value}>{value}</option>)}</select></div></section><RichTextEditor title="Notes" initialValue={result.notes} minHeight={220} readOnly={readOnly} onChange={notes => onUpdate(result.id, { notes })} /></div></main>
-          <aside className="w-[340px] shrink-0 space-y-4 overflow-y-scroll bg-white p-5" style={{ borderLeft: "1px solid #d7dde7", scrollbarGutter: "stable" }}><Field label="Date"><input aria-label="Test result date" disabled={readOnly} type="date" value={result.date} onChange={event => onUpdate(result.id, { date: event.target.value })} className={fieldClass} style={fieldStyle} /></Field><Field label="Tester"><select aria-label="Test result tester" disabled={readOnly} value={result.tester.name} onChange={event => onUpdate(result.id, { tester: testerOptions.find(owner => owner.name === event.target.value) || result.tester })} className={fieldClass} style={fieldStyle}>{testerOptions.map(owner => <option key={owner.name}>{owner.name}</option>)}</select></Field><Field label="Test Case"><input aria-label="Result test case" disabled value={`${testCase.id} · ${testCase.name}`} className={fieldClass} style={fieldStyle} /></Field><Field label="Work Product"><input aria-label="Result work product" disabled value={`${parentItem.id} · ${parentItem.title}`} className={fieldClass} style={fieldStyle} /></Field><Field label="Duration (minutes)"><input aria-label="Test result duration" disabled={readOnly} type="number" min={0} value={result.duration} onChange={event => onUpdate(result.id, { duration: Math.max(0, Number(event.target.value) || 0) })} className={fieldClass} style={fieldStyle} /></Field></aside>
+          <aside className="w-[340px] shrink-0 space-y-4 overflow-y-scroll bg-white p-5" style={{ borderLeft: "1px solid #d7dde7", scrollbarGutter: "stable" }}><Field label="Date"><input aria-label="Test result date" disabled={readOnly} type="date" value={result.date} onChange={event => onUpdate(result.id, { date: event.target.value })} className={fieldClass} style={fieldStyle} /></Field><Field label="Tester"><select aria-label="Test result tester" disabled={readOnly} value={result.tester.name} onChange={event => onUpdate(result.id, { tester: testerOptions.find(owner => owner.name === event.target.value) || result.tester })} className={fieldClass} style={fieldStyle}>{testerOptions.map(owner => <option key={owner.name}>{owner.name}</option>)}</select></Field><Field label="Test Case"><input aria-label="Result test case" disabled value={`${testCase.id} · ${testCase.name}`} className={fieldClass} style={fieldStyle} /></Field><Field label="Work Product"><input aria-label="Result work product" disabled value={result.workProductId === parentItem.id ? `${parentItem.id} · ${parentItem.title}` : `${result.workProductId} · historical Work Product`} className={fieldClass} style={fieldStyle} /></Field><Field label="Duration (minutes)"><input aria-label="Test result duration" disabled={readOnly} type="number" min={0} value={result.duration} onChange={event => onUpdate(result.id, { duration: Math.max(0, Number(event.target.value) || 0) })} className={fieldClass} style={fieldStyle} /></Field></aside>
         </div>
       )}
     </div>
   );
 }
 
-function TestCaseDetailView({ testCase, parentItem, testCaseTypes, results, defaultTester, readOnly, onBack, onUpdateTestCase, onCreateResult, onUpdateResult }: { testCase: TestCaseItem; parentItem: WorkItem; testCaseTypes: string[]; results: TestCaseResultItem[]; defaultTester: Owner; readOnly: boolean; onBack: () => void; onUpdateTestCase: (id: string, patch: Partial<TestCaseItem>) => void; onCreateResult: (testCase: TestCaseItem, input: NewTestCaseResultInput) => TestCaseResultItem; onUpdateResult: (id: string, patch: Partial<TestCaseResultItem>) => void }) {
+function TestCaseDetailView({ testCase, parentItem, testCaseTypes, results, defaultTester, readOnly, storySplits, onBack, onUpdateTestCase, onCreateResult, onUpdateResult }: { testCase: TestCaseItem; parentItem: WorkItem; testCaseTypes: string[]; results: TestCaseResultItem[]; defaultTester: Owner; readOnly: boolean; storySplits: StorySplit[]; onBack: () => void; onUpdateTestCase: (id: string, patch: Partial<TestCaseItem>) => void; onCreateResult: (testCase: TestCaseItem, input: NewTestCaseResultInput) => TestCaseResultItem; onUpdateResult: (id: string, patch: Partial<TestCaseResultItem>) => void }) {
   const [activeTestCaseTab, setActiveTestCaseTab] = useState<TestCaseDetailTab>("details");
   const [isAddResultOpen, setIsAddResultOpen] = useState(false);
   const [selectedResult, setSelectedResult] = useState<TestCaseResultItem | null>(null);
@@ -512,7 +529,7 @@ function TestCaseDetailView({ testCase, parentItem, testCaseTypes, results, defa
       </div>
 
       {activeTestCaseTab === "history" ? (
-        <TestCaseActivityLogView testCase={testCase} />
+        <TestCaseActivityLogView testCase={testCase} storySplits={storySplits} />
       ) : activeTestCaseTab === "results" ? (
         <TestCaseResultsView rows={results} parentItem={parentItem} readOnly={readOnly} onAdd={() => setIsAddResultOpen(true)} onOpen={setSelectedResult} />
       ) : (
@@ -560,7 +577,7 @@ function TestCaseDetailView({ testCase, parentItem, testCaseTypes, results, defa
   );
 }
 
-function TaskDetailView({ task, parentItem, readOnly, onBack, onUpdateTask }: { task: TaskItem; parentItem: WorkItem; readOnly: boolean; onBack: () => void; onUpdateTask: (id: string, patch: Partial<TaskItem>) => void }) {
+function TaskDetailView({ task, parentItem, readOnly, storySplits, onBack, onUpdateTask }: { task: TaskItem; parentItem: WorkItem; readOnly: boolean; storySplits: StorySplit[]; onBack: () => void; onUpdateTask: (id: string, patch: Partial<TaskItem>) => void }) {
   const [activeTaskTab, setActiveTaskTab] = useState<TaskDetailTab>("details");
   const [taskProject, setTaskProject] = useState(task.project);
   const selectedTaskProject = SCOPE_PROJECTS.find(candidate => candidate.key === taskProject) || SCOPE_PROJECTS[0];
@@ -619,7 +636,7 @@ function TaskDetailView({ task, parentItem, readOnly, onBack, onUpdateTask }: { 
       </div>
 
       {activeTaskTab === "history" ? (
-        <TaskActivityLogView task={task} />
+        <TaskActivityLogView task={task} storySplits={storySplits} />
       ) : (
     <div className="flex flex-1 min-h-0 gap-2" style={{ backgroundColor: "#e7ebf0" }}>
       <main className="flex-1 overflow-y-scroll p-6" style={{ backgroundColor: "#f3f5f8", scrollbarGutter: "stable" }}>
@@ -658,10 +675,11 @@ function TaskDetailView({ task, parentItem, readOnly, onBack, onUpdateTask }: { 
   );
 }
 
-export function WorkItemDetailPage({ item, role, readOnly = false, project, team: initialTeam, iterations, releases, milestones, features, tasks, testCases, testCaseResults, testCaseTypes, onCreateTask, onCreateTestCase, onCreateTestCaseResult, onUpdateTask, onUpdateTestCase, onUpdateTestCaseResult, onUpdateItem, onBack, onMinimize }: { item: WorkItem; role: Role; readOnly?: boolean; project: ScopeProject; team: string; iterations: IterationItem[]; releases: ReleaseItem[]; milestones: MilestoneItem[]; features: Feature[]; tasks: TaskItem[]; testCases: TestCaseItem[]; testCaseResults: TestCaseResultItem[]; testCaseTypes: string[]; onCreateTask: (parent: WorkItem, input: NewTaskInput) => TaskItem; onCreateTestCase: (parent: WorkItem, input: NewTestCaseInput) => TestCaseItem; onCreateTestCaseResult: (testCase: TestCaseItem, input: NewTestCaseResultInput) => TestCaseResultItem; onUpdateTask: (id: string, patch: Partial<TaskItem>) => void; onUpdateTestCase: (id: string, patch: Partial<TestCaseItem>) => void; onUpdateTestCaseResult: (id: string, patch: Partial<TestCaseResultItem>) => void; onUpdateItem: (id: string, patch: Partial<WorkItem>) => void; onBack: () => void; onMinimize?: (item: WorkItem) => void }) {
+export function WorkItemDetailPage({ item, role, readOnly = false, project, team: initialTeam, iterations, releases, milestones, features, tasks, testCases, testCaseResults, testCaseTypes, storySplits, onCreateTask, onCreateTestCase, onCreateTestCaseResult, onUpdateTask, onUpdateTestCase, onUpdateTestCaseResult, onUpdateItem, onBack, onMinimize, onSplit }: { item: WorkItem; role: Role; readOnly?: boolean; project: ScopeProject; team: string; iterations: IterationItem[]; releases: ReleaseItem[]; milestones: MilestoneItem[]; features: Feature[]; tasks: TaskItem[]; testCases: TestCaseItem[]; testCaseResults: TestCaseResultItem[]; testCaseTypes: string[]; storySplits: StorySplit[]; onCreateTask: (parent: WorkItem, input: NewTaskInput) => TaskItem; onCreateTestCase: (parent: WorkItem, input: NewTestCaseInput) => TestCaseItem; onCreateTestCaseResult: (testCase: TestCaseItem, input: NewTestCaseResultInput) => TestCaseResultItem; onUpdateTask: (id: string, patch: Partial<TaskItem>) => void; onUpdateTestCase: (id: string, patch: Partial<TestCaseItem>) => void; onUpdateTestCaseResult: (id: string, patch: Partial<TestCaseResultItem>) => void; onUpdateItem: (id: string, patch: Partial<WorkItem>) => void; onSplit?: (item: WorkItem) => void; onBack: () => void; onMinimize?: (item: WorkItem) => void }) {
   const [activeTab, setActiveTab] = useState<DetailTab>("details");
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isAddTestCaseOpen, setIsAddTestCaseOpen] = useState(false);
+  const [showItemActions, setShowItemActions] = useState(false);
   const taskRows = tasks;
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
   const [selectedTestCase, setSelectedTestCase] = useState<TestCaseItem | null>(null);
@@ -679,6 +697,7 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
     selectedMilestoneIds.includes(milestone.id) ||
     (selectedRelease ? milestone.releaseIds.includes(selectedRelease.id) : milestone.projectKeys.includes(selectedProjectKey))
   );
+  const splitReason = splitActionReason(item, iterations, !readOnly);
 
   function changeProject(projectKey: string) {
     const nextProject = SCOPE_PROJECTS.find(candidate => candidate.key === projectKey) || project;
@@ -694,7 +713,7 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
   }
 
   function changeWorkItemState(nextState: StatusType) {
-    onUpdateItem(item.id, { status: nextState });
+    onUpdateItem(item.id, { status: nextState, ...(["Accepted", "Release"].includes(nextState) ? { acceptedDate: new Date().toISOString() } : {}) });
   }
 
   function toggleMilestone(milestoneId: string) {
@@ -731,10 +750,10 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
   }
 
   if (selectedTask) {
-    return <TaskDetailView task={selectedTask} parentItem={item} readOnly={readOnly} onBack={() => setSelectedTask(null)} onUpdateTask={updateTaskRow} />;
+    return <TaskDetailView task={selectedTask} parentItem={item} readOnly={readOnly} storySplits={storySplits} onBack={() => setSelectedTask(null)} onUpdateTask={updateTaskRow} />;
   }
   if (selectedTestCase) {
-    return <TestCaseDetailView testCase={selectedTestCase} parentItem={item} testCaseTypes={testCaseTypes} results={testCaseResults.filter(result => result.testCaseId === selectedTestCase.id)} defaultTester={DEMO_ACCESS_PROFILES[role].owner} readOnly={readOnly} onBack={() => { setSelectedTestCase(null); setActiveTab("testCases"); }} onUpdateTestCase={updateTestCaseRow} onCreateResult={onCreateTestCaseResult} onUpdateResult={onUpdateTestCaseResult} />;
+    return <TestCaseDetailView testCase={selectedTestCase} parentItem={item} testCaseTypes={testCaseTypes} results={testCaseResults.filter(result => result.testCaseId === selectedTestCase.id)} defaultTester={DEMO_ACCESS_PROFILES[role].owner} readOnly={readOnly} storySplits={storySplits} onBack={() => { setSelectedTestCase(null); setActiveTab("testCases"); }} onUpdateTestCase={updateTestCaseRow} onCreateResult={onCreateTestCaseResult} onUpdateResult={onUpdateTestCaseResult} />;
   }
 
   return (
@@ -748,7 +767,13 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
           <h1 className="text-[15px] font-semibold truncate">{item.title}</h1>
           <div className="flex-1" />
           <button aria-label="Collapse work item to summary panel" title="Collapse to summary" onClick={() => onMinimize ? onMinimize(item) : onBack()} className="p-1.5 rounded hover:bg-white/10"><Minimize2 size={17} /></button>
-          <button aria-label="More work item actions" className="p-1.5 rounded hover:bg-white/10"><MoreHorizontal size={17} /></button>
+          <div className="relative">
+            <button aria-label="More work item actions" aria-expanded={showItemActions} onClick={() => setShowItemActions(!showItemActions)} className="p-1.5 rounded hover:bg-white/10"><MoreHorizontal size={17} /></button>
+            {showItemActions && <div className="absolute right-0 top-full z-30 w-64 rounded border border-slate-200 bg-white p-1 text-xs text-slate-700 shadow-lg">
+              <button disabled={!!splitReason} onClick={() => { setShowItemActions(false); onSplit?.(item); }} className="w-full rounded px-3 py-2.5 text-left hover:bg-blue-50 disabled:opacity-40">Split unfinished story</button>
+              <button onClick={() => setShowItemActions(false)} className="w-full rounded px-3 py-2 text-left text-slate-500 hover:bg-slate-50">Close menu</button>
+            </div>}
+          </div>
         </div>
         <div className="h-16 px-5 flex items-stretch gap-2">
           <button onClick={() => { setSelectedTask(null); setActiveTab("details"); }} className="w-28 flex flex-col items-center justify-center gap-1 text-[11px] font-medium" style={{ backgroundColor: activeTab === "details" ? "#2f6fc5" : "transparent", color: activeTab === "details" ? "white" : "#d7e4f7" }}><span className="h-5 flex items-center justify-center"><FileText size={18} /></span><span>Details</span></button>
@@ -772,7 +797,7 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
               <RichTextEditor title="Release Notes (Technical Writer Content)" minHeight={160} readOnly={readOnly || role === "Editor"} />
             </div>
           ) : activeTab === "history" ? (
-            <ActivityLogView />
+            <ActivityLogView item={item} storySplits={storySplits} />
           ) : activeTab === "tasks" ? (
             <div className="w-full">
               <div className="flex items-center justify-between mb-4"><div><h2 className="text-[20px] font-semibold" style={{ color: "#273449" }}>Tasks</h2><p className="text-[11px] mt-1" style={{ color: "#64748b" }}>Break this work item into trackable delivery tasks.</p></div>{!readOnly && <button onClick={() => setIsAddTaskOpen(true)} className="flex items-center gap-1.5 px-3 py-2 rounded text-[11px] font-semibold text-white" style={{ backgroundColor: "#1d3f73" }}><Plus size={13} />Add Task</button>}</div>

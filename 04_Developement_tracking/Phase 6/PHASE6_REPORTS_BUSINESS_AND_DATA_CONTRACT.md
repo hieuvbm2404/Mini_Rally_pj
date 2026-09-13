@@ -95,7 +95,7 @@ Detailed contract: `04_Team_Capacity/SRS.md`.
 
 1. `planEstimate`, Task hour fields and capacity are numeric and cannot be negative.
 2. `actuals` may exceed `estimate`; do not cap it.
-3. `todo` is an independent remaining-work field; do not derive it as `estimate - actuals`.
+3. `estimate`, `todo` and `actuals` are independent persisted fields.
 4. A Story/Defect currently in `Accepted` or `Release` must have `acceptedDate`; a reopened item must not retain a current accepted date. Historical records require a controlled backfill before Velocity is considered trustworthy.
 5. Aggregation must de-duplicate by stable Work Item or Task ID. This is especially important for All Teams.
 6. Round only display values. Aggregate full-precision source values first, then display points/hours consistently (maximum two decimals unless the product-wide number format says otherwise).

@@ -26,7 +26,7 @@ The repository entry point is [README](../README.md). [Baseline reconciliation](
 
 ### Confirmed corrections restored in this baseline
 
-- **BL-01, confirmed 2026-08-14:** Task Estimate, To Do and Actual are independent after create. Copy Estimate to a blank To Do once on create only. Completed/reopen never changes any hour value. The former equality formula and Completed-to-zero rule are superseded.
+- **BL-01, confirmed 2026-08-14 and reconfirmed 2026-09-11:** Task Estimate, To Do and Actual are independent after create. Copy Estimate to a blank To Do once on create only. Completed/reopen never changes any hour value.
 - **BL-02, accepted 2026-08-14:** Project Key allows 1–10 uppercase alphanumeric characters after normalization, caps input at 10, remains unique and immutable after creation. Team Key keeps its own SRS validation; the Project decision does not change Team Key.
 - **BL-03, C10 confirmed 2026-08-06:** A new Story/Defect defaults Owner to the authenticated current user when eligible in the current Project/Team; the user can explicitly choose Unassigned. The later discussion about available options did not approve a universal Unassigned default. Fallback when the current user is ineligible remains unconfirmed; do not invent a fallback or assign an ineligible user. Task and Test Case defaults use their own SRS.
 - Phase 4 Roles & Permissions is the current access authority. Team Status is hidden for Editor, while the Work Item Detail Tasks tab follows the Editor's normal Team-scoped Task permission.
@@ -106,7 +106,7 @@ Release <-> Milestone
 | Settings > Users | WA-only company directory. List columns are Name, Email, Phone Number, Status and Last Login. User Details separates General from Project Access; normal users may have different Access Levels per Project. |
 | Settings > Permission Model | Read-only explanation of Workspace Admin plus per-Project Admin and Editor. No custom E/R/D/H matrix editing in this MVP. |
 
-Iteration Status shows current-context Story/Defect rows assigned to the selected Iteration only. `Tasks — N active` counts non-deleted child Tasks with State other than `Completed` under the scoped US/DE, per the Iteration Status SRS. The Work Item Detail child-task count includes all non-deleted child Tasks, including Completed. Totals derive Plan Estimate from scoped US/DE and Task Estimate/To Do from all their non-deleted child Tasks; Task Estimate is the explicit Task Estimate field, not `To Do + Actual`.
+Iteration Status shows current-context Story/Defect rows assigned to the selected Iteration only. `Tasks — N active` counts non-deleted child Tasks with State other than `Completed` under the scoped US/DE, per the Iteration Status SRS. The Work Item Detail child-task count includes all non-deleted child Tasks, including Completed. Totals derive Plan Estimate from scoped US/DE and independently sum the persisted Task Estimate and To Do fields from all their non-deleted child Tasks.
 
 ## 5. Identity and mock-state contract
 

@@ -22,6 +22,8 @@ export interface WorkItem {
   description: string; lastUpdated: string; dueDate?: string;
   blocked?: boolean; defectCount?: number; commentCount?: number;
   attachmentCount?: number; project?: string; team?: string; rank?: number;
+  /** Parent Story used by related Defects. */
+  parentWorkItemId?: string;
 }
 export interface Notification {
   id: number; type: "assigned" | "mention";
@@ -350,12 +352,23 @@ export const WORK_ITEMS: WorkItem[] = [
   {
     id: "US-4821", type: "Story", rank: 1,
     title: "Implement SSO authentication via SAML 2.0 for enterprise tenant onboarding",
-    status: "In-Progress", priority: "High", owner: OWNERS[0], project: "NXP",
+    status: "In-Progress", priority: "High", owner: OWNERS[0], project: "NXP", team: "Core Platform",
     planEstimate: 8, taskCount: 6, completedTasks: 4, taskEstimate: 16, todoEstimate: 4,
     iteration: "Sprint 24.3", release: "Q4 2024", featureId: "FE-311", tags: ["auth", "security"],
-    dueDate: "Oct 28, 2024", commentCount: 4, attachmentCount: 2, defectCount: 0,
+    dueDate: "Oct 28, 2024", commentCount: 4, attachmentCount: 2, defectCount: 1,
     description: "Enterprise customers require SAML 2.0 SSO support for automated provisioning through their identity provider. Covers IdP metadata upload, attribute mapping, and session management across tenant boundaries.",
     lastUpdated: "Oct 21, 2024",
+  },
+  {
+    id: "DE-1146", type: "Defect", rank: 1.5,
+    title: "Rejected SAML response audit event is missing the correlation ID",
+    status: "Defined", priority: "High", owner: OWNERS[3], project: "NXP", team: "Core Platform",
+    parentWorkItemId: "US-4821",
+    planEstimate: 1, taskCount: 0, completedTasks: 0, taskEstimate: 0, todoEstimate: 0,
+    iteration: "Sprint 24.3", release: "Q4 2024", featureId: "FE-311", tags: ["auth", "audit"],
+    commentCount: 1, attachmentCount: 0, defectCount: 0,
+    description: "A rejected SAML response is logged without the correlation ID required to trace the request across authentication services.",
+    lastUpdated: "Oct 22, 2024",
   },
   {
     id: "DE-1142", type: "Defect", rank: 2,

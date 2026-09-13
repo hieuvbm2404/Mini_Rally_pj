@@ -20,6 +20,7 @@ import {
 } from "recharts";
 import { type NewWorkItemInput, type Role, type Page, type WorkItemType, type StatusType, type PriorityType, type Owner, type WorkItem, type TaskItem, type Notification, type Feature, type Project, type ScopeProject, type Initiative, type ReleaseItem, type WorkspaceUser, type WorkflowStatusItem, type LabelItem, type IterationItem, can, OWNERS, PROJECTS, SCOPE_PROJECTS, FEATURES, NOTIFICATIONS, VELOCITY_DATA, BURNDOWN_DATA, STATUS_PIE, INITIATIVES, RELEASES_DATA, WORKSPACE_USERS, WORKFLOW_STATUSES, LABELS_DATA, WORKLOAD_DATA, PLANNED_VS_COMPLETED, PERMISSIONS_MATRIX, DEFECT_ENVIRONMENTS, RELATED_STORIES } from "../model";
 import { releaseStatusCfg, cx, Avatar, TYPE_CFG, TypeBadge, STATUS_CFG, StatusBadge, ScheduleStateBar, PRI_CFG, PriorityBadge, MiniProgress, RoleBadge, DetailPanel, NewItemModal, EmptyState, SectionCard } from "../components/shared";
+import { splitActionReason } from "../splitStory";
 
 type IterationColumnKey = "rank" | "id" | "name" | "status" | "flowState" | "iteration" | "blocked" | "planEstimate" | "taskEstimate" | "todoEstimate" | "owner";
 type IterationFilterColumn = "id" | "name" | "type" | "status" | "flowState" | "iteration" | "blocked" | "planEstimate" | "taskEstimate" | "todoEstimate" | "owner";
@@ -113,12 +114,12 @@ function ResizableIterationHeader({ label, width, column, onResize, sort, onSort
   );
 }
 
-export function SelectedItemToolbar({ count, onClear }: { count: number; onClear: () => void }) {
+export function SelectedItemToolbar({ count, onClear, onSplit }: { count: number; onClear: () => void; onSplit?: () => void }) {
   return (
     <div className="flex items-center h-8 px-3 gap-1 shrink-0" style={{ backgroundColor: "#edf2fb", borderBottom: "1px solid #bdd0ef" }}>
       <span className="text-[11px] font-semibold mr-2" style={{ color: "#2558a6" }}>{count} selected</span>
       {TRACK_ACTION_GROUPS[0].map(a => (
-        <button key={a} className="px-2 py-0.5 text-[11px] rounded" style={{ color: "#2558a6" }} onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#dde8f5")} onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}>{a}</button>
+        <button key={a} disabled={a === "Split" && !onSplit} onClick={a === "Split" ? onSplit : undefined} className="px-2 py-0.5 text-[11px] rounded disabled:opacity-40" style={{ color: "#2558a6" }} onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#dde8f5")} onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}>{a}</button>
       ))}
       <div className="w-px h-4 mx-1" style={{ backgroundColor: "#bdd0ef" }} />
       {TRACK_ACTION_GROUPS[1].map(a => (
@@ -208,7 +209,7 @@ function IterationAddItemModal({ iteration, onClose, onCreateItem }: { iteration
   );
 }
 
-export function TrackPage({ title = "Iteration Status", role, readOnly = false, projectKey, iterations, onCreateItem, onUpdateIteration, items, tasks, onUpdateItem, activeItem, onItemClick, onOpenFull }: { title?: string; role: Role; readOnly?: boolean; projectKey: string; iterations: IterationItem[]; onCreateItem: (input: NewWorkItemInput, openDetails: boolean) => void; onUpdateIteration: (id: string, patch: Partial<IterationItem>) => void; items: WorkItem[]; tasks: TaskItem[]; onUpdateItem: (id: string, patch: Partial<WorkItem>) => void; activeItem: WorkItem | null; onItemClick: (i: WorkItem) => void; onOpenFull?: (item: WorkItem) => void }) {
+export function TrackPage({ title = "Iteration Status", role, readOnly = false, projectKey, iterations, onCreateItem, onUpdateIteration, items, tasks, onUpdateItem, activeItem, onItemClick, onOpenFull, onSplit }: { title?: string; role: Role; readOnly?: boolean; projectKey: string; iterations: IterationItem[]; onCreateItem: (input: NewWorkItemInput, openDetails: boolean) => void; onUpdateIteration: (id: string, patch: Partial<IterationItem>) => void; items: WorkItem[]; tasks: TaskItem[]; onUpdateItem: (id: string, patch: Partial<WorkItem>) => void; activeItem: WorkItem | null; onItemClick: (i: WorkItem) => void; onSplit?: (item: WorkItem) => void; onOpenFull?: (item: WorkItem) => void }) {
   const iterationItems = items;
   const [search, setSearch] = useState("");
   const [selectedIterationId, setSelectedIterationId] = useState("IT-24-3");
@@ -238,6 +239,12 @@ export function TrackPage({ title = "Iteration Status", role, readOnly = false, 
   }
 
   const editable = !readOnly && can.manageBacklog(role);
+  const selectedSplitItem = selectedIds.size === 1 ? items.find(row => selectedIds.has(row.id)) : undefined;
+  const selectedSplitReason = selectedIds.size !== 1
+    ? "Select one unfinished User Story to split."
+    : selectedSplitItem
+      ? splitActionReason(selectedSplitItem, iterations, editable)
+      : "Select one unfinished User Story to split.";
   const activeFilterColumns = ITERATION_FILTER_COLUMNS.filter(column => filters[column.key] !== undefined);
   const activeFilterCount = activeFilterColumns.length;
   const availableFilterColumns = ITERATION_FILTER_COLUMNS.filter(column => column.label.toLowerCase().includes(filterColumnSearch.toLowerCase()));
@@ -380,7 +387,7 @@ export function TrackPage({ title = "Iteration Status", role, readOnly = false, 
   const planEstimateTotal = sprintItems.reduce((sum, item) => sum + item.planEstimate, 0);
   const sprintParentIds = new Set(sprintItems.map(item => item.id));
   const sprintTasks = tasks.filter(task => sprintParentIds.has(task.parentWorkItemId));
-  const taskEstimateTotal = sprintTasks.reduce((sum, task) => sum + task.todo + task.actuals, 0);
+  const taskEstimateTotal = sprintTasks.reduce((sum, task) => sum + task.estimate, 0);
   const todoEstimateTotal = sprintTasks.reduce((sum, task) => sum + task.todo, 0);
   const plannedPts = planEstimateTotal;
   const acceptedPts = sprintItems.filter(i => i.status === "Accepted").reduce((s, i) => s + i.planEstimate, 0);
@@ -566,7 +573,7 @@ export function TrackPage({ title = "Iteration Status", role, readOnly = false, 
           )}
 
           {/* Selected item toolbar */}
-          {selectedIds.size > 0 && <SelectedItemToolbar count={selectedIds.size} onClear={() => setSelectedIds(new Set())} />}
+          {selectedIds.size > 0 && <SelectedItemToolbar count={selectedIds.size} onClear={() => setSelectedIds(new Set())} onSplit={!selectedSplitReason && selectedSplitItem && onSplit ? () => { onSplit(selectedSplitItem); setSelectedIds(new Set()); } : undefined} />}
 
           {/* Table */}
           <div className="flex flex-1 overflow-hidden">

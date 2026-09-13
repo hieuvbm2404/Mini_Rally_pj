@@ -1,7 +1,7 @@
 ﻿import { useState } from "react";
 import { TopNav, ContextBar } from "./components/layout";
 import { useEffect } from "react";
-import { type CapacityPlan, type Epic, type Feature, type IterationItem, type MilestoneItem, type NewCapacityPlanInput, type NewEpicInput, type NewFeatureInput, type NewIterationInput, type NewMilestoneInput, type NewReleaseInput, type NewTaskInput, type NewTestCaseInput, type NewTestCaseResultInput, type NewWorkItemInput, type Page, type ReleaseItem, type Role, type ScopeProject, type TaskItem, type TestCaseItem, type TestCaseResultItem, type WorkItem, toDateInputValue, CAPACITY_PLANS_DATA, DEFAULT_TEST_CASE_TYPES, EPICS, FEATURES, ITERATIONS_DATA, MILESTONES_DATA, NOTIFICATIONS, OWNERS, RELEASES_DATA, ROLE_SCOPE, SCOPE_PROJECTS, TASKS_DATA, TEST_CASES_DATA, TEST_CASE_RESULTS_DATA, WORK_ITEMS } from "./model";
+import { type CapacityPlan, type Epic, type Feature, type IterationItem, type MilestoneItem, type NewCapacityPlanInput, type NewEpicInput, type NewFeatureInput, type NewIterationInput, type NewMilestoneInput, type NewReleaseInput, type NewTaskInput, type NewTestCaseInput, type NewTestCaseResultInput, type NewWorkItemInput, type Page, type ReleaseItem, type Role, type ScopeProject, type TaskItem, type TestCaseItem, type TestCaseResultItem, type WorkItem, toDateInputValue, CAPACITY_PLANS_DATA, DEFAULT_TEST_CASE_TYPES, DEMO_ACCESS_PROFILES, EPICS, FEATURES, ITERATIONS_DATA, MILESTONES_DATA, NOTIFICATIONS, OWNERS, RELEASES_DATA, ROLE_SCOPE, SCOPE_PROJECTS, TASKS_DATA, TEST_CASES_DATA, TEST_CASE_RESULTS_DATA, WORK_ITEMS } from "./model";
 import { HomePage } from "./pages/HomePage";
 import { TrackPage } from "./pages/IterationStatusPage";
 import { TeamBoardPage } from "./pages/TeamBoardPage";
@@ -19,6 +19,8 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { WorkItemDetailPage } from "./pages/WorkItemDetailPage";
 import { LoginPage } from "./pages/LoginPage";
 import { AccessStatePage } from "./pages/AccessStatePage";
+import { SplitStoryDialog, SplitHistoryBanner } from "./components/SplitStoryDialog";
+import { buildStorySplit, splitTargets, type StorySplit, type StorySplitPlan } from "./splitStory";
 
 function formatAuditTimestamp(date: Date) {
   const weekday = date.toLocaleDateString("en-US", { weekday: "long" });
@@ -53,6 +55,25 @@ export default function App() {
   const [features, setFeatures] = useState<Feature[]>(FEATURES);
   const [capacityPlans, setCapacityPlans] = useState<CapacityPlan[]>(CAPACITY_PLANS_DATA);
   const [activeItem, setActiveItem] = useState<WorkItem | null>(null);
+  const [splitItem, setSplitItem] = useState<WorkItem | null>(null);
+  const [storySplits, setStorySplits] = useState<StorySplit[]>([]);
+
+  function splitStory(plan: StorySplitPlan) {
+    const source = workItems.find(item => item.id === splitItem?.id);
+    const sourceIteration = source ? iterations.find(iteration => iteration.name === source.iteration && iteration.projectKey === source.project && (iteration.team || "") === (source.team || "")) : undefined;
+    const target = source ? splitTargets(source, iterations).find(iteration => iteration.id === plan.targetIterationId) : undefined;
+    if (!source || !sourceIteration || !target) return;
+    const result = buildStorySplit(source, workItems, tasks, testCases, testCaseResults, sourceIteration, target, plan, new Date().toISOString(), DEMO_ACCESS_PROFILES[currentRole].owner);
+    const continued = result.items.find(item => item.id === source.id);
+    if (!continued) return;
+    setWorkItems(result.items);
+    setTasks(result.tasks);
+    setTestCases(result.testCases);
+    setTestCaseResults(result.results);
+    setStorySplits(previous => [...previous, result.record]);
+    setSplitItem(null);
+    openFullDetail(continued);
+  }
   const [showFullDetail, setShowFullDetail] = useState(false);
   const [fullDetailItem, setFullDetailItem] = useState<WorkItem | null>(null);
   const [accessState, setAccessState] = useState<"access-denied" | "not-found" | null>(null);
@@ -123,11 +144,13 @@ export default function App() {
   function createTask(parent: WorkItem, input: NewTaskInput): TaskItem {
     const siblings = tasks.filter(task => task.parentWorkItemId === parent.id);
     const parentNumber = parent.id.replace(/\D/g, "") || "0";
-    const nextSuffix = String(siblings.length + 1).padStart(2, "0");
+    let nextTaskNumber = siblings.length + 1;
+    while (tasks.some(task => task.id === `TA-${parentNumber}${String(nextTaskNumber).padStart(2, "0")}`)) nextTaskNumber++;
+    const nextSuffix = String(nextTaskNumber).padStart(2, "0");
     const task: TaskItem = {
       id: `TA-${parentNumber}${nextSuffix}`,
       parentWorkItemId: parent.id,
-      rank: siblings.length + 1,
+      rank: Math.max(0, ...siblings.map(task => task.rank)) + 1,
       name: input.name,
       state: "Defined",
       owner: input.owner,
@@ -506,7 +529,7 @@ export default function App() {
       case "projects": return <SettingsPage role={currentRole} projectReadOnly={projectReadOnly} initialTab="workspaceProjects" projectTestCaseTypes={projectTestCaseTypes} onAddProjectTestCaseType={addProjectTestCaseType} onRemoveProjectTestCaseType={removeProjectTestCaseType} />;
       case "backlog": return <BacklogPage role={currentRole} project={currentProject} team={currentTeam} iterations={iterations} releases={releases} features={features} items={workItems} onCreateItem={createWorkItem} onUpdateItem={updateWorkItem} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
       case "iterations": return <IterationsPage role={currentRole} readOnly={projectReadOnly} iterations={iterations} releases={releases} milestones={milestones} workItems={workItems} onCreateIteration={createIteration} onUpdateIteration={updateIteration} onCreateRelease={createRelease} onUpdateRelease={updateRelease} onCreateMilestone={createMilestone} onUpdateMilestone={updateMilestone} onUpdateWorkItem={updateWorkItem} />;
-      case "track": return <TrackPage key="track" title="Iteration" role={currentRole} readOnly={projectReadOnly} projectKey={currentProject.key} iterations={iterations} onCreateItem={createWorkItem} onUpdateIteration={updateIteration} items={workItems} tasks={tasks} onUpdateItem={updateWorkItem} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
+      case "track": return <TrackPage key="track" title="Iteration" role={currentRole} readOnly={projectReadOnly} projectKey={currentProject.key} iterations={iterations} onCreateItem={createWorkItem} onUpdateIteration={updateIteration} items={workItems} tasks={tasks} onUpdateItem={updateWorkItem} activeItem={activeItem} onItemClick={handleItemClick} onSplit={setSplitItem} onOpenFull={openFullDetail} />;
       case "teamBoard": return <TeamBoardPage role={currentRole} readOnly={projectReadOnly} projectKey={currentProject.key} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
       case "teamStatus": return <TeamStatusPage role={currentRole} readOnly={projectReadOnly} items={workItems} tasks={tasks} onUpdateTask={updateTask} onOpenFull={openFullDetail} />;
       case "quality": return <QualityPage role={currentRole} readOnly={projectReadOnly} projectKey={currentProject.key} items={workItems} onUpdateItem={updateWorkItem} activeItem={activeItem} onItemClick={handleItemClick} onOpenFull={openFullDetail} />;
@@ -515,7 +538,7 @@ export default function App() {
       case "capacityPlanning": return <CapacityPlanningPage role={currentRole} project={currentProject} releases={releases} features={features} workItems={workItems} capacityPlans={capacityPlans} onCreateCapacityPlan={createCapacityPlan} onUpdateCapacityPlan={updateCapacityPlan} onPublishCapacityPlan={publishCapacityPlan} />;
       case "releasePlanning": return <ReleasePlanningPlaceholder />;
       case "releases": return <ReleasesPage role={currentRole} readOnly={projectReadOnly} />;
-      case "reports": return <ReportsPage role={currentRole} readOnly={projectReadOnly} projectKey={currentProject.key} team={currentTeam} iterations={iterations} items={workItems} tasks={tasks} />;
+      case "reports": return <ReportsPage role={currentRole} readOnly={projectReadOnly} projectKey={currentProject.key} team={currentTeam} iterations={iterations} items={workItems} tasks={tasks} storySplits={storySplits} />;
       case "notifications": return <NotificationsPage onOpenWorkItem={openNotificationWorkItem} />;
       case "settings": return <SettingsPage role={currentRole} projectReadOnly={projectReadOnly} projectTestCaseTypes={projectTestCaseTypes} onAddProjectTestCaseType={addProjectTestCaseType} onRemoveProjectTestCaseType={removeProjectTestCaseType} />;
     }
@@ -527,13 +550,15 @@ export default function App() {
     <div className="flex flex-col h-screen overflow-hidden" style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", backgroundColor: "#f0f2f5" }}>
       <TopNav currentPage={currentPage} onNavigate={navigateTo} currentRole={currentRole} onRoleChange={changeRole} unreadCount={unreadCount} currentProject={currentProject} currentTeam={currentTeam} onScopeChange={changeScope} onSignOut={signOut} />
       <ContextBar currentPage={currentPage} currentProject={currentProject} currentTeam={currentTeam} currentRole={currentRole} onScopeChange={changeScope} portfolioTypeFilter={portfolioTypeFilter} onPortfolioTypeFilterChange={setPortfolioTypeFilter} />
+      {showFullDetail && fullDetailItem && storySplits.filter(record => record.continuedId === fullDetailItem.id || record.unfinishedId === fullDetailItem.id).map(record => <SplitHistoryBanner key={record.id} record={record} items={workItems} onOpen={openFullDetail} />)}
       <div className="flex flex-1 overflow-hidden">
         {accessState
           ? <AccessStatePage variant={accessState} onBack={() => { setAccessState(null); setCurrentPage("backlog"); }} />
           : showFullDetail && fullDetailItem
-            ? <WorkItemDetailPage item={fullDetailItem} role={currentRole} readOnly={currentRole === "Admin" && !ROLE_SCOPE.adminProjectKeys.includes((fullDetailItem.project ?? "") as typeof ROLE_SCOPE.adminProjectKeys[number])} project={currentProject} team={currentTeam} iterations={iterations} releases={releases} milestones={milestones} features={features} tasks={tasks.filter(task => task.parentWorkItemId === fullDetailItem.id)} testCases={testCases.filter(testCase => testCase.parentWorkItemId === fullDetailItem.id)} testCaseResults={testCaseResults.filter(result => testCases.some(testCase => testCase.id === result.testCaseId && testCase.parentWorkItemId === fullDetailItem.id))} testCaseTypes={projectTestCaseTypes[fullDetailItem.project || currentProject.key] || [...DEFAULT_TEST_CASE_TYPES]} onCreateTask={createTask} onCreateTestCase={createTestCase} onCreateTestCaseResult={createTestCaseResult} onUpdateTask={updateTask} onUpdateTestCase={updateTestCase} onUpdateTestCaseResult={updateTestCaseResult} onUpdateItem={updateWorkItem} onBack={closeFullDetail} onMinimize={minimizeFullDetail} />
+            ? <WorkItemDetailPage key={fullDetailItem.id} onSplit={setSplitItem} storySplits={storySplits} item={fullDetailItem} role={currentRole} readOnly={currentRole === "Admin" && !ROLE_SCOPE.adminProjectKeys.includes((fullDetailItem.project ?? "") as typeof ROLE_SCOPE.adminProjectKeys[number])} project={currentProject} team={currentTeam} iterations={iterations} releases={releases} milestones={milestones} features={features} tasks={tasks.filter(task => task.parentWorkItemId === fullDetailItem.id)} testCases={testCases.filter(testCase => testCase.parentWorkItemId === fullDetailItem.id)} testCaseResults={testCaseResults.filter(result => testCases.some(testCase => testCase.id === result.testCaseId && testCase.parentWorkItemId === fullDetailItem.id))} testCaseTypes={projectTestCaseTypes[fullDetailItem.project || currentProject.key] || [...DEFAULT_TEST_CASE_TYPES]} onCreateTask={createTask} onCreateTestCase={createTestCase} onCreateTestCaseResult={createTestCaseResult} onUpdateTask={updateTask} onUpdateTestCase={updateTestCase} onUpdateTestCaseResult={updateTestCaseResult} onUpdateItem={updateWorkItem} onBack={closeFullDetail} onMinimize={minimizeFullDetail} />
             : renderPage()}
       </div>
+      {splitItem && <SplitStoryDialog item={workItems.find(item => item.id === splitItem.id) || splitItem} tasks={tasks.filter(task => task.parentWorkItemId === splitItem.id)} relatedDefects={workItems.filter(item => item.type === "Defect" && item.parentWorkItemId === splitItem.id)} testCases={testCases.filter(testCase => testCase.parentWorkItemId === splitItem.id)} iterations={iterations} releases={releases} onClose={() => setSplitItem(null)} onSplit={splitStory} />}
     </div>
   );
 }

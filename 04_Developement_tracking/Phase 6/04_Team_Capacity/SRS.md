@@ -34,7 +34,7 @@ Rules:
 - All Teams totals are the sum of displayed Team rows.
 - The scoped Task set is determined from the Task's parent Story/Defect Project, Team and Iteration assignment.
 - Parent status does not exclude its Tasks. Accepted or Released work still contributes Task hours while it remains assigned to the selected Iteration.
-- `ToDo` is not calculated as `Estimate - Actual`.
+- `Estimate`, `ToDo` and `Actual` are persisted and aggregated independently.
 - `Actual` is not capped at `Estimate`.
 - Hours must be numeric and non-negative. Zero is valid.
 
