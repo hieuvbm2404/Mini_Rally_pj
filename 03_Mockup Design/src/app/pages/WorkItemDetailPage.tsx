@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { AlignLeft, AtSign, Bold, ChevronLeft, ClipboardCheck, Code2, FileText, FlaskConical, History, ImagePlus, Italic, Link2, List, ListChecks, ListOrdered, Maximize2, Minimize2, MoreHorizontal, Plus, Redo2, Strikethrough, Table2, Underline, Undo2 } from "lucide-react";
+import { AlertTriangle, AlignLeft, ArrowRight, AtSign, Bold, CalendarDays, CalendarClock, ChevronLeft, ChevronRight, ClipboardCheck, Code2, FileText, FlaskConical, History, ImagePlus, Italic, Link2, List, ListChecks, ListOrdered, Maximize2, Minimize2, MoreHorizontal, Plus, Redo2, Strikethrough, Table2, Underline, Undo2, X } from "lucide-react";
 import { type Feature, type IterationItem, type MilestoneItem, type NewTaskInput, type NewTestCaseInput, type NewTestCaseResultInput, type Owner, type ReleaseItem, type Role, type ScopeProject, type StatusType, type TaskItem, type TaskState, type TestCaseItem, type TestCaseMethod, type TestCasePriority, type TestCaseResultItem, type TestCaseType, type TestCaseVerdict, type WorkItem, DEMO_ACCESS_PROFILES, OWNERS, PROJECT_MEMBER_OWNERS, SCOPE_PROJECTS } from "../model";
 import { Avatar, TypeBadge, ScheduleStateBar } from "../components/shared";
 import { splitActionReason, type StorySplit } from "../splitStory";
@@ -13,6 +13,14 @@ const WORK_ITEM_STATE_OPTIONS = ["Idea", "Defined", "In-Progress", "Completed", 
 const DEFECT_PRIORITY_OPTIONS = ["Low", "Normal", "High", "Urgent", "None"];
 const DEFECT_PRIORITY_DEFAULTS: Record<string, string> = { Low: "Low", Medium: "Normal", High: "High", Critical: "Urgent" };
 
+function iterationDateValue(value: string) {
+  return value.slice(0, 10);
+}
+
+function formatCompactDate(value?: string | null) {
+  return value || "Not set";
+}
+
 function calculateTaskTotals(tasks: TaskItem[]) {
   return tasks.reduce(
   (totals, task) => ({
@@ -24,7 +32,7 @@ function calculateTaskTotals(tasks: TaskItem[]) {
   );
 }
 
-const TASK_GRID_COLUMNS = "44px 72px 110px minmax(320px,1fr) 140px 170px 160px 150px 90px 100px 100px";
+const TASK_GRID_COLUMNS = "44px 72px 110px minmax(300px,1fr) 140px 170px 160px 150px 112px 112px 90px 100px 100px";
 
 const ACTIVITY_ROWS = [
   { id: "ACT-1007", at: "Today, 10:24", actor: OWNERS[0], action: "changed State", target: "US-4821", detail: "Defined → In-Progress" },
@@ -107,7 +115,15 @@ function ActivityLogView({ item, storySplits }: { item: WorkItem; storySplits: S
   const splitRows = storySplits
     .filter(record => record.unfinishedId === item.id || record.continuedId === item.id || record.defectAssignments.some(defect => defect.id === item.id))
     .map(record => ({ id: `${record.id}-${item.id}`, at: new Date(record.at).toLocaleString(), actor: record.actor, action: "split Story", target: record.id, detail: splitActivityDetail(record) }));
-  const rows = [...splitRows, ...(item.id === "US-4821" ? ACTIVITY_ROWS : [])];
+  const transitionRows = [...(item.iterationTransitions || [])].reverse().map((transition, index) => ({
+    id: transition.id || `TRANSITION-${index}`,
+    at: transition.at,
+    actor: item.owner,
+    action: transition.type === "Carryover" ? "accepted Carryover" : "moved Iteration",
+    target: item.id,
+    detail: `${transition.fromIteration} → ${transition.toIteration}${transition.targetEndDate ? ` · Target End ${transition.targetEndDate}` : ""}`,
+  }));
+  const rows = [...transitionRows, ...splitRows, ...ACTIVITY_ROWS.filter(activity => activity.target === item.id)];
   return (
     <div className="w-full space-y-5">
       <div>
@@ -177,6 +193,76 @@ function TaskActivityLogView({ task, storySplits }: { task: TaskItem; storySplit
 
 export const fieldClass = "w-full text-[12px] px-3 py-2 rounded bg-white focus:outline-none";
 export const fieldStyle = { border: "1px solid #d7dde7", color: "#1a2234" };
+
+function parseInputDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function dateToInputValue(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function TargetEndDatePicker({ value, storyStartDate, allowedIterations, disabled, invalid, onChange }: { value?: string | null; storyStartDate?: string | null; allowedIterations: IterationItem[]; disabled: boolean; invalid: boolean; onChange: (value: string) => void }) {
+  const firstAllowedDate = allowedIterations[0] ? iterationDateValue(allowedIterations[0].startDate) : "";
+  const initialMonthValue = value || storyStartDate || firstAllowedDate || dateToInputValue(new Date());
+  const [isOpen, setIsOpen] = useState(false);
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const initial = parseInputDate(initialMonthValue);
+    return new Date(initial.getFullYear(), initial.getMonth(), 1);
+  });
+  const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+  const calendarStart = new Date(monthStart);
+  calendarStart.setDate(1 - monthStart.getDay());
+  const calendarDays = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(calendarStart);
+    date.setDate(calendarStart.getDate() + index);
+    return date;
+  });
+  const minimumDate = storyStartDate || firstAllowedDate;
+
+  function isAllowed(targetDate: string) {
+    if (minimumDate && targetDate < minimumDate) return false;
+    return allowedIterations.some(iteration => targetDate >= iterationDateValue(iteration.startDate) && targetDate <= iterationDateValue(iteration.endDate));
+  }
+
+  function moveMonth(direction: -1 | 1) {
+    setVisibleMonth(previous => new Date(previous.getFullYear(), previous.getMonth() + direction, 1));
+  }
+
+  return (
+    <div className="relative min-w-0 flex-1">
+      <button type="button" aria-label="Open Story target end date picker" disabled={disabled || allowedIterations.length === 0} onClick={() => setIsOpen(open => !open)} className={`${fieldClass} flex items-center justify-between text-left disabled:cursor-not-allowed disabled:bg-[#f8fafc]`} style={{ ...fieldStyle, borderColor: invalid ? "#e59f0c" : "#d7dde7", color: value ? "#1a2234" : "#8c94a6" }}>
+        <span>{value || "Select a date"}</span><CalendarDays size={14} style={{ color: "#64748b" }} />
+      </button>
+      {isOpen && (
+        <div className="absolute bottom-full right-0 z-50 mb-2 w-[300px] rounded-md bg-white p-3 shadow-xl" style={{ border: "1px solid #cfd8e6" }}>
+          <div className="mb-3 flex items-center justify-between">
+            <button type="button" aria-label="Previous month" onClick={() => moveMonth(-1)} className="rounded p-1.5 hover:bg-[#f1f5f9]" style={{ color: "#475569" }}><ChevronLeft size={15} /></button>
+            <span className="text-[12px] font-semibold" style={{ color: "#273449" }}>{visibleMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
+            <button type="button" aria-label="Next month" onClick={() => moveMonth(1)} className="rounded p-1.5 hover:bg-[#f1f5f9]" style={{ color: "#475569" }}><ChevronRight size={15} /></button>
+          </div>
+          <div className="grid grid-cols-7 gap-1 text-center text-[9px] font-semibold uppercase" style={{ color: "#8c94a6" }}>{["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(day => <span key={day} className="py-1">{day}</span>)}</div>
+          <div className="grid grid-cols-7 gap-1">
+            {calendarDays.map(date => {
+              const dateValue = dateToInputValue(date);
+              const outsideMonth = date.getMonth() !== visibleMonth.getMonth();
+              const allowed = isAllowed(dateValue);
+              const selected = value === dateValue;
+              return <button key={dateValue} type="button" aria-label={dateValue} disabled={!allowed} onClick={() => { onChange(dateValue); setIsOpen(false); }} className="flex h-8 items-center justify-center rounded text-[11px] disabled:cursor-not-allowed disabled:line-through" style={{ backgroundColor: selected ? "#2558a6" : allowed ? "white" : "#f4f6f8", color: selected ? "white" : allowed ? outsideMonth ? "#94a3b8" : "#334155" : "#b8bec8", border: selected ? "1px solid #2558a6" : "1px solid transparent" }}>{date.getDate()}</button>;
+            })}
+          </div>
+          <div className="mt-3 space-y-1 border-t pt-2 text-[10px] leading-4" style={{ borderColor: "#e2e8f0", color: "#64748b" }}>
+            <p>Available only from Start Date onward.</p>
+            <p>Enabled dates belong to the current or a future iteration.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AddTaskModal({ defaultOwner, onClose, onCreate }: { defaultOwner: string; onClose: () => void; onCreate: (input: NewTaskInput, openDetails: boolean) => void }) {
   const [name, setName] = useState("");
@@ -664,6 +750,8 @@ function TaskDetailView({ task, parentItem, readOnly, storySplits, onBack, onUpd
         <Field label="Owner"><select disabled={readOnly} className={fieldClass} style={fieldStyle} defaultValue={task.owner.name}>{OWNERS.map(owner => <option key={owner.name}>{owner.name}</option>)}</select></Field>
         <Field label="Project"><select disabled={readOnly} aria-label="Task project" value={taskProject} onChange={event => changeTaskProject(event.target.value)} className={fieldClass} style={fieldStyle}>{SCOPE_PROJECTS.map(scopeProject => <option key={scopeProject.key} value={scopeProject.key}>{scopeProject.key} · {scopeProject.name}</option>)}</select></Field>
         <Field label="Team"><select disabled={readOnly} aria-label="Task team" value={taskTeam} onChange={event => setTaskTeam(event.target.value)} className={fieldClass} style={fieldStyle}><option value="">Project backlog</option>{selectedTaskProject.teams.map(scopeTeam => <option key={scopeTeam}>{scopeTeam}</option>)}</select></Field>
+        <Field label="Start Date"><input aria-label="Task start date" disabled className={fieldClass} style={{ ...fieldStyle, backgroundColor: "#f8fafc", color: task.startDate ? "#1a2234" : "#8c94a6" }} value={formatCompactDate(task.startDate)} /></Field>
+        <Field label="Actual End Date"><input aria-label="Task actual end date" disabled className={fieldClass} style={{ ...fieldStyle, backgroundColor: "#f8fafc", color: task.actualEndDate ? "#1a2234" : "#8c94a6" }} value={formatCompactDate(task.actualEndDate)} /></Field>
         <Field label="Work Product"><select disabled={readOnly} className={fieldClass} style={fieldStyle} defaultValue={parentItem.id}><option value={parentItem.id}>{parentItem.id} · {parentItem.title}</option><option value="unscheduled">Unassigned</option></select></Field>
         <Field label="Estimate"><input disabled={readOnly} className={fieldClass} style={fieldStyle} type="number" min={0} value={taskEstimate} onChange={event => updateTaskEstimate(Number(event.target.value) || 0)} /></Field>
         <Field label="To Do"><input disabled={readOnly} className={fieldClass} style={fieldStyle} type="number" min={0} value={taskTodo} onChange={event => updateTaskTime(Number(event.target.value) || 0, taskActuals)} /></Field>
@@ -675,11 +763,54 @@ function TaskDetailView({ task, parentItem, readOnly, storySplits, onBack, onUpd
   );
 }
 
+function CarryoverConfirmModal({ item, tasks, source, target, targetDate, onCancel, onConfirm }: { item: WorkItem; tasks: TaskItem[]; source: IterationItem; target?: IterationItem; targetDate: string; onCancel: () => void; onConfirm: () => void }) {
+  const unfinishedTasks = tasks.filter(task => task.state !== "Completed");
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-6">
+      <button aria-label="Close carryover confirmation" onClick={onCancel} className="absolute inset-0 h-full w-full" style={{ backgroundColor: "rgba(15,23,42,.42)" }} />
+      <section role="dialog" aria-modal="true" aria-labelledby="carryover-title" className="relative w-full max-w-[620px] overflow-hidden rounded-md bg-white shadow-2xl" style={{ border: "1px solid #cfd8e6" }}>
+        <div className="flex items-start gap-3 px-5 py-4" style={{ backgroundColor: "#fff8e8", borderBottom: "1px solid #f1d89b" }}>
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: "#f8e3ad", color: "#9a6509" }}><CalendarClock size={19} /></span>
+          <div className="min-w-0 flex-1">
+            <h2 id="carryover-title" className="text-[16px] font-semibold" style={{ color: "#273449" }}>This User Story will carry over</h2>
+            <p className="mt-1 text-[12px] leading-5" style={{ color: "#5c6478" }}>Target End Date <span className="font-semibold" style={{ color: "#9a6509" }}>{targetDate}</span> is outside {source.name}, which ends on {iterationDateValue(source.endDate)}.</p>
+          </div>
+          <button aria-label="Close" onClick={onCancel} className="rounded p-1" style={{ color: "#64748b" }}><X size={16} /></button>
+        </div>
+
+        <div className="space-y-4 p-5">
+          {target ? (
+            <>
+              <div className="flex items-center gap-3 rounded-md px-4 py-3" style={{ backgroundColor: "#f8fafc", border: "1px solid #dde2ea" }}>
+                <div className="min-w-0 flex-1"><p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8c94a6" }}>Current iteration</p><p className="mt-1 text-[13px] font-semibold" style={{ color: "#273449" }}>{source.name}</p><p className="text-[10px]" style={{ color: "#64748b" }}>{iterationDateValue(source.startDate)} — {iterationDateValue(source.endDate)}</p></div>
+                <ArrowRight size={18} style={{ color: "#2558a6" }} />
+                <div className="min-w-0 flex-1"><p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#8c94a6" }}>Bring to iteration</p><p className="mt-1 text-[13px] font-semibold" style={{ color: "#2558a6" }}>{target.name}</p><p className="text-[10px]" style={{ color: "#64748b" }}>{iterationDateValue(target.startDate)} — {iterationDateValue(target.endDate)}</p></div>
+              </div>
+              <div className="rounded-md px-4 py-3 text-[11px] leading-5" style={{ backgroundColor: "#eef3fb", border: "1px solid #bdd0ef", color: "#334155" }}>
+                <p><span className="font-semibold">{item.id}</span> and all {tasks.length} Tasks move immediately to {target.name}.</p>
+                <p>{unfinishedTasks.length} unfinished Task{unfinishedTasks.length === 1 ? "" : "s"} keep their Start Date, effort and history. The original Carryover event remains in Revision History.</p>
+              </div>
+            </>
+          ) : (
+            <div className="flex gap-3 rounded-md px-4 py-3" style={{ backgroundColor: "#fff4f2", border: "1px solid #f0b7ad", color: "#9b2c20" }}><AlertTriangle size={17} className="mt-0.5 shrink-0" /><div><p className="text-[12px] font-semibold">No destination iteration contains {targetDate}</p><p className="mt-1 text-[11px] leading-5">Create or select an iteration covering this date before carrying over the Story.</p></div></div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-5 py-3" style={{ backgroundColor: "#f8fafc", borderTop: "1px solid #dde2ea" }}>
+          <button onClick={onCancel} className="rounded px-4 py-2 text-[12px] font-medium" style={{ backgroundColor: "white", border: "1px solid #d7dde7", color: "#475569" }}>Cancel</button>
+          <button disabled={!target} onClick={onConfirm} className="rounded px-4 py-2 text-[12px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45" style={{ backgroundColor: "#1d3f73" }}>Accept &amp; Carry Over</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function WorkItemDetailPage({ item, role, readOnly = false, project, team: initialTeam, iterations, releases, milestones, features, tasks, testCases, testCaseResults, testCaseTypes, storySplits, onCreateTask, onCreateTestCase, onCreateTestCaseResult, onUpdateTask, onUpdateTestCase, onUpdateTestCaseResult, onUpdateItem, onBack, onMinimize, onSplit }: { item: WorkItem; role: Role; readOnly?: boolean; project: ScopeProject; team: string; iterations: IterationItem[]; releases: ReleaseItem[]; milestones: MilestoneItem[]; features: Feature[]; tasks: TaskItem[]; testCases: TestCaseItem[]; testCaseResults: TestCaseResultItem[]; testCaseTypes: string[]; storySplits: StorySplit[]; onCreateTask: (parent: WorkItem, input: NewTaskInput) => TaskItem; onCreateTestCase: (parent: WorkItem, input: NewTestCaseInput) => TestCaseItem; onCreateTestCaseResult: (testCase: TestCaseItem, input: NewTestCaseResultInput) => TestCaseResultItem; onUpdateTask: (id: string, patch: Partial<TaskItem>) => void; onUpdateTestCase: (id: string, patch: Partial<TestCaseItem>) => void; onUpdateTestCaseResult: (id: string, patch: Partial<TestCaseResultItem>) => void; onUpdateItem: (id: string, patch: Partial<WorkItem>) => void; onSplit?: (item: WorkItem) => void; onBack: () => void; onMinimize?: (item: WorkItem) => void }) {
   const [activeTab, setActiveTab] = useState<DetailTab>("details");
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isAddTestCaseOpen, setIsAddTestCaseOpen] = useState(false);
   const [showItemActions, setShowItemActions] = useState(false);
+  const [pendingCarryover, setPendingCarryover] = useState<{ targetDate: string; source: IterationItem; target?: IterationItem } | null>(null);
   const taskRows = tasks;
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
   const [selectedTestCase, setSelectedTestCase] = useState<TestCaseItem | null>(null);
@@ -693,6 +824,13 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
   const featureOptions = features.filter(feature => feature.project === selectedProjectKey && !feature.archivedAt);
   const selectedMilestoneIds = item.milestoneIds || [];
   const selectedRelease = releases.find(release => release.id === item.releaseId) || releases.find(release => release.name === item.release);
+  const currentIteration = iterations.find(iteration => iteration.name === item.iteration && iteration.projectKey === selectedProjectKey);
+  const eligibleTargetIterations = currentIteration
+    ? iterations
+      .filter(iteration => iteration.projectKey === currentIteration.projectKey && iteration.team === currentIteration.team && iterationDateValue(iteration.startDate) >= iterationDateValue(currentIteration.startDate))
+      .sort((left, right) => left.startDate.localeCompare(right.startDate))
+    : [];
+  const targetDateOutsideCurrentIteration = Boolean(item.targetEndDate && currentIteration && item.targetEndDate > iterationDateValue(currentIteration.endDate));
   const milestoneOptions = milestones.filter(milestone =>
     selectedMilestoneIds.includes(milestone.id) ||
     (selectedRelease ? milestone.releaseIds.includes(selectedRelease.id) : milestone.projectKeys.includes(selectedProjectKey))
@@ -716,6 +854,62 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
     onUpdateItem(item.id, { status: nextState, ...(["Accepted", "Release"].includes(nextState) ? { acceptedDate: new Date().toISOString() } : {}) });
   }
 
+  function changeIteration(nextIteration: string) {
+    if (nextIteration === item.iteration) return;
+    onUpdateItem(item.id, {
+      iteration: nextIteration,
+      iterationTransitions: [
+        ...(item.iterationTransitions || []),
+        {
+          id: `MOVE-${Date.now()}`,
+          type: "Manual Move",
+          at: new Date().toLocaleString(),
+          fromIteration: item.iteration,
+          toIteration: nextIteration,
+          taskSnapshots: taskRows.map(task => ({ taskId: task.id, state: task.state, estimate: task.estimate, todo: task.todo, actuals: task.actuals })),
+        },
+      ],
+    });
+  }
+
+  function changeTargetEndDate(targetDate: string) {
+    if (!targetDate) {
+      onUpdateItem(item.id, { targetEndDate: null });
+      return;
+    }
+    if (item.startDate && targetDate < item.startDate) return;
+    const source = iterations.find(iteration => iteration.name === item.iteration && iteration.projectKey === selectedProjectKey);
+    if (!source || targetDate <= iterationDateValue(source.endDate)) {
+      onUpdateItem(item.id, { targetEndDate: targetDate });
+      return;
+    }
+    const target = iterations
+      .filter(iteration => iteration.projectKey === selectedProjectKey && iteration.team === source.team)
+      .find(iteration => targetDate >= iterationDateValue(iteration.startDate) && targetDate <= iterationDateValue(iteration.endDate));
+    setPendingCarryover({ targetDate, source, target });
+  }
+
+  function acceptCarryover() {
+    if (!pendingCarryover?.target) return;
+    onUpdateItem(item.id, {
+      targetEndDate: pendingCarryover.targetDate,
+      iteration: pendingCarryover.target.name,
+      iterationTransitions: [
+        ...(item.iterationTransitions || []),
+        {
+          id: `CARRY-${Date.now()}`,
+          type: "Carryover",
+          at: new Date().toLocaleString(),
+          fromIteration: pendingCarryover.source.name,
+          toIteration: pendingCarryover.target.name,
+          targetEndDate: pendingCarryover.targetDate,
+          taskSnapshots: taskRows.map(task => ({ taskId: task.id, state: task.state, estimate: task.estimate, todo: task.todo, actuals: task.actuals })),
+        },
+      ],
+    });
+    setPendingCarryover(null);
+  }
+
   function toggleMilestone(milestoneId: string) {
     const next = selectedMilestoneIds.includes(milestoneId)
       ? selectedMilestoneIds.filter(id => id !== milestoneId)
@@ -729,10 +923,13 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
     const nextActuals = Math.max(0, Number(patch.actuals ?? currentTask?.actuals ?? 0));
     const shouldComplete = patch.state === "Completed";
     const shouldCopyEstimateToTodo = patch.estimate !== undefined && nextTodo === 0 && nextActuals === 0;
+    const lifecycleDate = new Date().toISOString().slice(0, 10);
     const derivedPatch = {
       ...patch,
       ...(shouldComplete ? { todo: 0 } : {}),
       ...(shouldCopyEstimateToTodo ? { todo: Math.max(0, Number(patch.estimate) || 0) } : {}),
+      ...(patch.state === "In-Progress" && !currentTask?.startDate ? { startDate: lifecycleDate } : {}),
+      ...(patch.state === "Completed" && !currentTask?.actualEndDate ? { actualEndDate: lifecycleDate } : {}),
     };
     onUpdateTask(id, derivedPatch);
     setSelectedTask(previous => previous?.id === id ? { ...previous, ...derivedPatch } : previous);
@@ -812,6 +1009,8 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
                     <TaskHeaderCell label="Owner" activeSort />
                     <TaskHeaderCell label="Project" />
                     <TaskHeaderCell label="Teams" />
+                    <TaskHeaderCell label="Start Date" />
+                    <TaskHeaderCell label="Actual End" />
                     <TaskHeaderCell label="To Do" />
                     <TaskHeaderCell label="Actuals" />
                     <span className="flex items-center h-full px-3 text-[12px] font-semibold" style={{ color: "#1f2937" }}>Estimate</span>
@@ -820,6 +1019,8 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
                   <div className="grid h-8 items-center text-[12px] font-semibold" style={{ gridTemplateColumns: TASK_GRID_COLUMNS, backgroundColor: "#f3f6fa", borderBottom: "1px solid #d7dde7", color: "#1f2937" }}>
                     <span />
                     <span className="px-3">Totals</span>
+                    <span />
+                    <span />
                     <span />
                     <span />
                     <span />
@@ -860,6 +1061,8 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
                       </span>
                       <span className="px-3 truncate">{task.project}</span>
                       <span className="px-3 truncate">{task.team || "Project backlog"}</span>
+                      <span className="px-3 font-mono text-[11px]" style={{ color: task.startDate ? "#334155" : "#94a3b8" }}>{formatCompactDate(task.startDate)}</span>
+                      <span className="px-3 font-mono text-[11px]" style={{ color: task.actualEndDate ? "#334155" : "#94a3b8" }}>{formatCompactDate(task.actualEndDate)}</span>
                       <span className="px-3"><input aria-label={`${task.id} task dashboard todo`} readOnly={!taskDashboardEditable} type="number" min={0} value={task.todo} onChange={event => updateTaskRow(task.id, { todo: Number(event.target.value) })} className="w-full rounded-sm bg-transparent px-1 py-1 text-right font-mono focus:outline-none focus:bg-white" style={{ border: taskDashboardEditable ? "1px solid transparent" : "0", color: "#334155" }} /></span>
                       <span className="px-3"><input aria-label={`${task.id} task dashboard actuals`} readOnly={!taskDashboardEditable} type="number" min={0} value={task.actuals} onChange={event => updateTaskRow(task.id, { actuals: Number(event.target.value) })} className="w-full rounded-sm bg-transparent px-1 py-1 text-right font-mono focus:outline-none focus:bg-white" style={{ border: taskDashboardEditable ? "1px solid transparent" : "0", color: "#334155" }} /></span>
                       <span className="px-3"><input aria-label={`${task.id} task dashboard estimate`} readOnly={!taskDashboardEditable} type="number" min={0} value={task.estimate} onChange={event => updateTaskRow(task.id, { estimate: Number(event.target.value) })} className="w-full rounded-sm bg-transparent px-1 py-1 text-right font-mono focus:outline-none focus:bg-white" style={{ border: taskDashboardEditable ? "1px solid transparent" : "0", color: "#334155" }} /></span>
@@ -897,12 +1100,22 @@ export function WorkItemDetailPage({ item, role, readOnly = false, project, team
               </div>
             </details>
           </Field>
-          <Field label="Iteration"><select aria-label="Detail iteration" disabled={readOnly} className={fieldClass} style={fieldStyle} value={item.iteration} onChange={event => onUpdateItem(item.id, { iteration: event.target.value })}>{workItemIterationOptions.map(iteration => <option key={iteration}>{iteration}</option>)}</select></Field>
+          <Field label="Iteration"><select aria-label="Detail iteration" disabled={readOnly} className={fieldClass} style={fieldStyle} value={item.iteration} onChange={event => changeIteration(event.target.value)}>{workItemIterationOptions.map(iteration => <option key={iteration}>{iteration}</option>)}</select></Field>
+          {item.type === "Story" && <Field label="Start Date"><input aria-label="Story start date" disabled className={fieldClass} style={{ ...fieldStyle, backgroundColor: "#f8fafc", color: item.startDate ? "#1a2234" : "#8c94a6" }} value={formatCompactDate(item.startDate)} /></Field>}
+          {item.type === "Story" && <Field label="Target End Date">
+            <div className="flex gap-2">
+              <TargetEndDatePicker value={item.targetEndDate} storyStartDate={item.startDate} allowedIterations={eligibleTargetIterations} disabled={readOnly} invalid={targetDateOutsideCurrentIteration} onChange={changeTargetEndDate} />
+              {!readOnly && item.targetEndDate && <button type="button" aria-label="Clear target end date" title="Clear Target End Date" onClick={() => changeTargetEndDate("")} className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded bg-white" style={{ border: "1px solid #d7dde7", color: "#64748b" }}><X size={14} /></button>}
+            </div>
+            {targetDateOutsideCurrentIteration && <p className="mt-1.5 flex items-start gap-1 text-[10px] leading-4" style={{ color: "#9a6509" }}><AlertTriangle size={12} className="mt-0.5 shrink-0" />Target End Date is outside {item.iteration}. Clear it or choose another date.</p>}
+          </Field>}
+          {item.type === "Story" && <Field label="Actual End Date"><input aria-label="Story actual end date" disabled className={fieldClass} style={{ ...fieldStyle, backgroundColor: "#f8fafc", color: item.acceptedDate ? "#1a2234" : "#8c94a6" }} value={formatCompactDate(item.acceptedDate)} /></Field>}
         </aside>
         )}
       </div>
       {!readOnly && isAddTaskOpen && <AddTaskModal defaultOwner={item.owner.name} onClose={() => setIsAddTaskOpen(false)} onCreate={createTask} />}
       {!readOnly && isAddTestCaseOpen && <AddTestCaseModal defaultOwner={DEMO_ACCESS_PROFILES[role].owner.name} ownerOptions={PROJECT_MEMBER_OWNERS[selectedProjectKey] || OWNERS.filter(owner => owner.name !== "Unassigned")} testCaseTypes={testCaseTypes} onClose={() => setIsAddTestCaseOpen(false)} onCreate={createTestCase} />}
+      {pendingCarryover && <CarryoverConfirmModal item={item} tasks={taskRows} source={pendingCarryover.source} target={pendingCarryover.target} targetDate={pendingCarryover.targetDate} onCancel={() => setPendingCarryover(null)} onConfirm={acceptCarryover} />}
     </div>
   );
 }

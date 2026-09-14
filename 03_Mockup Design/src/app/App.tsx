@@ -31,6 +31,17 @@ function formatAuditTimestamp(date: Date) {
   return `${weekday}, ${month} ${date.getDate()}, ${date.getFullYear()} ${hh}:${mm}:${ss}`;
 }
 
+function todayInputValue() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function applyWorkItemLifecycleDates(item: WorkItem, patch: Partial<WorkItem>): WorkItem {
+  const next = { ...item, ...patch };
+  if (patch.status === "In-Progress" && !item.startDate) next.startDate = todayInputValue();
+  if (patch.status === "Accepted" && !item.acceptedDate) next.acceptedDate = todayInputValue();
+  return next;
+}
+
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>("home");
@@ -80,9 +91,9 @@ export default function App() {
   const unreadCount = NOTIFICATIONS.filter(notification => !notification.read).length;
 
   function updateWorkItem(id: string, patch: Partial<WorkItem>) {
-    setWorkItems(previous => previous.map(item => item.id === id ? { ...item, ...patch } : item));
-    setActiveItem(previous => previous?.id === id ? { ...previous, ...patch } : previous);
-    setFullDetailItem(previous => previous?.id === id ? { ...previous, ...patch } : previous);
+    setWorkItems(previous => previous.map(item => item.id === id ? applyWorkItemLifecycleDates(item, patch) : item));
+    setActiveItem(previous => previous?.id === id ? applyWorkItemLifecycleDates(previous, patch) : previous);
+    setFullDetailItem(previous => previous?.id === id ? applyWorkItemLifecycleDates(previous, patch) : previous);
   }
   function createWorkItem(input: NewWorkItemInput, openDetails: boolean) {
     const prefix = input.type === "Defect" ? "DE" : "US";
@@ -126,14 +137,16 @@ export default function App() {
     const taskEstimate = siblings.reduce((total, task) => total + task.estimate, 0);
     const todoEstimate = siblings.reduce((total, task) => total + task.todo, 0);
     const patch: Partial<WorkItem> = { status: nextStatus, taskCount: siblings.length, completedTasks, taskEstimate, todoEstimate };
-    setWorkItems(previous => previous.map(item => item.id === parentId ? { ...item, ...patch } : item));
-    setActiveItem(previous => previous?.id === parentId ? { ...previous, ...patch } : previous);
-    setFullDetailItem(previous => previous?.id === parentId ? { ...previous, ...patch } : previous);
+    setWorkItems(previous => previous.map(item => item.id === parentId ? applyWorkItemLifecycleDates(item, patch) : item));
+    setActiveItem(previous => previous?.id === parentId ? applyWorkItemLifecycleDates(previous, patch) : previous);
+    setFullDetailItem(previous => previous?.id === parentId ? applyWorkItemLifecycleDates(previous, patch) : previous);
   }
   function updateTask(id: string, patch: Partial<TaskItem>) {
     const nextTasks = tasks.map(task => {
       if (task.id !== id) return task;
       const updated = { ...task, ...patch };
+      if (patch.state === "In-Progress" && !task.startDate) updated.startDate = todayInputValue();
+      if (patch.state === "Completed" && !task.actualEndDate) updated.actualEndDate = todayInputValue();
       if (updated.state === "Completed") return { ...updated, todo: 0 };
       return updated;
     });

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Download, Repeat2 } from "lucide-react";
 import {
   Bar,
   CartesianGrid,
@@ -70,7 +70,65 @@ function buildFallbackSnapshots(iteration: IterationItem, openingToDo: number) {
   });
 }
 
-function IterationBurndown({ projectKey, team, iterations, items, tasks, storySplits, selectedIterationId, onIterationChange }: { projectKey: string; team: string; iterations: IterationItem[]; items: WorkItem[]; tasks: TaskItem[]; storySplits: StorySplit[]; selectedIterationId: string; onIterationChange: (iterationId: string) => void }) {
+type CarryoverRow = {
+  id: string;
+  item: WorkItem;
+  fromIteration: string;
+  toIteration: string;
+  at: string;
+  startDate: string;
+  targetEndDate: string;
+  estimate: number;
+  todo: number;
+  actualBefore: number;
+  actualAfter: number;
+};
+
+function buildCarryoverRows(items: WorkItem[], tasks: TaskItem[]) {
+  const taskById = new Map(tasks.map(task => [task.id, task]));
+  return items.flatMap(item => (item.iterationTransitions || [])
+    .filter(transition => transition.type === "Carryover")
+    .map(transition => {
+      const snapshots = transition.taskSnapshots || [];
+      const estimate = snapshots.reduce((sum, snapshot) => sum + snapshot.estimate, 0);
+      const todo = snapshots.reduce((sum, snapshot) => sum + snapshot.todo, 0);
+      const actualAtMove = snapshots.reduce((sum, snapshot) => sum + snapshot.actuals, 0);
+      const currentActual = snapshots.reduce((sum, snapshot) => sum + (taskById.get(snapshot.taskId)?.actuals ?? snapshot.actuals), 0);
+      return {
+        id: transition.id,
+        item,
+        fromIteration: transition.fromIteration,
+        toIteration: transition.toIteration,
+        at: transition.at,
+        startDate: item.startDate || "—",
+        targetEndDate: transition.targetEndDate || item.targetEndDate || "—",
+        estimate,
+        todo,
+        actualBefore: actualAtMove,
+        actualAfter: Math.max(0, currentActual - actualAtMove),
+      };
+    }));
+}
+
+function CarryoverSummaryBadge({ selectedIteration, items, tasks, onOpen }: { selectedIteration: IterationItem; items: WorkItem[]; tasks: TaskItem[]; onOpen: () => void }) {
+  const rows = buildCarryoverRows(items, tasks).filter(row => row.fromIteration === selectedIteration.name || row.toIteration === selectedIteration.name);
+  if (rows.length === 0) return null;
+  const carryIn = rows.filter(row => row.toIteration === selectedIteration.name).length;
+  const carryOut = rows.filter(row => row.fromIteration === selectedIteration.name).length;
+  const todo = rows.reduce((sum, row) => sum + row.todo, 0);
+  return (
+    <button onClick={onOpen} className="mb-3 flex items-center gap-2 rounded px-2.5 py-1.5 text-[10px] font-semibold" style={{ color: "#2558a6", backgroundColor: "#eef4fc", border: "1px solid #bdd0ef" }}>
+      <Repeat2 size={13} />
+      {carryIn > 0 && <span>{carryIn} Carry In</span>}
+      {carryIn > 0 && carryOut > 0 && <span className="text-[#9aa5b5]">·</span>}
+      {carryOut > 0 && <span>{carryOut} Carry Out</span>}
+      <span className="font-normal text-[#64748b]">· {todo}h To Do</span>
+      <span className="ml-1">View report →</span>
+    </button>
+  );
+}
+
+function IterationBurndown({ projectKey, team, iterations, items, tasks, storySplits, selectedIterationId, onIterationChange, onOpenCarryover }: { projectKey: string; team: string; iterations: IterationItem[]; items: WorkItem[]; tasks: TaskItem[]; storySplits: StorySplit[]; selectedIterationId: string; onIterationChange: (iterationId: string) => void; onOpenCarryover: () => void }) {
   const availableIterations = useMemo(() => iterations.filter(iteration => iteration.projectKey === projectKey && (team === "All Teams" || iteration.team === team)), [iterations, projectKey, team]);
   const defaultIteration = availableIterations.find(iteration => iteration.name === "Sprint 24.3") ?? availableIterations[0];
   const selectedIteration = availableIterations.find(iteration => iteration.id === selectedIterationId) ?? defaultIteration;
@@ -137,6 +195,7 @@ function IterationBurndown({ projectKey, team, iterations, items, tasks, storySp
           </div>;
         })}
       </div>}
+      <CarryoverSummaryBadge selectedIteration={selectedIteration} items={items} tasks={tasks} onOpen={onOpenCarryover} />
       <div className="h-[360px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 12, right: 16, left: 4, bottom: 12 }}>
@@ -256,30 +315,41 @@ function VelocityChart({ projectKey, team, iterations, items, storySplits }: { p
 
 type CapacityMemberRow = { member: string; capacity: number; estimate: number; todo: number; actuals: number };
 type CapacityTeamRow = { team: string; capacity: number; estimate: number; todo: number; actuals: number; members: CapacityMemberRow[] };
-type ReportView = "burndown" | "velocity" | "capacity";
+type ReportView = "burndown" | "velocity" | "capacity" | "carryover";
 
-function TeamCapacity({ projectKey, team, iterations, selectedIteration, items, tasks, storySplits, onIterationChange }: { projectKey: string; team: string; iterations: IterationItem[]; selectedIteration?: IterationItem; items: WorkItem[]; tasks: TaskItem[]; storySplits: StorySplit[]; onIterationChange: (iterationId: string) => void }) {
+function TeamCapacity({ projectKey, team, iterations, selectedIteration, items, tasks, storySplits, onIterationChange, onOpenCarryover }: { projectKey: string; team: string; iterations: IterationItem[]; selectedIteration?: IterationItem; items: WorkItem[]; tasks: TaskItem[]; storySplits: StorySplit[]; onIterationChange: (iterationId: string) => void; onOpenCarryover: () => void }) {
   const [collapsedTeams, setCollapsedTeams] = useState<Set<string>>(new Set());
   const parentById = useMemo(() => new Map(items.map(item => [item.id, item])), [items]);
   const selectedSplitEvents = selectedIteration ? storySplits.filter(record => record.projectKey === projectKey && (team === "All Teams" || record.team === team) && (record.sourceIterationId === selectedIteration.id || record.targetIterationId === selectedIteration.id)) : [];
   const teamRows = useMemo<CapacityTeamRow[]>(() => {
     const taskMetrics = selectedIteration ? tasks.flatMap(task => {
       const parent = parentById.get(task.parentWorkItemId);
+      if (!parent || parent.project !== projectKey || (team !== "All Teams" && task.team !== team)) return [];
       const currentScope = parent?.project === projectKey && parent.iteration === selectedIteration.name && (team === "All Teams" || task.team === team);
-      const event = [...selectedSplitEvents].reverse().find(record => record.taskSnapshots.some(snapshot => snapshot.id === task.id));
-      const snapshot = event?.taskSnapshots.find(row => row.id === task.id);
-      const sourceScope = !!event && event.sourceIterationId === selectedIteration.id;
-      const targetScope = !!event && event.targetIterationId === selectedIteration.id && snapshot?.splitSide === "continued";
-      if (!currentScope && !sourceScope && !targetScope) return [];
-      let actuals = currentScope ? task.actuals : 0;
-      let member = task.owner.name;
-      if (sourceScope && snapshot) {
-        actuals = snapshot.splitSide === "continued" ? snapshot.actuals : task.actuals;
-        member = snapshot.owner.name;
-      } else if (targetScope && snapshot) {
-        actuals = Math.max(0, task.actuals - snapshot.actuals);
+      const splitEvent = [...selectedSplitEvents].reverse().find(record => record.taskSnapshots.some(snapshot => snapshot.id === task.id));
+      const splitSnapshot = splitEvent?.taskSnapshots.find(row => row.id === task.id);
+
+      if (splitEvent && splitSnapshot) {
+        const sourceScope = splitEvent.sourceIterationId === selectedIteration.id;
+        const targetScope = splitEvent.targetIterationId === selectedIteration.id && splitSnapshot.splitSide === "continued";
+        if (!currentScope && !sourceScope && !targetScope) return [];
+        const actuals = sourceScope
+          ? (splitSnapshot.splitSide === "continued" ? splitSnapshot.actuals : task.actuals)
+          : targetScope
+            ? Math.max(0, task.actuals - splitSnapshot.actuals)
+            : task.actuals;
+        return [{ task, member: sourceScope ? splitSnapshot.owner.name : task.owner.name, estimate: currentScope ? task.estimate : 0, todo: currentScope ? task.todo : 0, actuals }];
       }
-      return [{ task, member, estimate: currentScope ? task.estimate : 0, todo: currentScope ? task.todo : 0, actuals }];
+
+      if (parent.iteration === selectedIteration.name) {
+        const carryIn = [...(parent.iterationTransitions || [])].reverse().find(transition => transition.type === "Carryover" && transition.toIteration === selectedIteration.name);
+        const snapshot = carryIn?.taskSnapshots?.find(entry => entry.taskId === task.id);
+        return [{ task, member: task.owner.name, estimate: task.estimate, todo: task.todo, actuals: snapshot ? Math.max(0, task.actuals - snapshot.actuals) : task.actuals }];
+      }
+
+      const carryOut = [...(parent.iterationTransitions || [])].reverse().find(transition => transition.type === "Carryover" && transition.fromIteration === selectedIteration.name);
+      const snapshot = carryOut?.taskSnapshots?.find(entry => entry.taskId === task.id);
+      return snapshot ? [{ task, member: task.owner.name, estimate: snapshot.estimate, todo: snapshot.todo, actuals: snapshot.actuals }] : [];
     }) : [];
     const baseRows = TEAM_CAPACITY_DATA.filter(row => row.projectKey === projectKey && (team === "All Teams" || row.team === team));
     taskMetrics.forEach(metric => {
@@ -314,6 +384,7 @@ function TeamCapacity({ projectKey, team, iterations, selectedIteration, items, 
 
   return (
     <>
+      {selectedIteration && <CarryoverSummaryBadge selectedIteration={selectedIteration} items={items} tasks={tasks} onOpen={onOpenCarryover} />}
       <div className="mb-3 flex items-center justify-between text-[10px] text-[#6f7787]">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-[#1a2234]">Iteration</span>
@@ -360,6 +431,115 @@ function TeamCapacity({ projectKey, team, iterations, selectedIteration, items, 
   );
 }
 
+function CarryoverReport({ projectKey, team, iterations, selectedIteration, items, tasks, onIterationChange }: { projectKey: string; team: string; iterations: IterationItem[]; selectedIteration?: IterationItem; items: WorkItem[]; tasks: TaskItem[]; onIterationChange: (iterationId: string) => void }) {
+  const [directionFilter, setDirectionFilter] = useState<"all" | "in" | "out">("all");
+  const sortedIterations = useMemo(() => [...iterations].sort((left, right) => dateInputValue(left.startDate).localeCompare(dateInputValue(right.startDate))), [iterations]);
+  const iterationIndex = sortedIterations.findIndex(iteration => iteration.id === selectedIteration?.id);
+  const allRows = useMemo(() => buildCarryoverRows(
+    items.filter(item => item.project === projectKey && (team === "All Teams" || item.team === team)),
+    tasks,
+  ), [items, projectKey, tasks, team]);
+  const iterationRows = selectedIteration ? allRows.filter(row => row.fromIteration === selectedIteration.name || row.toIteration === selectedIteration.name) : [];
+  const rows = iterationRows.filter(row => directionFilter === "all" || (directionFilter === "in" ? row.toIteration === selectedIteration?.name : row.fromIteration === selectedIteration?.name));
+  const carryIn = iterationRows.filter(row => row.toIteration === selectedIteration?.name).length;
+  const carryOut = iterationRows.filter(row => row.fromIteration === selectedIteration?.name).length;
+  const transferredTodo = iterationRows.reduce((sum, row) => sum + row.todo, 0);
+  const scheduledStoryIds = new Set(items
+    .filter(item => item.project === projectKey && item.type === "Story" && (team === "All Teams" || item.team === team) && item.iteration === selectedIteration?.name)
+    .map(item => item.id));
+  iterationRows.filter(row => row.fromIteration === selectedIteration?.name).forEach(row => scheduledStoryIds.add(row.item.id));
+  const affectedStoryCount = new Set(iterationRows.map(row => row.item.id)).size;
+  const carryoverRate = scheduledStoryIds.size > 0 ? Math.round((affectedStoryCount / scheduledStoryIds.size) * 100) : 0;
+  const chartData = sortedIterations.map(iteration => ({
+    iteration: iteration.name.replace(/^Sprint\s*/i, ""),
+    carryIn: allRows.filter(row => row.toIteration === iteration.name).length,
+    carryOut: allRows.filter(row => row.fromIteration === iteration.name).length,
+  }));
+
+  function displayTransitionDate(value: string) {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString("en-CA");
+  }
+
+  return (
+    <>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <span className="text-[11px] font-semibold text-[#1a2234]">Iteration</span>
+        <div className="flex h-8 overflow-hidden rounded" style={{ border: "1px solid #cbd5e1" }}>
+          <button aria-label="Previous carryover iteration" disabled={iterationIndex <= 0} onClick={() => onIterationChange(sortedIterations[iterationIndex - 1]?.id ?? selectedIteration?.id ?? "")} className="flex w-8 items-center justify-center disabled:opacity-30" style={{ borderRight: "1px solid #dce2ea", color: "#2f6fd6" }}><ChevronLeft size={15} /></button>
+          <select aria-label="Carryover iteration" value={selectedIteration?.id ?? ""} onChange={event => onIterationChange(event.target.value)} className="min-w-48 bg-white px-2.5 text-[11px] outline-none">
+            {sortedIterations.map(iteration => <option key={iteration.id} value={iteration.id}>{iteration.name}</option>)}
+          </select>
+          <span className="hidden items-center border-l border-[#dce2ea] px-3 text-[10px] text-[#657084] md:flex">{selectedIteration ? `${dateInputValue(selectedIteration.startDate)} - ${dateInputValue(selectedIteration.endDate)}` : ""}</span>
+          <button aria-label="Next carryover iteration" disabled={iterationIndex < 0 || iterationIndex >= sortedIterations.length - 1} onClick={() => onIterationChange(sortedIterations[iterationIndex + 1]?.id ?? selectedIteration?.id ?? "")} className="flex w-8 items-center justify-center border-l border-[#dce2ea] disabled:opacity-30" style={{ color: "#2f6fd6" }}><ChevronRight size={15} /></button>
+        </div>
+        <label className="ml-auto flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-[#6f7787]">
+          Direction
+          <select aria-label="Carryover direction" value={directionFilter} onChange={event => setDirectionFilter(event.target.value as "all" | "in" | "out")} className="h-8 rounded bg-white px-2 text-[11px] font-normal normal-case tracking-normal text-[#1a2234] outline-none" style={{ border: "1px solid #cbd5e1" }}>
+            <option value="all">All</option>
+            <option value="in">Carry In</option>
+            <option value="out">Carry Out</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="mb-4 grid grid-cols-4 gap-3">
+        {[
+          { label: "Carry In", value: carryIn, unit: "US", color: "#2f7d45" },
+          { label: "Carry Out", value: carryOut, unit: "US", color: "#a16207" },
+          { label: "Transferred To Do", value: transferredTodo, unit: "h", color: "#1d3f73" },
+          { label: "Carryover Rate", value: carryoverRate, unit: "%", color: "#7c3aed" },
+        ].map(metric => (
+          <div key={metric.label} className="rounded bg-[#f8fafc] px-3 py-2.5" style={{ border: "1px solid #e2e8f0" }}>
+            <div className="text-[10px] text-[#6f7787]">{metric.label}</div>
+            <div className="mt-1 text-[21px] font-semibold" style={{ color: metric.color }}>{metric.value}<span className="ml-1 text-[10px] font-normal text-[#6f7787]">{metric.unit}</span></div>
+            {metric.label === "Carryover Rate" && <div className="mt-0.5 text-[9px] text-[#8a94a5]">Affected US / scheduled US</div>}
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-4 rounded bg-[#fbfcfe] p-3" style={{ border: "1px solid #e2e8f0" }}>
+        <div className="mb-1 text-[10px] font-semibold text-[#39465a]">Carryover trend by Iteration</div>
+        <div className="h-[180px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={chartData} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#edf0f4" vertical={false} />
+              <XAxis dataKey="iteration" tick={{ fontSize: 10, fill: "#657084" }} axisLine={{ stroke: "#dce2ea" }} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "#657084" }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ fontSize: 11, border: "1px solid #dce2ea", borderRadius: 3 }} />
+              <Legend wrapperStyle={{ fontSize: 10 }} />
+              <Bar dataKey="carryIn" name="Carry In" fill="#4b9b68" barSize={24} radius={[2, 2, 0, 0]} />
+              <Bar dataKey="carryOut" name="Carry Out" fill="#d39b34" barSize={24} radius={[2, 2, 0, 0]} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded" style={{ border: "1px solid #dce2ea" }}>
+        <div className="grid min-w-[1024px] grid-cols-[80px_70px_minmax(174px,1fr)_84px_84px_86px_86px_86px_60px_54px_80px_80px] items-center bg-[#f7f8fa] px-3 py-2 text-[9px] font-semibold uppercase tracking-wide text-[#6f7787]">
+          <span>Direction</span><span>Work Item</span><span>Name</span><span>From</span><span>To</span><span>Moved On</span><span>Start Date</span><span>Target End</span><span className="text-right">Estimate</span><span className="text-right">To Do</span><span className="text-right">Actual Before</span><span className="text-right">Actual After</span>
+        </div>
+        {rows.length > 0 ? rows.map(row => {
+          const direction = row.toIteration === selectedIteration?.name ? "CARRY IN" : "CARRY OUT";
+          const carryInRow = direction === "CARRY IN";
+          return (
+            <div key={row.id} className="grid min-w-[1024px] grid-cols-[80px_70px_minmax(174px,1fr)_84px_84px_86px_86px_86px_60px_54px_80px_80px] items-center px-3 py-2.5 text-[10px] text-[#334155]" style={{ borderTop: "1px solid #edf0f4" }}>
+              <span className="w-fit rounded px-1.5 py-0.5 text-[9px] font-semibold" style={{ color: carryInRow ? "#1f6b3a" : "#9a6509", backgroundColor: carryInRow ? "#eaf6ee" : "#fff3d6", border: `1px solid ${carryInRow ? "#b8dcc3" : "#f0d28c"}` }}>{direction}</span>
+              <span className="font-mono font-semibold text-[#2558a6]">{row.item.id}</span>
+              <span className="truncate pr-3">{row.item.title}</span>
+              <span>{row.fromIteration}</span><span>{row.toIteration}</span>
+              <span className="font-mono text-[9px]">{displayTransitionDate(row.at)}</span>
+              <span className="font-mono">{row.startDate}</span><span className="font-mono">{row.targetEndDate}</span>
+              <span className="text-right font-mono">{row.estimate}h</span><span className="text-right font-mono">{row.todo}h</span>
+              <span className="text-right font-mono">{row.actualBefore}h</span><span className="text-right font-mono font-semibold">{row.actualAfter}h</span>
+            </div>
+          );
+        }) : <div className="px-4 py-10 text-center text-[11px] text-[#6f7787]">No Carryover events for this Iteration.</div>}
+      </div>
+    </>
+  );
+}
+
 export function ReportsPage({ role, readOnly = false, projectKey, team = "All Teams", iterations, items, tasks, storySplits }: { role: Role; readOnly?: boolean; projectKey: string; team?: string; iterations: IterationItem[]; items: WorkItem[]; tasks: TaskItem[]; storySplits: StorySplit[] }) {
   const canExport = !readOnly && role !== "Editor";
   const [selectedReport, setSelectedReport] = useState<ReportView>("burndown");
@@ -377,15 +557,17 @@ export function ReportsPage({ role, readOnly = false, projectKey, team = "All Te
               <option value="burndown">Iteration Burndown</option>
               <option value="velocity">Velocity</option>
               <option value="capacity">Team Capacity</option>
+              <option value="carryover">Carryover</option>
             </select>
           </label>
         </div>
         {canExport && <button className="flex items-center gap-1.5 rounded px-3 py-1.5 text-[11px] font-semibold text-white" style={{ backgroundColor: "#1d3f73" }}><Download size={12} /> Export Report</button>}
       </div>
       <div className="grid grid-cols-3 gap-3 p-4">
-        {selectedReport === "burndown" && <IterationBurndown projectKey={projectKey} team={team} iterations={iterations} items={items} tasks={tasks} storySplits={storySplits} selectedIterationId={selectedIteration?.id ?? ""} onIterationChange={setSelectedIterationId} />}
+        {selectedReport === "burndown" && <IterationBurndown projectKey={projectKey} team={team} iterations={iterations} items={items} tasks={tasks} storySplits={storySplits} selectedIterationId={selectedIteration?.id ?? ""} onIterationChange={setSelectedIterationId} onOpenCarryover={() => setSelectedReport("carryover")} />}
         {selectedReport === "velocity" && <Widget title="Velocity - Accepted Iterations" span={3}><VelocityChart projectKey={projectKey} team={team} iterations={iterations} items={items} storySplits={storySplits} /></Widget>}
-        {selectedReport === "capacity" && <Widget title={`Team Capacity - ${team}`} span={3}><TeamCapacity projectKey={projectKey} team={team} iterations={availableIterations} selectedIteration={selectedIteration} items={items} tasks={tasks} storySplits={storySplits} onIterationChange={setSelectedIterationId} /></Widget>}
+        {selectedReport === "capacity" && <Widget title={`Team Capacity - ${team}`} span={3}><TeamCapacity projectKey={projectKey} team={team} iterations={availableIterations} selectedIteration={selectedIteration} items={items} tasks={tasks} storySplits={storySplits} onIterationChange={setSelectedIterationId} onOpenCarryover={() => setSelectedReport("carryover")} /></Widget>}
+        {selectedReport === "carryover" && <Widget title={`Carryover - ${team}`} span={3}><CarryoverReport projectKey={projectKey} team={team} iterations={availableIterations} selectedIteration={selectedIteration} items={items} tasks={tasks} onIterationChange={setSelectedIterationId} /></Widget>}
       </div>
     </div>
   );

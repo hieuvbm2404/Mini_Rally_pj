@@ -22,8 +22,8 @@ import { type NewWorkItemInput, type Role, type Page, type WorkItemType, type St
 import { releaseStatusCfg, cx, Avatar, TYPE_CFG, TypeBadge, STATUS_CFG, StatusBadge, ScheduleStateBar, PRI_CFG, PriorityBadge, MiniProgress, RoleBadge, DetailPanel, NewItemModal, EmptyState, SectionCard } from "../components/shared";
 import { splitActionReason } from "../splitStory";
 
-type IterationColumnKey = "rank" | "id" | "name" | "status" | "flowState" | "iteration" | "blocked" | "planEstimate" | "taskEstimate" | "todoEstimate" | "owner";
-type IterationFilterColumn = "id" | "name" | "type" | "status" | "flowState" | "iteration" | "blocked" | "planEstimate" | "taskEstimate" | "todoEstimate" | "owner";
+type IterationColumnKey = "rank" | "id" | "name" | "status" | "flowState" | "iteration" | "startDate" | "targetEndDate" | "blocked" | "planEstimate" | "taskEstimate" | "todoEstimate" | "owner";
+type IterationFilterColumn = "id" | "name" | "type" | "status" | "flowState" | "iteration" | "startDate" | "targetEndDate" | "blocked" | "planEstimate" | "taskEstimate" | "todoEstimate" | "owner";
 type IterationFilters = Partial<Record<IterationFilterColumn, string>>;
 type IterationSort = { column: IterationColumnKey; direction: "asc" | "desc" };
 
@@ -41,6 +41,8 @@ const ITERATION_FILTER_COLUMNS: Array<{ key: IterationFilterColumn; label: strin
   { key: "status", label: "Schedule State", mode: "select" },
   { key: "flowState", label: "Flow State", mode: "select" },
   { key: "iteration", label: "Iteration", mode: "select" },
+  { key: "startDate", label: "Start Date", mode: "search" },
+  { key: "targetEndDate", label: "Target End", mode: "search" },
   { key: "blocked", label: "Blocked", mode: "select" },
   { key: "planEstimate", label: "Plan Est", mode: "search" },
   { key: "taskEstimate", label: "Task Est", mode: "search" },
@@ -71,6 +73,8 @@ function getIterationSortValue(item: WorkItem, column: IterationColumnKey): stri
     case "status": return ITERATION_STATUS_ORDER[toIterationScheduleState(item.status)] ?? 0;
     case "flowState": return ITERATION_STATUS_ORDER[toIterationScheduleState(item.status)] ?? 0;
     case "iteration": return item.iteration.toLowerCase();
+    case "startDate": return item.startDate || "";
+    case "targetEndDate": return item.targetEndDate || "";
     case "blocked": return item.blocked ? 1 : 0;
     case "planEstimate": return item.planEstimate;
     case "taskEstimate": return item.taskEstimate ?? 0;
@@ -222,7 +226,7 @@ export function TrackPage({ title = "Iteration Status", role, readOnly = false, 
   const [sort, setSort] = useState<IterationSort | null>(null);
   const [pageSize, setPageSize] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
-  const [columnWidths, setColumnWidths] = useState<Record<IterationColumnKey, number>>({ rank: 32, id: 72, name: 300, status: 146, flowState: 124, iteration: 128, blocked: 72, planEstimate: 72, taskEstimate: 72, todoEstimate: 62, owner: 170 });
+  const [columnWidths, setColumnWidths] = useState<Record<IterationColumnKey, number>>({ rank: 32, id: 72, name: 300, status: 146, flowState: 124, iteration: 128, startDate: 96, targetEndDate: 106, blocked: 72, planEstimate: 72, taskEstimate: 72, todoEstimate: 62, owner: 170 });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showModal, setShowModal] = useState(false);
 
@@ -265,6 +269,8 @@ export function TrackPage({ title = "Iteration Status", role, readOnly = false, 
         case "status": return toIterationScheduleState(i.status) === value;
         case "flowState": return toIterationScheduleState(i.status) === value;
         case "iteration": return i.iteration === value;
+        case "startDate": return (i.startDate || "").includes(searchValue);
+        case "targetEndDate": return (i.targetEndDate || "").includes(searchValue);
         case "blocked": return value === "Blocked" ? Boolean(i.blocked) : !i.blocked;
         case "planEstimate": return String(i.planEstimate).includes(searchValue);
         case "taskEstimate": return String(i.taskEstimate ?? 0).includes(searchValue);
@@ -366,7 +372,7 @@ export function TrackPage({ title = "Iteration Status", role, readOnly = false, 
     event.stopPropagation();
     const startX = event.clientX;
     const startWidth = columnWidths[column];
-    const minimums: Record<IterationColumnKey, number> = { rank: 32, id: 64, name: 180, status: 132, flowState: 104, iteration: 96, blocked: 64, planEstimate: 56, taskEstimate: 56, todoEstimate: 56, owner: 112 };
+    const minimums: Record<IterationColumnKey, number> = { rank: 32, id: 64, name: 180, status: 132, flowState: 104, iteration: 96, startDate: 84, targetEndDate: 92, blocked: 64, planEstimate: 56, taskEstimate: 56, todoEstimate: 56, owner: 112 };
     function handleMouseMove(moveEvent: MouseEvent) {
       const nextWidth = Math.max(minimums[column], startWidth + moveEvent.clientX - startX);
       setColumnWidths(previous => ({ ...previous, [column]: nextWidth }));
@@ -589,6 +595,8 @@ export function TrackPage({ title = "Iteration Status", role, readOnly = false, 
                     <ResizableIterationHeader label="Schedule State" column="status" width={columnWidths.status} onResize={startColumnResize} sort={sort} onSort={toggleSort} />
                     <ResizableIterationHeader label="Flow State" column="flowState" width={columnWidths.flowState} onResize={startColumnResize} sort={sort} onSort={toggleSort} />
                     <ResizableIterationHeader label="Iteration" column="iteration" width={columnWidths.iteration} onResize={startColumnResize} sort={sort} onSort={toggleSort} />
+                    <ResizableIterationHeader label="Start Date" column="startDate" width={columnWidths.startDate} onResize={startColumnResize} sort={sort} onSort={toggleSort} />
+                    <ResizableIterationHeader label="Target End" column="targetEndDate" width={columnWidths.targetEndDate} onResize={startColumnResize} sort={sort} onSort={toggleSort} />
                     <ResizableIterationHeader label="Blocked" column="blocked" width={columnWidths.blocked} onResize={startColumnResize} sort={sort} onSort={toggleSort} align="center" />
                     <ResizableIterationHeader label="Plan Est" column="planEstimate" width={columnWidths.planEstimate} onResize={startColumnResize} sort={sort} onSort={toggleSort} align="right" />
                     <ResizableIterationHeader label="Task Est" column="taskEstimate" width={columnWidths.taskEstimate} onResize={startColumnResize} sort={sort} onSort={toggleSort} align="right" />
@@ -605,6 +613,8 @@ export function TrackPage({ title = "Iteration Status", role, readOnly = false, 
                     <div className="shrink-0" style={{ width: columnWidths.status }} />
                     <div className="shrink-0" style={{ width: columnWidths.flowState }} />
                     <div className="shrink-0" style={{ width: columnWidths.iteration }} />
+                    <div className="shrink-0" style={{ width: columnWidths.startDate }} />
+                    <div className="shrink-0" style={{ width: columnWidths.targetEndDate }} />
                     <div className="shrink-0" style={{ width: columnWidths.blocked }} />
                     <div className="shrink-0 text-right font-mono tabular-nums" style={{ width: columnWidths.planEstimate }}>{planEstimateTotal}</div>
                     <div className="shrink-0 text-right font-mono tabular-nums" style={{ width: columnWidths.taskEstimate }}>{taskEstimateTotal}</div>
@@ -637,6 +647,8 @@ export function TrackPage({ title = "Iteration Status", role, readOnly = false, 
                         <div className="shrink-0 overflow-hidden" style={{ width: columnWidths.iteration }} onClick={event => event.stopPropagation()}>
                           {editable ? <select aria-label={`${item.id} iteration`} value={item.iteration} onChange={event => updateItem(item.id, { iteration: event.target.value })} className="w-[122px] max-w-full text-[11px] rounded-sm bg-white focus:outline-none" style={{ border: "1px solid #bdd0ef", color: "#2558a6" }}>{iterationOptions.map(iteration => <option key={iteration}>{iteration}</option>)}</select> : <span className="block truncate text-[11px]" style={{ color: "#5c6478" }}>{item.iteration}</span>}
                         </div>
+                        <div className="shrink-0 overflow-hidden font-mono text-[10px]" style={{ width: columnWidths.startDate, color: item.startDate ? "#475569" : "#a3aab7" }}>{item.startDate || "Not set"}</div>
+                        <div className="shrink-0 overflow-hidden font-mono text-[10px]" style={{ width: columnWidths.targetEndDate, color: item.targetEndDate ? "#8a5808" : "#a3aab7" }}>{item.targetEndDate || "Not set"}</div>
                         <div className="shrink-0 flex justify-center" style={{ width: columnWidths.blocked }}>
                           {item.blocked ? <span className="flex items-center gap-1 text-[10px] font-semibold" style={{ color: "#b91c1c" }}><AlertTriangle size={11} />Yes</span> : <span className="text-[10px]" style={{ color: "#c4cad4" }}>—</span>}
                         </div>

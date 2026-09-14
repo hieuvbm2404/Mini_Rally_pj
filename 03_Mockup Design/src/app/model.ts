@@ -19,6 +19,11 @@ export interface WorkItem {
   iteration: string; release: string; releaseId?: string; milestoneIds?: string[]; featureId?: string; tags: string[];
   /** Timestamp when the Story/Defect actually entered Accepted; null means not accepted. */
   acceptedDate?: string | null;
+  /** First date the work item entered In-Progress. System managed and preserved across iteration moves. */
+  startDate?: string | null;
+  /** User forecast for completion. On a Story, a date outside its Iteration can initiate Carryover. */
+  targetEndDate?: string | null;
+  iterationTransitions?: IterationTransitionEvent[];
   description: string; lastUpdated: string; dueDate?: string;
   blocked?: boolean; defectCount?: number; commentCount?: number;
   attachmentCount?: number; project?: string; team?: string; rank?: number;
@@ -34,6 +39,24 @@ export interface TaskItem {
   state: TaskState; owner: Owner; project: string; team: string;
   estimate: number; todo: number; actuals: number;
   description: string; notes: string; attachments: string[];
+  /** System-managed first In-Progress date and first Completed date. */
+  startDate?: string | null;
+  actualEndDate?: string | null;
+}
+export interface IterationTransitionEvent {
+  id: string;
+  type: "Carryover" | "Manual Move";
+  at: string;
+  fromIteration: string;
+  toIteration: string;
+  targetEndDate?: string;
+  taskSnapshots?: Array<{
+    taskId: string;
+    state: TaskState;
+    estimate: number;
+    todo: number;
+    actuals: number;
+  }>;
 }
 export type TestCaseMethod = "Manual" | "Automated";
 export type TestCaseType = string;
@@ -355,6 +378,7 @@ export const WORK_ITEMS: WorkItem[] = [
     status: "In-Progress", priority: "High", owner: OWNERS[0], project: "NXP", team: "Core Platform",
     planEstimate: 8, taskCount: 6, completedTasks: 4, taskEstimate: 16, todoEstimate: 4,
     iteration: "Sprint 24.3", release: "Q4 2024", featureId: "FE-311", tags: ["auth", "security"],
+    startDate: "2024-10-15", targetEndDate: null,
     dueDate: "Oct 28, 2024", commentCount: 4, attachmentCount: 2, defectCount: 1,
     description: "Enterprise customers require SAML 2.0 SSO support for automated provisioning through their identity provider. Covers IdP metadata upload, attribute mapping, and session management across tenant boundaries.",
     lastUpdated: "Oct 21, 2024",
@@ -579,11 +603,11 @@ export const NOTIFICATIONS: Notification[] = [
 ];
 
 export const TASKS_DATA: TaskItem[] = [
-  { id: "TA-482101", parentWorkItemId: "US-4821", rank: 1, name: "Prepare implementation approach", state: "Completed", owner: OWNERS[0], project: "NXP", team: "Core Platform", estimate: 3, todo: 0, actuals: 3, description: "Define the SSO implementation approach and validation checkpoints.", notes: "Reviewed with platform lead.", attachments: ["implementation-outline.md"] },
-  { id: "TA-482102", parentWorkItemId: "US-4821", rank: 2, name: "Configure SAML metadata upload", state: "Completed", owner: OWNERS[0], project: "NXP", team: "Core Platform", estimate: 3, todo: 0, actuals: 3, description: "Configure metadata upload and validation.", notes: "Metadata validation complete.", attachments: [] },
-  { id: "TA-482103", parentWorkItemId: "US-4821", rank: 3, name: "Map IdP attributes", state: "Completed", owner: OWNERS[1], project: "NXP", team: "Core Platform", estimate: 2, todo: 0, actuals: 2, description: "Map IdP attributes to tenant profile fields.", notes: "Required attributes mapped.", attachments: [] },
-  { id: "TA-482104", parentWorkItemId: "US-4821", rank: 4, name: "Validate session lifecycle", state: "Completed", owner: OWNERS[1], project: "NXP", team: "Core Platform", estimate: 2, todo: 0, actuals: 2, description: "Validate login, renewal and logout behavior.", notes: "Core session cases pass.", attachments: [] },
-  { id: "TA-482105", parentWorkItemId: "US-4821", rank: 5, name: "Complete security review", state: "In-Progress", owner: OWNERS[1], project: "NXP", team: "Core Platform", estimate: 4, todo: 2, actuals: 2, description: "Review SAML security controls and tenant isolation.", notes: "Awaiting final security sign-off.", attachments: [] },
+  { id: "TA-482101", parentWorkItemId: "US-4821", rank: 1, name: "Prepare implementation approach", state: "Completed", owner: OWNERS[0], project: "NXP", team: "Core Platform", estimate: 3, todo: 0, actuals: 3, startDate: "2024-10-15", actualEndDate: "2024-10-16", description: "Define the SSO implementation approach and validation checkpoints.", notes: "Reviewed with platform lead.", attachments: ["implementation-outline.md"] },
+  { id: "TA-482102", parentWorkItemId: "US-4821", rank: 2, name: "Configure SAML metadata upload", state: "Completed", owner: OWNERS[0], project: "NXP", team: "Core Platform", estimate: 3, todo: 0, actuals: 3, startDate: "2024-10-16", actualEndDate: "2024-10-18", description: "Configure metadata upload and validation.", notes: "Metadata validation complete.", attachments: [] },
+  { id: "TA-482103", parentWorkItemId: "US-4821", rank: 3, name: "Map IdP attributes", state: "Completed", owner: OWNERS[1], project: "NXP", team: "Core Platform", estimate: 2, todo: 0, actuals: 2, startDate: "2024-10-17", actualEndDate: "2024-10-18", description: "Map IdP attributes to tenant profile fields.", notes: "Required attributes mapped.", attachments: [] },
+  { id: "TA-482104", parentWorkItemId: "US-4821", rank: 4, name: "Validate session lifecycle", state: "Completed", owner: OWNERS[1], project: "NXP", team: "Core Platform", estimate: 2, todo: 0, actuals: 2, startDate: "2024-10-18", actualEndDate: "2024-10-21", description: "Validate login, renewal and logout behavior.", notes: "Core session cases pass.", attachments: [] },
+  { id: "TA-482105", parentWorkItemId: "US-4821", rank: 5, name: "Complete security review", state: "In-Progress", owner: OWNERS[1], project: "NXP", team: "Core Platform", estimate: 4, todo: 2, actuals: 2, startDate: "2024-10-21", actualEndDate: null, description: "Review SAML security controls and tenant isolation.", notes: "Awaiting final security sign-off.", attachments: [] },
   { id: "TA-482106", parentWorkItemId: "US-4821", rank: 6, name: "Add automated verification", state: "Defined", owner: OWNERS[3], project: "NXP", team: "Core Platform", estimate: 2, todo: 2, actuals: 0, description: "Add automated coverage for SAML provisioning and errors.", notes: "Start after security review.", attachments: [] },
   { id: "TA-114201", parentWorkItemId: "DE-1142", rank: 1, name: "Reproduce Firefox refresh loop", state: "Defined", owner: OWNERS[1], project: "NXP", team: "Core Platform", estimate: 3, todo: 3, actuals: 0, description: "Reproduce the widget refresh loop in supported Firefox versions.", notes: "Use the production dashboard fixture.", attachments: [] },
   { id: "TA-114202", parentWorkItemId: "DE-1142", rank: 2, name: "Release detached chart observers", state: "Defined", owner: OWNERS[1], project: "NXP", team: "Core Platform", estimate: 3, todo: 3, actuals: 0, description: "Dispose detached chart observers and verify memory recovery.", notes: "Implement after reproduction is stable.", attachments: [] },
