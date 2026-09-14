@@ -8,10 +8,10 @@
 | Feature name | Story Date Tracking and Carryover |
 | Product | Rova / Mini Rally |
 | Phase | Phase 7 — After MVP |
-| Status | Draft for BA review |
+| Status | BA approved; created under `FE-37` on Rova |
 | Updated | 2026-09-14 |
-| Parent specification | `FEATURE.md` in this folder |
-| ID note | `CO-01` to `CO-10` are local planning IDs, not Rally item IDs |
+| Parent specification | `FEATURE.md` and `SRS.md` in this folder |
+| ID note | `CO-01` to `CO-10` are local delivery slices mapped in order to Rova `US-109` to `US-118` |
 
 ## 1. Delivery map
 

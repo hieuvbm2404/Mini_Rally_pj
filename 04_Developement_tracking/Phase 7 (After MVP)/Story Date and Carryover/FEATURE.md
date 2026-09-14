@@ -8,9 +8,9 @@
 | Feature name | Story Date Tracking and Carryover |
 | Product | Rova / Mini Rally |
 | Phase | Phase 7 — After MVP |
-| Status | Draft for BA review; aligned with the approved clickable mockup and decisions on 2026-09-14 |
+| Status | BA approved for Phase 7; aligned with the approved clickable mockup and decisions on 2026-09-14 |
 | Updated | 2026-09-14 |
-| Detailed rules | No separate `SRS.md` has been requested for this folder |
+| Detailed rules | `SRS.md` in this folder |
 | Delivery backlog | `USER_STORIES.md` in this folder |
 
 ## 1. Feature summary
