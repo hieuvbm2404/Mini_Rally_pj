@@ -12,7 +12,7 @@ import {
   GripVertical, Copy, Scissors, UserPlus, GitMerge,
   ExternalLink, AlignJustify, Minus, Zap,
   Calendar, RotateCw, ListChecks, Globe, Send, ArrowUpRight,
-  CheckSquare, Square, Columns,
+  CheckSquare, Square, Columns, BookOpen,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -749,6 +749,14 @@ export function SettingsPage({ role, projectReadOnly = false, initialTab = "prof
                 })}
               </div>
             ))}
+            <div className="mb-4">
+              <p className="text-[9px] uppercase tracking-widest font-semibold px-2 mb-1" style={{ color: "#8c94a6" }}>Help</p>
+              <a href="/user-guide/index.html" target="_blank" rel="noreferrer" className="w-full flex items-center gap-2 px-2 py-1.5 text-[12px] rounded text-left mb-0.5 hover:bg-[#f4f6f9]" style={{ color: "#3a4254" }}>
+                <BookOpen size={13} style={{ color: "#8c94a6" }} />
+                <span className="flex-1">Guideline</span>
+                <ExternalLink size={10} style={{ color: "#8c94a6" }} />
+              </a>
+            </div>
           </div>
         </div>
         <div className="flex-1 overflow-auto p-6 bg-white">
